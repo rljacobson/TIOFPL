@@ -1,0 +1,29 @@
+Chapter 1 Introduction
+1.3 Part II: Graph Reduction
+The rest of the book describes how the lambda calculus may be implemented
+using a technique called graph reduction. It is largely independent of the later
+chapters in Part I, Chapters 2-4 being the essential prerequisites.
+As a foretaste of things to come, we offer the following brief introduction to
+graph reduction. Suppose that the function f is defined (in Miranda) like this:
+f x = (x + 1) * (x - 1)
+This definition specifies that f is a function of a single argument x, which
+computes '(x + 1) * (x - 1)'. Now suppose that we are required to evaluate
+f 4
+that is, the function f applied to 4. We can think of the program like this:
+where the @ stands for function application. Applying f to 4 gives
+(Note: in the main text we will use a slightly different representation for
+applications of *, + and -, but this fact is not significant here.) We may now
+execute the addition and the subtraction (in either order), giving
+5
+3
+Finally we can execute the multiplication, to give the result
+15
+From this simple example we can see that:
+(i) Executing a functional program consists of evaluating an expression.
+(ii) A functional program has a natural representation as a tree (or, more
+generally, a graph).
+(iii) Evaluation proceeds by means of a sequence of simple steps, called
+reductions. Each reduction performs a local transformation of the graph
+(hence the term graph reduction).
+(iv) Reductions may safely take place in a variety of orders, or indeed in
+parallel, since they cannot interfere with each other.

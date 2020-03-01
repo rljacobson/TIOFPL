@@ -1,0 +1,23 @@
+Four
+STRUCTURED TYPES AND THE
+SEMANTICS OF
+PATTERN-MATCHING
+Simon L. Peyton Jones and Philip Wadler
+This chapter concerns structured types, a powerful and general mechanism
+for defining data types, provided by several functional languages, including
+Miranda, ML and Hope. Intimately associated with structured types is a
+notational device known as pattern-matching, which is used by such
+languages for defining functions.
+Section 4.1 gives a general introduction to structured types and pattern-
+matching. Section 4.2 begins with a more in-depth look at pattern-matching
+and conditional equations, and then introduces two new constructs in the
+enriched lambda calculus, [ and pattern-matching lambda abstractions. Using
+these constructs, we then show how to translate a general Miranda function
+definition into the enriched lambda calculus. Section 4.3 is devoted to
+providing a precise semantics for pattern-matching lambda abstractions.
+We conclude in Section 4.4 by defining case-expressions, the last new
+construct of the enriched lambda calculus. This clears the way for Chapter 5,
+which will show how to transform pattern-matching lambda abstractions into
+case-expressions, thus giving a considerable gain in efficiency.
+What in this chapter are called 'structured types' are called 'algebraic types'
+in Miranda, and 'free data types' by some others [Burstall and Goguen, 1982].

@@ -1,0 +1,31 @@
+Section 14.2 Lets and letrecs in supercombinator bodies
+233
+14.1 Notation
+Since we want to treat recursion directly, we do not want it to be compiled into
+applications of the Y combinator. Hence we assume that the high-level
+functional program is instead translated into the lambda notation augmented
+with the simple let and letrec constructs, as was described in Chapter 3.
+In passing we observe that the notation
+$S1 x y = B1
+$S2 f = B2
+etc.
+E
+is precisely equivalent to
+letrec
+$S1 = Ax.Ay . B1
+$S2 = Af . B2
+etc.
+in
+E
+so that the lambda-lifting process can be regarded as a source to source
+transformation of the enriched lambda calculus.
+14.2 Lets and letrecs in Supercombinator Bodies
+Suppose we wanted to write a textual description for the graph
+Whilst expressions such as (f (g a) b) can describe trees, they cannot express
+the sharing and cycles embodied in the above graph. One solution would be to
+name the nodes (a, b and c, say, working top to bottom) and express the
+graph thus:
+a =cb
+b =c3
+c =fb
+We would also want to identify a as being the root of the graph. But we have

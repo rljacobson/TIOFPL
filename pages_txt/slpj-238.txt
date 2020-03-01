@@ -1,0 +1,29 @@
+238
+Chapter 14 Recursive Supercombinators
+Now sumints and sum have no inner abstractions, and they are at the top
+level, so they are supercombinators. Lifting them directly, and adding the
+final $Prog supercombinator, gives
+$count count m n = IF (> n m) NIL (CONS n (count (+ n 1)))
+$sum ns = IF (= ns NIL) 0 (+ (HEAD ns) ($sum (TAIL ns)))
+$sumInts m = letrec count = $count count m
+in $sum (count 1)
+$Prog = $sumints 100
+$Prog
+We are done.
+14.6 Alternative Approaches
+The technique described earlier is not the only way of lambda-lifting recursive
+functions. For example, Johnsson [1985] describes an algorithm which
+constructs graphical supercombinator bodies for data structures, but not for
+functions.
+Briefly, his technique works like this. Suppose we have a program with a
+recursive function f containing a free variable v:
+(.
+letrec f = \x. (.. .f. ..v . . .)
+in (.. .f. . .)
+...)
+We generate a recursive supercombinator $f from f by abstracting the free
+variables (just v in this case) but not f itself. Instead, all uses of f are replaced
+with ($f v), including those in the body of $f itself. This yields
+$f v x = .. .($f v) . . .v. . .
+(...
+(. . .($f v). . .)

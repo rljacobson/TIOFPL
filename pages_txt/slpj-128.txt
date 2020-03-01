@@ -1,0 +1,24 @@
+Seven
+LIST COMPREHENSIONS
+Philip Wadler
+List comprehensions are a syntactic feature of several functional languages,
+which, like pattern-matching, can greatly increase the ease with which one
+can read and write functional programs. Like pattern-matching, they add no
+fundamental new power to the language, and it is easy to translate a program
+contain them.
+containing list comprehensions into an equivalent program that does not
+This chapter is organized as follows. Section 7.1 explains the list compre-
+hension notation. Section 7.2 gives a formal semantics of list comprehensions
+in terms of reduction rules. Section 7.3 presents a method of translating
+comprehensions into the enriched lambda calculus, and Section 7.4 uses
+program transformation techniques to improve this method. For simplicity,
+Sections 7.2-7.4 do not allow patterns in comprehensions, and the results of
+these sections are extended to include patterns in Section 7.5.
+7.1 Introduction to List Comprehensions
+Set comprehensions were introduced by Burstall in an early version of the
+language NPL (which later evolved into Hope, but without set compre-
+hensions). List comprehensions were first used by Turner in KRC, where they
+were called ZF expressions [Turner, 1982]. List comprehensions have since
+been included in several other functional languages, including Miranda and
+SASL (in both of which they are called ZF expressions), and Orwell.
+(List comprehensions have sometimes been called set abstractions. This

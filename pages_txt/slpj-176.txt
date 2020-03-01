@@ -1,0 +1,47 @@
+Section 9.6 New variables
+175
+types of the free variables of an expression by means of an object of the
+following type:
+type_env == assoc_list vname type_scheme
+We shall use gamma, gamma', etc. as variables standing for type environ-
+ments. The functions unknowns_scheme and sub_scheme can be extended to
+act on type environments, in the obvious way:
+unknowns_te :: type_env -> [tvname]
+unknowns_te gamma = appendlist (map unknowns_scheme (rng gamma))
+appendlist :: [ [*] ] -> [*]
+appendlist lis = foldr (++) [] lis
+sub_te :: subst -> type_env -> type_env
+sub_te phi gamma
+= [ (x,sub_scheme phi st) 1 (x,st) <- gamma ]
+9.6 New Variables
+When type-checking a closed expression, we first assigned a distinct type
+variable to each subexpression, and then wrote down equations expressing
+the constraints on those variables imposed by the structure of the expression.
+When type-checking an expression containing variables defined in a let- or
+letrec-expression, we chose first to work out the schematic types of those
+variables (i.e. we checked the definitions first). We then assigned to each
+occurrence of such a variable a type expression obtained by substituting new
+unknown variables for the schematic variables, using a distinct set of
+unknowns for each distinct occurrence.
+So we will need a mechanism that enables us to 'make up' new type
+variables, and guarantees that they are distinct from type variables we may
+introduce in the future. There are many ways to provide such a mechanism.
+functions
+The one we adopt here is to postulate that there is a type name_supply, and
+next_name :: name_supply -> tvname
+deplete
+split
+:: name_supply -> name_supply
+:: name_supply -> (name_supply,name_supply)
+such that if ns is a name supply, then (next_name ns) is distinct from any name
+supplied by (deplete hs), and if (ns0,ns1) = split ns, then any name supplied
+from ns0 is distinct from any name supplied by ns1. One way to implement
+such a type is to (re)define tvname, thus:
+tvname
+[num]
+name_supply
+tvname
+next_name ns = ns
+deplete (n:ns) = (n+2:ns)
+split ns
+= (0:ns, 1:ns)

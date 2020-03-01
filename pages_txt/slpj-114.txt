@@ -1,0 +1,45 @@
+Section 6.2 Transforming let and letrec
+113
+would be transformed to
+let v = B in (let x = SEL-PAIR-1 v
+in E)
+y = SEL-PAIR-2 v
+Notice that if neither x nor y is evaluated in E, then B will not be evaluated
+either, so the transformation implements lazy product-matching. Lazy
+product-matching is just as much of an advantage here as it was in function
+definitions. For example, we could recode the function 'firsts' from Section
+4.3.5 in the following way:
+firsts []
+= (0, 0)
+firsts (x:XS) = (x, ev),
+odd x
+= (od, x),
+even x
+where
+(od, ev) = firsts xs
+We would expect this definition to behave just like that of Chapter 4, so that if
+lazy product-matching is used for function definitions then it should also be
+used for let(rec)-expressions.
+section, namely:
+(Note: an alternative transformation would have been possible in this
+let p = B in E = (\p. E) B
+where p is an irrefutable pattern. From a semantic point of view, this is
+entirely equivalent to the transformation used above. However, for the
+efficiency reasons outlined in Section 3.2.4, we prefer to stay in the world of
+let-expressions as long as possible; hence our choice.)
+6.2.5 Transforming Irrefutable letrecs into Simple letrecs
+The transformation from a letrec involving only irrefutable definitions into a
+simple letrec is very similar to that for let-expressions:
+letrec (t pi . .. pr) = B = letrec v = B
+<other definitions>
+in E
+P1 = SEL-t-1 v
+. .
+Pr = SEL-t-r v
+in E
+<other definitions>
+where v is a new variable that does not occur free in E or B.
+All the transformed definitions must be in a single letrec, to ensure that
+variables in the patterns pi are in scope in B. The ' <other definitions>' simply
+takes into account the fact that the letrec may contain multiple definitions, and
+this transformation should be applied to each of them separately.

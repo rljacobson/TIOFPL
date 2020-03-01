@@ -1,0 +1,27 @@
+References
+395
+Conference on Functional Programming and Computer Architecture, Nancy.
+pp. 35-49. Jouannaud (editor). LNCS 201. Springer Verlag.
+Cousot, P., and Cousot, R. 1977. Abstract interpretation: a unified lattice model for
+static analysis of programs by construction or approximation of fixed points. In
+Proceedings of the 4th ACM Symposium on Principles of Programming
+Languages, Los Angeles, pp. 238-52.
+Hudak, P., and Young, J. 1986. Higher order strictness analysis in untyped lambda
+calculus. In Proceedings of the 12th ACM Symposium on Principles of
+Programming Languages, pp. 97-109, January.
+Hughes, R.J.M. 1985. Strictness Detection in Non-flat Domains. Programming
+Research Group, Oxford. August.
+Mycroft, A. 1981. Abstract interpretation and optimising transformations for
+applicative programs. PhD thesis, Dept Computer Science, University of
+Edinburgh.
+Stoy, J.E. 1981. Denotational Semantics. MIT Press.
+Wadler, P. 1984. Listlessness is better than laziness: lazy evaluation and garbage
+collection at compile-time. In Proceedings of the ACM Symposium on Lisp and
+Functional Programming, Austin, Texas. August.
+Wadler, P. 1985a. Strictness Analysis on Non-flat Domains. Programming Research
+Group, Oxford. November.
+Wadler, P. 1985b. Listlessness is better than laziness II: composing listless functions.
+In Programs as Data Objects, Ganzinger, H., and Jones, N.D. (editors). LNCS
+217. Springer Verlag
+Wray, S.C. 1986. Implementation and programming techniques for functional
+languages. PhD thesis, University of Cambridge. January.

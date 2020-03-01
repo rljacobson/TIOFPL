@@ -1,0 +1,48 @@
+404
+Chapter 23 The Pragmatics of Graph Reduction
+This is a nice simple definition, but let us see it in practice:
+sum [1,2,3]
+1 + sum [2,3]
+1 + (2 + (sum [3]))
++ (2 + (3 + sum []))
+tittttt
+1 + (2 + (3 + 0))
+1 + (2 + 3)
+5
+6
+The evaluation consumes transient space linear in the length of the list. (Note:
+using an unboxed G-machine implementation this transient space would
+actually be on the stack; this is less bad than transient heap space, but still
+undesirable.)
+This phenomenon is well known to the Lisp community, and any red-
+blooded Lisp programmer would never have written the above definition.
+Instead he would have used an accumulating parameter:
+sum list = sum1 0 list
+where
+sum1 n [] = n
+sum1 n (x:xs) = sum1 (n+x) xs
+The definition of sum1 is tail recursive (cf. Chapter 21), and on a Lisp system
+will execute in constant space. Unfortunately, many graph reduction imple-
+mentations will not execute this in constant space:
+sum [1,2,3]
+sum1 0 [1,2,3]
+sum1 (0+1) [2,3]
+sum1 ((0+1)+2) [3]
+sum1 (((0+1)+2)+3) []
+ttittTTT
+((0+1)+2)+3
+(1+2)+3
+3+3
+6
+Here the first parameter to sum1 grows in size linearly with the length of the
+list. Stack usage is also linear in the length of the list.
+In this case strictness analysis comes to the rescue, because it can infer that
+sum1 will eventually evaluate its first argument, so that its first argument can
+safely be evaluated before sum1 is applied. This will produce:
+sum [1,2,3]
+sum1 0 [1,2,3]
+sum1 (0+1) [2,3]
+sum1 1 [2,3]
+sum1 (1+2) [3]
+sum1 3 [3]
+etc.

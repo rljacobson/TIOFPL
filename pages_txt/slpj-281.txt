@@ -1,0 +1,25 @@
+Seventeen
+STORAGE MANAGEMENT AND
+GARBAGE COLLECTION
+As mentioned in Chapter 10, a graph reducer requires the support of a storage
+management system which allocates cells on request, and recovers garbage
+cells for subsequent re-use. Storage management and garbage collection is a
+subject on which there is a large literature. Cohen [1981] gives an excellent
+survey with a comprehensive list of references.
+The purpose of this chapter is to sketch the standard algorithms, to give an
+assessment of their characteristics, and to make a brief survey of more
+recently developed techniques.
+17.1 Criteria for Assessing a Storage Manager
+When considering a garbage collection technique it is helpful to keep in mind
+the criteria against which it should be assessed. The main ones are:
+(i) What are its overheads (in space and time)? All garbage collection
+systems consume resources, both in the form of per-cell extra storage
+requirements and in the CPU cycles taken to perform the collection.
+(ii) Does it support compaction? If a storage manager repeatedly allocates,
+recovers and re-allocates variable-sized cells, the free storage tends to
+become fragmented into many small separate blocks. This can mean that
+a cell cannot be allocated because no free block is large enough, even
+though the total free storage is adequate. This phenomenon is known as
+storage fragmentation [Knuth, 1976], and it can only be avoided by
+periodically compacting all the cells together at one end of the address
+space, so as to produce a large contiguous free area from which to

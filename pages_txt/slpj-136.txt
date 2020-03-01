@@ -1,0 +1,50 @@
+Section 7.4 Using transformations to improve efficiency
+135
+TE[ [E ( Q] ] = TO[ [E I Q] ++ [] ]
+(A) TQ[ [E I v <- Li; Q] ++ L2 ]
+= letrec
+h = Aus. case us of
+NIL
+CONS v uS'=
+TE[ L2 I
+(B)
+in (h TE[ Lf D
+TQ[ [E I Q] ++ (h us') ]
+TQ[ [E I B; Q] ++ L ] = IF TE[ B ] TO[ [E I Q] ++ L ] TE[ L ]
+TO[ [E ! ] +LI
+CONS TE[ E ] TE[ L I
+where h, us and us' are new variables which do not occur free in E, L1, L2or Q
+Figure 7.4 Optimal translation scheme for list comprehensions
+TE[[ [square x | x <- xs; odd x] ]
+letrec
+h = Aus. case us of
+NIL
+NIL
+in (h xs)
+CONS x us'
+=> IF (odd x) (CONS (square x) (h us')) (h us')
+TE[ [(x,y) ! x <- xs; y <- ys] ]
+letrec
+g = Aus. case us of
+NIL
+CONS x us'
+NIL
+letrec
+h = Avs. case vs of
+NIL
+(g us')
+in (h ys)
+CONS y vs'
+CONS (PAIR x y) (h vs')
+in (g xs)
+Figure 7.5 Example translations using the optimal scheme
+Figure 7.5 shows two examples of the translations produced by the new
+scheme. These should be compared with the examples at the end of the
+previous section. The reader will see that the new translations are consider-
+ably longer, but also considerably more efficient. Indeed, the translations
+make by hand.
+produced by the new scheme are as good as the best translations one would
+More precisely, we can state that the new translation scheme is optimal in
+that it performs the minimum number of CONS operations. For a list compre-
+hension, this means performing exactly one CONS operation for each element
+in the returned list. The old translation scheme performed rather more CONS

@@ -1,0 +1,45 @@
+196
+Chapter II Selecting the Next Redex
+entire input before producing any output. These observations focus our
+attention on the mechanisms available for input and output.
+Input and output are regarded as side-effects in imperative programming
+languages, so functional systems have to take a different view since they do
+not support side-effects. The accepted solution is to regard the functional
+program as a function from input data to output data:
+Input
+data
+Functional program
+Output
+data
+The input data are normally presented to the program as an infinite list of
+characters, which might, for example, come from the user's keyboard. The
+output data are the result of applying the program to the input list, and are
+normally some kind of data structure which might, for example, be displayed
+on the user's screen.
+As well as getting the correct results to the program, however, we also want
+it to have 'nice' operational behavior, namely that output is printed as soon as
+it is available, and that input is not consumed until it is needed. In the next two
+sections we discuss how this operational behavior can be achieved, beginning
+with the printing mechanism.
+11.2.1 The Printing Mechanism
+Since we want to print out a data structure as it is generated, we see that the
+evaluation of a functional program is driven by the need to print its result, and
+that the evaluator is called from the printing program. The printing program
+calls the evaluator, and then looks at the root of the result (i.e. the root of the
+evaluated graph). If it is a number (or boolean, character, etc.), the printer
+prints it and evaluation is complete. If, on the other hand, the result is a data
+constructor (such as a CONS cell), the printing program can call the evaluator
+successively to evaluate the components of the data structure, printing out the
+results as it goes. The whole printing process can be repeated recursively on
+the components of the data structure.
+Assuming that our functional program always evaluates to a number or a
+CONS cell, we might write a pseudo-code printing program like this:
+Print( E )
+begin
+E' := Evaluate( E )
+if (IsNumber( E' )) then Output( E' )
+else begin
+Print( Head( E' ) )
+Print( Tail( E' ) )
+end
+end

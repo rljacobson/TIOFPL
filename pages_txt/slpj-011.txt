@@ -1,0 +1,39 @@
+10
+Chapter 2 The Lambda Calculus
+for example, the function + precedes its arguments 4 and 5. A slightly more
+complex example, showing the (quite conventional) use of brackets, is
+(+ (* 5 6) (+ 8 3))
+In both examples, the outermost brackets are redundant, but have been
+added for clarity (see Section 2.1.2).
+From the implementation viewpoint, a functional program should be
+thought of as an expression, which is 'executed' by evaluating it. Evaluation
+proceeds by repeatedly selecting a reducible expression (or redex) and
+reducing it. In our last example there are two redexes: (* 5 6) and (+ 8 3).
+The whole expression (+ (* 5 6) (* 8 3)) is not a redex, since a + needs to be
+applied to two numbers before it is reducible. Arbitrarily choosing the first
+redex for reduction, we write
+(+ (* 5 6) (* 8 3)) - (+ 30 (* 8 3))
+where the- is pronounced 'reduces to'. Now there is only one redex, (* 8 3),
+which gives
+(+ 30 (* 8 3)) - (+ 30 24)
+This reduction creates a new redex, which we now reduce
+(+ 30 24) - 54
+When there are several redexes we have a choice of which one to reduce
+first. This issue will be addressed later in this chapter.
+2.1.1 Function Application and Currying
+In the lambda calculus, function application is so important that it is denoted
+by simple juxtaposition; thus we write
+f x
+to denote 'the function f applied to the argument x'. How should we express
+the application of a function to several arguments? We could use a new
+notation, like (f (x,y)), but instead we use a simple and rather ingenious
+alternative. To express 'the sum of 3 and 4' we write
+((+ 3) 4)
+The expression (+ 3) denotes the function that adds 3 to its argument. Thus
+the whole expression means 'the function + applied to the argument 3, the
+result of which is a function applied to 4'. (In common with all functional
+programming languages, the lambda calculus allows a function to return a
+function as its result.)
+This device allows us to think of all functions as having a single argument
+only. It was introduced by Schonfinkel [1924] and extensively used by Curry
+[Curry and Feys, 1958]; as a result it is known as currying.

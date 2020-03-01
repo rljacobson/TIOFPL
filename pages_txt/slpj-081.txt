@@ -1,0 +1,50 @@
+80
+Chapter 5 Efficient Compilation of Pattern-matching
+examines the list and the sublist only once:
+nodups
+= Axs". case xs" of
+NIL
+NIL
+CONS x' xS'
+case xs' of
+NIL
+CONS X' NIL
+CONS x xS
+IF (= x' x)
+(nodups (CONS x xs))
+(CONS x' (nodups (CONS x xs))
+(Here x' is the variable that was called x in the second equation and y in the
+third.)
+The two kinds of pattern-matching, nested patterns and multiple patterns,
+are closely related to one another. The pattern-matching compiler discussed
+below works uniformly for both.
+In the examples above, the patterns on the left-hand sides of the equations
+do not overlap. Many people would rewrite the first definition in the form:
+mappairs' f [] ys
+=
+mappairs' f xs []
+=
+mappairs' f (x:xs) (y:ys) = f x y : mappairs' f xs ys
+In this case, the patterns overlap because both the first and the second
+equation match against (mappairs' f [] []).
+One reason for preferring mappairs' to mappairs is that it is considered to be
+more efficient. Indeed, if the simplest implementation of pattern-matching is
+used, matching each equation in turn, then it is slightly less work to match
+against xs than to match against (x:xs). However, as we shall see, this
+definition may actually be less efficient when the pattern-matching compiler is
+used. Some other problems with definitions like mappairs' will be discussed in
+Section 5.5.
+The remainder of this chapter is organized as follows. Section 5.2 explains
+the pattern-matching compiler algorithm. Section 5.3 presents a Miranda
+program that implements the algorithm. Section 5.4 describes some optimiza
+tions to the pattern-matching compiler. Section 5.5 discusses a restricted class
+of definitions, called uniform definitions, which have useful properties.
+Credit for the first published description of a pattern-matching compiler
+goes to Augustsson, who used it in the LML compiler [Augustsson, 1985].
+Techniques similar to Augustsson's have been discovered independently by
+several researchers, including the authors of the Hope compiler [Burstall et
+al., 1980]. The material presented here is derived partly from Augustsson's
+paper and partly from original work by the author (Wadler).
+It is also possible to derive the pattern-matching compiler from its
+Wadler [1986].
+specification using program transformation techniques; see Barrett and

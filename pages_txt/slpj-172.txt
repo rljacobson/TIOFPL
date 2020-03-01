@@ -1,0 +1,41 @@
+Section 9.5 Keeping track of types
+171
+9.5 Keeping Track of Types
+proceed.
+When type-checking an expression with free variables, there are two ways to
+9.5.1 Method 1: Look to the Occurrences
+We can find the constraints imposed on the types of the free variables by the
+manner in which they occur in the expression. In a complete program, the free
+variables must stand for the system's built-in functions or functions associated
+with type definitions. We would then look to see whether the types deduced
+for each occurrence of a free variable can be instances of the type supplied a
+priori for that variable. When type-checking a lambda abstraction (Ax. E), we
+would check that the types deduced for the various occurrences of x within E
+can be unified to the same type expression, and we would handle occurrences
+of defined variables in the right-hand sides of a letrec-expression in the same
+way.
+It is quite possible to develop a type-checker along these lines: one is
+presented in Damas [1985].
+9.5.2 Method 2: Look to the Variables
+It is technically rather a nuisance that distinct occurrences of the same variable
+in an expression are associated with different type expressions. Is there
+something which we can associate with each variable instead?
+Suppose we wish to type-check a let-expression. First of all we type-check
+the definitions of the let, thus deducing a type for each variable defined by the
+let. Then it seems that we could associate each variable with its type, and
+proceed to type-check the body of the let-expression. At each occurrence of
+one of these defined variables in the body, we should construct an instance of
+its associated type, substituting fresh type variables for the schematic
+variables in the type (see Section 8.5.3). However, as we discovered in
+Section 8.5.5, some of the variables in the type are constrained and should not
+be substituted for, and the instantiation mechanism must take account of this.
+What is needed, therefore, is to associate with each variable a kind of type
+template, in which the schematic variables are distinguished from the non-
+schematic variables. Then the template can be instantiated by copying it,
+substituting a fresh type variable for each occurrence of a schematic variable
+(but copying non-schematic variables unchanged). This type template is
+called a type scheme. To summarize:
+(i) The schematic type variables in a type scheme associated with a variable
+are those that may be freely instantiated to conform with the type
+constraints on the various occurrences of that variable.
+(ii) All the other (non-schematic) variables in a type scheme are constrained,

@@ -1,0 +1,29 @@
+Sixteen
+SK COMBINATORS
+In this chapter we shall examine another graph reduction technique based on
+a fixed set of supercombinators. The most important members of this set are
+called S and K; hence the title of this chapter. The idea of having a fixed set of
+supercombinators contrasts with the approach previously described, in which
+the supercombinator definitions are generated from the program.
+The method is appealing because it gives rise to an extremely simple
+reduction machine which, in effect, only has to support built-in operators and
+needs no template-instantiation mechanism. In addition it turns out that the
+implementation is, in a certain sense, lazier than our best efforts so far, but as
+we shall see, these benefits are won at a price.
+(Note: in this chapter we shall use lower-case letters to stand for
+expressions, to avoid confusion with the combinators, which are written in
+upper case.)
+16.1 The SK Compilation Scheme
+Our strategy is to transform the program into one containing only the built-in
+operators and constants, together with the combinators S, K and I. These
+combinators are described by the reduction rules
+Sfgx - fx (g x)
+K x y
+X
+x
+x
+The motivation for choosing this particular set should become clearer as we
+proceed. S, K and I are all supercombinators, since they satisfy the definition
+given in Chapter 13, but for the purposes of this chapter, and for compatibility
+with other published work, we will use the more general term 'combinator'
+260

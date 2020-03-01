@@ -1,0 +1,39 @@
+Section 12.4 Updating the root and indirection nodes
+217
+since it will never again be overwritten; by copying it we still waste space, but
+we no longer risk duplicated reductions. For example, if the (f 6) evaluated to
+a CONS cell, copying would give this:
+reduces to
+12.4.4 Summary: Indirection Nodes versus Copying
+This is a slightly tricky section, and we shall summarize our conclusions.
+(i) When the root of the result is constructed during the reduction, and is
+sufficiently small, it should be constructed directly on top of the root of
+the redex, rather than being allocated elsewhere, copied and discarded.
+(ii) If the root of the result was not constructed during the reduction, then we
+can overwrite the root of the redex either with a copy of the root of
+the result, or with an indirection to the result.
+(iii) The cases covered by (ii) arise for
+(a) functions (both lambda abstractions and built-in functions)
+returning unboxed results,
+(b) lambda abstractions whose body consists of a single variable,
+(c) built-in projection functions, which include HEAD, TAIL and IF.
+(iv) In the cases covered by (ii), the result should be evaluated to WHNF
+before overwriting the root of the redex. If this is done, no sharing is lost
+and the number of reductions performed is the same either way.
+There are the following arguments in favor of using indirections:
+There is no alternative if the result is an unboxed object.
+E
+They use no fewer cells at the time the reduction takes place. However,
+indirection nodes can be 'shorted out' and recovered by the garbage
+collector, thus recovering the storage they occupy, whereas the garbage
+collector cannot recover the duplicated storage allocated by the copying
+technique (see Chapter 17).
+(iii) There is no problem if the root of the result is bigger than the root of the
+redex.
+iv) Chains of indirection nodes can be prevented.
+(v) It has been suggested by Hughes [1985] that implementations of
+functional languages should incorporate memo functions; that is,
+functions which remember what arguments they have been applied to so
+far, together with the corresponding results, and when reapplied to one
+of these arguments deliver the corresponding result directly. This idea
+works better in a system based on indirection nodes, since if we make

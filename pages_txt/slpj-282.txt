@@ -1,0 +1,44 @@
+282
+Chapter 17 Storage Management and Garbage Collection
+allocate new cells. Compaction also has a beneficial effect on virtual
+memory performance.
+(iii) How well does it support a sparsely used heap and virtual memory? There
+has been much recent interest in very large persistent heaps. The idea of
+persistence is that a functional operating system, for example, could
+incorporate a filing system as part of its data structures in a very large
+heap, rather than treating the filing system as something external to the
+program (an idea first implemented in Multics). In such a system, only a
+small fraction of the heap will be in active use at any time, and a virtual
+memory system is essential to cache the active portion in fast memory.
+(iv) Can it operate on a parallel machine, or in real time? One of the
+attractions of functional languages is that they offer a natural way to
+exploit the power of parallel architectures (see Chapter 24), which
+requires storage managers that are capable of running on such a dis-
+tributed system.
+Some garbage collection techniques require the computation to be
+stopped while garbage collection takes place, leading to an 'embarrassing
+pause' during which the system appears to do nothing. This is unaccept-
+able in real-time applications, and garbage collectors have been
+proposed which work in parallel with the useful computation. Such
+parallel collectors may also be suitable for parallel architectures.
+(v) What is the effect of heap occupancy? The performance of some
+algorithms drops sharply when the heap gets full.
+(vi) Can it recover cyclic structures?
+These issues are all discussed by Cohen.
+17.2 A Sketch of the Standard Techniques
+There are several well-known garbage collection techniques. Among these
+are mark-scan, copying and reference-counting garbage collectors. In this
+section we will give a brief sketch of the algorithms and their characteristics.
+Cohen [1981] is the reference where no reference is given explicitly.
+Mark-scan algorithms operate in two phases. First, all accessible cells are
+marked by traversing the entire accessible structure. Then a linear scan
+through memory recovers all unmarked cells.
+Copying algorithms work by copying the entire accessible structure from
+one portion of the address space (from-space) into another (to-space),
+thereby leaving all the garbage behind in from-space. Cells being copied into
+to-space are placed contiguously, beginning at one end of the space, and
+hence when copying is complete there is a contiguous area in to-space from
+which new cells can be allocated. When to-space fills up with new cells, the
+spaces are flipped (i.e. to-space becomes from-space and vice versa) and the
+process is repeated. The algorithm is surprisingly simple, and is well described
+in Baker's classic paper [1978].

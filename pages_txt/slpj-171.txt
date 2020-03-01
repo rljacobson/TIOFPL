@@ -1,0 +1,47 @@
+170
+Chapter 9 A Type-checker
+We can code the unification algorithm as follows:
+unify :: subst -> (type_exp, type_exp) -> reply subst
+unify phi ((TVAR tvn),t)
+= extend phi tvn phit,
+phitvn = TVAR tvn
+= unify phi (phitvn,phit)
+where
+phitvn = phi tvn
+phit
+= sub_type phi t
+unify phi ((TCONS ton ts),(TVAR tvn))
+= unify phi ((TVAR tvn), (TCONS ton ts))
+unify phi ((TCONS ton ts),(TCONS ton' ts'))
+= unifyl phi (ts $zip ts'),
+tcn = tcn'
+FAILURE
+The function zip, which is generally useful, turns a pair of lists into a list of
+pairs, whose length is the same as that of the shorter of the lists:
+zip :: [*] -> [* *] -> [(*,**)]
+zip [] xs
+zip (x:xs) []
+zip (x:xs) (y:ys) = (x,y):zip xs ys
+The function unifyl is defined such that (unifyl phi pts) constructs a substitution
+extending phi which unifies corresponding entries in the list of pairs pts. This
+function is also generally useful, so it is defined globally too.
+unifyl :: subst -> [(type_exp,type_exp)] -> reply subst
+unifyl phi eqns = foldr unify' (OK phi) eqns
+where
+unify' eqn (OK phi) = unify phi eqn
+unify' eqn FAILURE = FAILURE
+This completes the definition of the unification algorithm.
+It is important to see why the unification algorithm terminates. After all, in
+the definition above we have defined the value of (unify (TVAR tvn) t) in terms
+of (unify phitvn phit) where phitvn = (phi tvn) and phit = (sub_type phi t),
+which may be very much larger expressions than (TVAR tvn) and t. However,
+we only use that clause of the definition in circumstances when tvn cannot
+occur in phitvn or phit. Define the solution set of phi to be the set of variables
+which occur in an expression (phi tvn'), where tvn' is moved by phi. We can
+prove that (unify phi (t1,t2)) terminates, by a nested induction: the outer
+induction is on the number of variables in t1 and t2 which are not in the
+solution set of phi, and the inner induction is on the combined length of t1 and
+12.
+The unification algorithm has many applications other than type-checking.
+In particular it is a key algorithm in the implementation of programming
+languages such as Prolog.

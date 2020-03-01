@@ -1,0 +1,40 @@
+Section 4.1 Introduction to structured types
+53
+4.1.1 Type Variables
+Type declarations may also contain type variables. For example, the
+definition of the type tree above may be rewritten to allow trees with leaves of
+any type:
+tree * ::= LEAF * | BRANCH (tree *) (tree *)
+Here * is called a generic (or schematic) type variable. The declaration could
+be read as follows: 'a tree of * is either a LEAF, which contains a *, or a
+BRANCH which contains a tree of * and a tree of *, for any type * '.
+Leaves of any particular tree must all contain values of the same type, but
+different trees may have leaves of different types. Examples of trees and their
+types are
+BRANCH (LEAF 1) (LEAF 2)
+:: tree num
+BRANCH (LEAF 'a') (LEAF 'b')
+:: tree char
+(The symbol :: is pronounced 'has type'.) Here, 'tree' is called a type-forming
+operator, since it takes a type (such as num or char) as an 'argument' and
+produces a type (respectively, (tree num) or (tree char)).
+The repeated use of * on the right-hand side of the type declaration
+specifies that the two branches of a tree must be of uniform type. For example,
+BRANCH (LEAF 1) (LEAF 'a')
+is not legal, since it has leaves of mixed type. More will be said about types and
+type variables in Chapter 8.
+4.1.2 Special Cases
+This section shows how three 'built-in' types, namely lists, tuples and
+enumerated types, can be regarded as instances of general structured types.
+4.1.2.1 Lists
+Miranda has a special syntax to denote lists, but lists are just an instance of a
+general structured type. Lists could be defined as follows:
+list * ::= NIL ! CONS * (list *)
+This type declaration defines the two new constructors NIL and CONS.
+Miranda's built-in syntax for lists could then be translated to use NIL and
+CONS, as follows:
+[ ] is translated to NIL
+(x:xs) is translated to (CONS x xs).
+[x,y,z] is a Miranda abbreviation for (x:y:z:[ )) and hence is translated to
+(CONS x (CONS y (CONS z NIL)))
+[*] is translated to (list *)

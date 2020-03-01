@@ -1,0 +1,53 @@
+298
+Chapter 18 The G-machine
+Control has now passed to $from. A G-machine compiler will produce the
+following G-code for $from, which is executed in sequence:
+G-code for function $from
+PUSH 0;
+Push n
+PUSHGLOBAL $succ;
+Push function $succ
+MKAP;
+Construct ($succ n)
+PUSHGLOBAL $from;
+Push function $from
+MKAP;
+Construct ($from ($succ n))
+PUSH 1;
+Push n
+CONS;
+Construct (n : ($from ($succ n)))
+UPDATE 2;
+Update the root of the redex
+POP 1;
+Pop the parameter n
+UNWIND;
+Initiate next reduction
+The execution of $from is shown step by step in Figure 18.2. We can make
+several observations by examining the code given above:
+(i) At the point of entry, the parameter n is on top of the stack, and a pointer
+to the root of the redex is immediately below it (Figure 18.2(c)).
+(ii) Items which are not on top of the stack are addressed relative to the top of
+the stack, with the top element having offset zero. For example, the
+PUSH 1 instruction takes the element next to top in the stack, and pushes
+it onto the stack. Stack items cannot be addressed relative to the base of
+the stack because a reduction takes place at the tip of the spine, with an
+unknown number of vertebrae above. (An alternative would have been
+to assume a frame pointer, and relegate offset calculation to code
+generation time.)
+(iii) Some instructions take their operands from the stack and put their result
+on the stack in the manner of a zero address machine. MKAP and CONS
+are examples of such instructions.
+Apart from the last three instructions, the sequence simply constructs an
+instance of the body of $from (see Figure 18.2(1) ).
+The UPDATE 2 instruction updates the root of the redex with a copy of the
+root of the result (there is a slight inefficiency here, since the root of the result
+is discarded almost immediately it is constructed; we will address this
+efficiency question later). Notice that the G-machine updates the root of the
+redex using copying, rather than using indirection nodes (but this is not an
+inherent property of the G-machine - see Section 19.4.4).
+The POP 1 instruction removes the parameters (only one in this case) from
+the stack, leaving a pointer to the reduced graph on top of the stack. Finally
+UNWIND examines the tag of the root node of the reduced graph. In this case it
+is a CONS cell, so evaluation is complete.
+This concludes our example, for now. (Note: in order to reduce the number

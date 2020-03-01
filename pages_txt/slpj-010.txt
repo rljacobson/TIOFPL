@@ -1,0 +1,24 @@
+Two
+THE LAMBDA CALCULUS
+This chapter introduces the lambda calculus, a simple language which will be
+used throughout the rest of the book as a bridge between high-level functional
+languages and their low-level implementations. The reasons for introducing
+the lambda calculus as an intermediate language are:
+(i) It is a simple language, with only a few, syntactic constructs, and simple
+semantics. These properties make it a good basis for a discussion of
+implementations, because an implementation of the lambda calculus only
+has to support a few constructs, and the simple semantics allows us to
+reason about the correctness of the implementation.
+(ii) It is an expressive language, which is sufficiently powerful to express all
+functional programs (and indeed, all computable functions). This means
+that if we have an implementation of the lambda calculus, we can
+calculus.
+implement any other functional language by translating it into the lambda
+In this chapter we focus on the syntax and semantics of the lambda calculus
+itself, before turning our attention to high-level functional languages in the
+next chapter.
+2.1 The Syntax of the Lambda Calculus
+Here is a simple expression in the lambda calculus:
+(+ 4 5)
+All function applications in the lambda calculus are written in prefix form, so,
+9

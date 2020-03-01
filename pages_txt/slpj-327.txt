@@ -1,0 +1,71 @@
+Section 19.3 Target code generation
+329
+G-code
+HP VAX assembler code
+Simulated stack Comments
+PUSHINT 5
+[]
+Begin
+PUSH 1
+5:[]
+Push 5
+MKAP
+4 moval APPLY,(%HP)+
+stack 0:5:[]
+Push f
+8 movl 0(%EP),(%HP)+
+12 moval L5,(%HP)+
+5:[]
+Tag to heap
+[]
+Fun to heap
+Arg to heap
+PUSHGLOBAL $NEG
+heap 0:[]
+Result on stack
+MKAP
+16 moval APPLY,(%HP)+
+NEG:heap 0:[] Push NEG
+20 moval C_NEG,(%HP)+
+Tag to heap
+24 moval -20(%HP),(%HP)+ []
+heap O:[]
+Fun to heap
+UPDATE 2
+moval -12(%HP),rt
+[]
+heap 12:[]
+Arg to heap
+Result on stack
+movi 4(%EP), 12
+Result in r
+movl (r1)+,((2)+
+Root in r2
+movl (r1)+,(12)+
+Copy tag
+POP 1
+movl (r1)+,(12)+
+Copy first
+moval 4(%EP),%EP
+Copy second
+Pop arguments
+Figure 19.4 Code generation using a simulated stack
+19.3.3 Handling EVALS and JUMPs
+EVAL is a considerable nuisance because it may cause an arbitrary amount of
+computation to occur. This means that the amount of heap consumed has no
+simple bound, and garbage collection may occur during such evaluation, thus
+completely disrupting the simulated stack and HP.
+We can deal with this by treating the segments of code between EVALS
+separately, each with its own code to check for heap exhaustion. All stack and
+heap offsets in the simulated stack are calculated relative to the values of EP
+and HP at the beginning of the segment (not the supercombinator, as stated
+above). Furthermore, before EVAL is called, the simulated stack must be
+flushed out onto the real stack.
+Similar remarks apply to sections of code broken with JUMP instructions. If
+there are two different routes leading to a given place in the code then
+different amounts of heap may have been allocated along the two routes, and
+the contents of the simulated stack may be different. Accordingly, the
+simulated stack must be flushed before JUMPs also.
+What all this amounts to is that we can generate good code for straight-line
+segments of code ('basic blocks' in conventional compiler terminology), but
+have to take more care when the flow of control can be broken.

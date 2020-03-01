@@ -1,0 +1,38 @@
+Section 20.12 Summary
+363
+This sequence of PUSH/SELSUM instructions simply unpacks v onto the
+stack, and hence is readily optimized to:
+PUSH (d - p v); UNPACKSUM k;
+where 'UNPACKSUM k' is a new G-code instruction, which unpacks the top
+element on the stack into its k components, placing them on top of the stack.
+As before, the optimization can be performed by a peephole optimizer.
+Everything in this section applies analogously to product types, reading
+SEL-k-i and SELPRODUCT k,i instead of SEL-SUM-k-i and SELSUM k,i.
+20.11 Pattern-matching Revisited
+The UNPACK peephole optimization presented above puts the finishing touch
+to our strategy for compiling pattern-matching. A function which uses
+pattern-matching is now compiled to
+(i) a code sequence to evaluate the argument;
+(ii) a multi-way jump (CASEJUMP), based on the structure tag of the
+argument (see Section 18.8.4);
+(iii) an unpack instruction, which takes the structure apart, and puts its
+components on the stack;
+(iv) a code sequence to evaluate the appropriate right-hand side of the
+function, in the correct context (namely, free variables accessible in the
+stack, and the components of the structure on top of the stack).
+It is hard to see how pattern-matching can be compiled more efficiently!
+Notice how important the optimization of case-expressions presented in
+Section 6.3.3 has proved. There we showed how to transform a case-
+expression into a let-expression, without using a lambda abstraction. If the
+lambda abstraction had been present, it would have been lambda-lifted, and
+we would have generated a separate supercombinator for each right-hand
+side of a pattern-matching definition. As it is, we generate a single
+supercombinator with far more efficient code.
+20.12 Summary
+In this chapter we have developed a long sequence of optimizations to the
+basic G-machine. It is the possibility of making such optimizations that makes
+the G-machine strategy so attractive. What started as an optimization to
+improve the efficiency of template instantiation has turned out to offer many
+avenues for improved performance. Figures 20.14 and 20.15 give the final
+versions of the R and RS schemes, combining all our modifications, while
+Figures 20.16 and 20.17 give the final versions of the E and ES schemes.

@@ -1,0 +1,32 @@
+244
+Chapter 15 Fully Lazy Lambda-lifting
+It looks as if these constant subexpressions could be spotted and marked by
+a compiler, but they can be generated 'on the fly'. Consider the Miranda
+program
+f =g4
+9 xy = y + (sqrt x)
+(f 1) + (f 2)
+This compiles to the lambda expression:
+letrec f = g 4
+g = Ax. Ay . + y (sqrt x)
+in + (f 1) (f 2)
+Therefore, when evaluating the expression, we get
++ (f 1) (f 2)
++ (- 1) (- 2)
+((xx.Ay . + y (sqrt x)) 4)
++
+(- 1) (. 2)
+(Ay . + y (sqrt 4))
++
+(. 1) (+ 2 (sqrt 4))
+(Ay . + y (sqrt 4))
++ (( 1) 4
+(Ay . + y (sqrt 4))
++ (+ 1 (sqrt 4)) 4
+1 1
++ 3 4
+7
+The crucial point is that the (sqrt 4) is evaluated twice, because a fresh
+instance of it is made each time the Ay is applied. The reason for this is that it is
+a dynamically created constant subexpression of the Ay abstraction.
+Not surprisingly, just the same problem occurs with supercombinators. Our

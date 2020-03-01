@@ -1,0 +1,45 @@
+388
+Chapter 22 Strictness Analysis
+The abstract version of f is therefore given by
+f# x y = & x ( ! y (f# x y))
+To find out whether f is strict in y we evaluate (f# 1 0), but unfortunately this
+evaluation will not terminate. This would be a disaster, because this evaluation
+occurs at compile-time, so the compiler would loop. However, it is intuitively
+clear that f is strict in y, and we would like the compiler to be able to deduce
+this fact.
+We will now examine algorithms for dealing with recursion, beginning with
+two attempts that turn out to be inadequate.
+22.3.1 The First Wrong Way
+At first it looks as if we could just assume that recursive calls to f# were strict
+in everything. Thus
+f# 1 0 = & 1 (1 0 (f# 1 0))
+= & 1 (1 0 0)
+=
+0
+which is the correct answer. This simple method is, however, easily defeated.
+Consider the function
+fxy z = if (= y 0) (f 0 1 x) x
+The simple method says this function is strict in x and y, whereas it is, of
+course, only strict in y. In retrospect this seems obvious, but this mistake was
+actually made in two published implementations of Mycroft's work.
+22.3.2 The Second Wrong Way
+The reason the first method fails is that it uses a bad approximation to f#. To
+see this, observe that the definition of f# is a perfectly good recursive function
+definition. Domain theory tells us that the function thus defined is given by the
+least upper bound of an ascending sequence of approximations to f# - the
+ascending Kleene chain (AKC). For example,
+if
+f# xy z = ...f#. . . (a recursive definition)
+then
+f#oxy z = 0
+f#1 xy z = .. .f#o. . .
+(zeroth approximation)
+f#2 x y z = ...f#1. . .
+( first approximation)
+(second approximation)
+and so on.
+Since we are in the abstract two-element domain, there are only a finite
+number of functions of three arguments. This sequence must therefore reach
+a limit in a finite number of steps. The first method failed because we used the
+first approximation only, which may not be the limit. So we must examine
+successive approximations until we reach a fixed point, and our problem boils

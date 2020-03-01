@@ -1,0 +1,42 @@
+Section 3.7 The organization of Chapters 4-8
+49
+Application of the rules for TE gives
+TEI[ average 2 (3+5) ]]
+TE[ average ] TEI[ 2 ] TE[ 3+5 ]]
+III 101
+average 2 (TEI[ + ]] TE[[ 3 ] TE[[ 5 11)
+average 2 (+ 3 5)
+Similarly, the rules for TD give
+TDI[ average a b = (a+b)/2 ]
+average = Aa. Ab. TE[ (a+b)/2 II
+average = \a. Ab. (TE[[ / ]] TEI[ a+b ]] TEI[ 2 ]])
+average = \a.Ab.(/ (1=[[ + ] TE[ a ] TE[[ b 1) 2 )
+average = xa. Ab . (/ (+ a b) 2)
+Putting it all together gives the result of the translation:
+letrec
+in
+average = \a. Ab. (/ (+ a b) 2)
+average 2 (+ 3 5)
+To complete the example, let us transform the expression into the ordinary
+lambda calculus. Let us suppose that we spot that the letrec may be replaced
+with a let, because the definition is non-recursive (the method is described in
+Chapter 6). Then we can use the semantics of let-expressions to produce the
+ordinary lambda expression
+(xaverage . (average 2 (+ 3 5))) (Aa. Ab.(/ (+ a b) 2))
+You can see why we prefer to write programs in Miranda!
+3.7 The Organization of Chapters 4-9
+In the interests of simplicity, the equations for TD and TE given in Figure 3.3
+are far from comprehensive. The rest of Part I of the book is devoted to filling
+in the details.
+Chapter 4 introduces structured data objects, pattern-matching and
+conditional equations, and gives a simple translation into the enriched lambda
+calculus. This translation is rather inefficient, and Chapter 5 shows how
+pattern-matching can be compiled far more efficiently. Chapter 6 then shows
+how to transform all the constructs of the enriched lambda calculus into the
+ordinary lambda calculus.
+Miranda contains constructs called ZF expressions (also known as list
+comprehensions). We discuss their translation in Chapter 7.
+Finally, Miranda is a polymorphically typed language, and we have so far
+paid no attention to the question of type-checking. This is addressed in
+Chapters 8 and 9.
+The organization of these chapters is depicted in Figure 3.4.

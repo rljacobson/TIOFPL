@@ -1,0 +1,57 @@
+68
+Chapter 4 Structured Types and the Semantics of Pattern-matching
+TE[ Exp ] translates the expression Exp
+TE[ : 1
+CONS
+TE[ [] I
+NIL
+TE[ [E1, E2, ..., En] ]
+10
+CONS TEI E, ] TEI [E2, .. ., En] ]
+TEI (E1, E2) ]
+PAIR TE[ E, ] TEI E2 ]
+TE[ (E1, E2, E3)
+TRIPLE TE[ E1 ] TE[ E2 ] TE[ E3 ]
+and so on
+TE[ True ]
+TRUE
+TEL[ False I
+FALSE
+TE[ k ]
+TE[ v I
+k
+V
+TE[ E, ] TE[ E2 ]
+=
+TE[ E1 E2 ]
+TE[ Et infix E2 ]
+"TE[ infix ] TE[ E: ] TE[ E2 ]
+TE[ E1 $v E2 ]
+TE[ v ] TE[ E1 1 TEI E2 ]
+where k is a literal constant or built-in operator
+V, Vi are variables
+E, Ex are expressions
+infix is an infix operator
+Figure 4.3 The final TE translation scheme
+TD[ Def ] translates the definition Def
+TDI p = R ] = TE[[ p ] = TRI R I
+TD
+P1,1 . . . P1,m = R1
+. . . .
+. . . . . . . . . . - -
+f Pn. 1
+.. . Pn.m = Rn
+f = (Avi...AVm . ( ((XTEI[ P1,1 ]... ATEL P1,m ]. TRI[ R1 D) v1 . . . Vm)
+0 . . .
+I ((\TEI Po,1 ]. ..ATE[ Pn,m ]. TR[ Rn D vi ... Vm)
+| ERROR))
+where f is a variable
+Vi is a variable not free in any R;
+Pi,j is a pattern
+R is a right-hand side
+Ri is a right-hand side
+Figure 4.4 The final TD translation scheme
+4.3.1 The Semantics of Variable Patterns
+If the pattern p is a variable v, then the pattern-matching lambda abstraction
+(Ap. E) is just an ordinary lambda abstraction (Av. E), whose semantics have
+already been discussed in Section 2.5.

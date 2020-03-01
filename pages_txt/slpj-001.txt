@@ -1,0 +1,34 @@
+PREFACE
+This book is about implementing functional programming languages using
+graph reduction.
+Functional languages have become the focus of much active research in
+recent years [Backus, 1978] [Peyton Jones, 1984], but their acceptance has
+been delayed by the inefficiency of their available implementations when
+compared with more conventional languages.
+This situation has changed recently, with the advent of rather fast imple-
+mentations of functional languages such as Cardelli's ML [Cardelli, 1983],
+Fairbairn's Ponder [Fairbairn, 1982], and the Chalmers Lazy ML compiler
+[Johnsson, 1984]. These implementations rival the speed of compilers for
+more conventional languages.
+There appear to be two main approaches to the efficient implementation of
+functional languages. The first is an environment-based scheme, exemplified
+by Cardelli's ML implementation, which derives from the experience of the
+Lisp community. The other is graph reduction, a much newer technique first
+invented by Wadsworth [Wadsworth, 1971], and on which the Ponder and
+Lazy ML implementations are founded. Despite the radical differences in
+beginnings, the most sophisticated examples of each approach show remark-
+able similarities.
+The techniques of graph reduction are to be found scattered amongst the
+proceedings of various conferences and workshops, and it is one purpose of
+this book to collect some of this work together. The book is intended to have
+two main applications:
+(i) As a course text for part of an undergraduate or postgraduate course on
+the implementation of functional languages.
+(ii) As a handbook for those attempting to write a functional language
+implementation based on graph reduction.
+The material is presented in a fairly informal tutorial fashion, the idea being to
+convey the framework and some of the intuitions that will render the original
+sources more accessible.
+Chapters 5 and 7 were written by Philip Wadler, of the Programming
+Research Group, Oxford, and Chapter 4 was written in collaboration with
+xvii

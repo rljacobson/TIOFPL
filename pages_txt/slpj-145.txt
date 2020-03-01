@@ -1,0 +1,44 @@
+144
+Chapter 8 Polymorphic Type-checking
+id (3,'a') = (3,'a')
+the function id is used with the types
+num
+-> num
+char -> char
+(num, char) -> (num,char)
+In this sense, id is indifferent to the type of its arguments. However, id always
+returns a result of the same type as its argument. We express this by saying
+that id is of type A -> A, for all types A.
+Sometimes we omit the 'for all types A' (the jargon for which is schematic
+generality; A is said to be a schematic (or generic) variable). When the
+schematic variables are not given explicitly, every type variable is here to be
+understood as a schematic variable.
+To say that id is of type (A -> A) for all types A means that the name id can
+occur in a larger expression in any context suitable for a function whose type is
+of that form. When we indicate a form by means of a type expression, we
+should say which parts of the expression may vary, by indicating the schematic
+variables. To say that a type T is of the form
+..A. . .B. . .A. . .C. . .
+where A and B are the schematic variables, is to say that T may be obtained by
+substituting certain types TA and TB for the schematic variables. In other
+words, T is a substitution instance of the indicated type. The types
+num
+-> num
+char -> char
+(num,char) -> (num,char)
+are all substitution instances of the form
+A ->A
+where it is understood that A is the schematic variable.
+For a final example, consider the expression:
+id (code (id 'a'))
+The first occurrence of id must have type (num -> num), and the second must
+have type (char -> char). Since these are both substitution instances of the
+type of id, (A -> A), the expression is correctly typed
+Note: What we here call schematic type variables are called in Miranda
+generic type variables and written using the special symbols *, **, etc. to
+distinguish them from ordinary (non-generic) names for types.)
+8.2.2 The length Function
+The function which returns the length of a list may be defined by the equations
+length []
+= 0
+length (x:xs) = (length xs) + 1

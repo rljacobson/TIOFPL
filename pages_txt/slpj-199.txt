@@ -1,0 +1,42 @@
+Section 11.3 Normal forms
+199
+11.3.2 Top-level Reduction is Easier
+The result of a functional program never has any free variables. For example,
+(+ x 1) is not a valid functional program since it has the free variable x, whose
+value is not specified.
+Since we only ever reduce the top-level redex, which has no free variables,
+it follows that the arguments of the redex have no free variables either. This
+means that the name-capture problem described in Section 2.2.6 can never
+arise in our implementations, which is a considerable relief. It is also an
+essential property if we are to compile our programs (see Chapter 13).
+11.3.3 Head Normal Form
+Head normal form is often confused with weak head normal form, so it merits
+some discussion. The content of this section is, however, largely academic
+since for most purposes head normal form is the same as weak head normal
+form. Nevertheless, we will stick to the term WHNF for the sake of precision.
+DEFINITION
+form
+A lambda expression is in head normal form (HNF) if and only if it is of the
+AX1 . AX2. . .AXn. (v M1 M2 . . - Mm)
+where n, m = 0;
+and
+v is a variable (x;), a data object, or a built-in function;
+(v M1 M2 . . . Mp) is not a redex for any p:sm.
+Anything in HNF is also in WHNF, but not vice versa. For example, the
+following expression is in WHNF but not HNF:
+Ax . ((Ay . y) 3)
+To reach HNF the inner redex should be reduced.
+The difference between HNF and WHNF is only significant when the result
+is a lambda abstraction, since for data objects and built-in functions they are
+identical. For the purists, though, the question is whether we should perhaps
+reduce to HNF rather than WHNF. This raises some practical difficulties,
+since it will involve performing inner reductions where the argument may
+back.
+have free variables, so the name-capture problem of Section 2.2.6 comes
+Taking this idea further, Barendregt et al. [1986] advocate a reduction order
+called innermost spine reduction. This is a modification of normal order which
+For example
+evaluates the body of a lambda expression before applying it to an argument.
+(Ax. ((Ay .y) 3)) 4
+(\x.3) 4
+3

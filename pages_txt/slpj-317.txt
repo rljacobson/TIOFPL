@@ -1,0 +1,28 @@
+Nineteen
+G-CODE
+Definition and Implementation
+So far we have described a basic compilation algorithm from super-
+combinators into G-code. The next step, code generation, is to compile the
+G-code program into target machine code.
+The basic idea is that to each G-code instruction there corresponds a simple
+sequence of target machine instructions, so that we can generate target code
+for a G-code program simply by generating these sequences for each
+instruction:
+G-code
+PUSH 3
+Target machine code
+UPDATE 4
+<Target code for PUSH 3>
+<Target code for UPDATE 4>
+Typically the output of the code generator would be a program in the
+assembly code of the target machine, which would then be assembled, linked
+with any run-time libraries, and run.
+In order to perform code generation in this way we need to know:
+(i) exactly what each G-code instruction is supposed to do;
+(ii) how the various bits of the abstract G-machine are mapped on to the
+target machine.
+We will address these two issues in order.
+19.1 What the G-code Instructions Do
+The G-machine is a finite-state machine, with the following components:
+(i) S, the stack.
+310

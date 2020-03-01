@@ -1,0 +1,30 @@
+280
+Chapter 16 SK Combinators
+cache whole supercombinator bodies, another consequence of the
+coarser grain of supercombinators.
+References
+Burton, F.W. 1982. A linear space translation of functional programs to Turner
+combinators. Information Processing Letters. Vol. 14, no. 5, pp. 202-4.
+Curry, H.B., and Feys, R. 1958. Combinatory Logic, Vol. 1. North-Holland.
+Hughes, R.J.M. 1984. The design and implementation of programming languages.
+PhD thesis, PRG-40. Programming Research Group, Oxford.
+Joy, M.S., Rayward-Smith, V.J., and Burton, F.W. 1985. Efficient combinator code.
+Computer Languages. Vol. 10, no. 3/4, pp. 211-24.
+Kennaway, J.R. 1982. The Complexity of a Translation of Lambda Calculus to
+Combinators. Department of Computer Science, University of East Anglia.
+Kennaway, J.R., and Sleep, M.R. 1982a. Director Strings as Combinators.
+Department of Computer Science, University of East Anglia.
+Kennaway, J. R., and Sleep, M.R. 1982b. Counting Director Strings. Department of
+Computer Science, University of East Anglia.
+Scheevel, M., 1986. Norma: a graph reduction processor. In Proceedings of the ACM
+Conference on Lisp and Functional Programming, Cambridge, Mass., pp. 212-19.
+August.
+Stoye, W.R. 1983. The SKIM microprogrammer's guide. Technical Report 31.
+University of Cambridge. October.
+Stoye, W.R. 1985. The implementation of functional languages using custom
+hardware. PhD thesis, Computer Lab., University of Cambridge. May.
+Turner, D.A. 1976. SASL Reference Manual. University of St Andrews.
+Turner, D.A. 1979a. A new implementation technique for applicative languages.
+Software - Practice and Experience. Vol. 9, pp. 31-49.
+Turner, D.A. 1979b. Another algorithm for bracket abstraction. Journal of Symbolic
+Logic. Vol. 44, no. 2, pp. 67-270.

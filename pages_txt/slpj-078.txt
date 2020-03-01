@@ -1,0 +1,21 @@
+References
+77
+gives a more efficient translation of Miranda function definitions into case-
+expressions, and Chapter 6 shows how to transform the new constructs into
+the ordinary lambda calculus.
+References
+Burstall, R.M. 1969. Proving properties of programs by structural induction. The
+Computer Journal. Vol. 12, No. 1, pp. 41-8.
+Burstall, R.M. 1977. Design considerations for a functional programming language. In
+Proceedings Infotech State of the Art Conference, Copenhagen, pp. 54-7.
+Burstall, R.M., and Darlington, J. 1977. A transformation system for developing
+recursive programs. Journal of the ACM. Vol. 24, No. 1, pp. 44-67.
+Burstall, R.M., and Goguen, J.A. 1982. Algebras, Theories, and Freeness: An
+Introduction for Computer Scientists. Report CSR-101-82, Dept of Computer
+Science, University of Edinburgh. February.
+Landin, P.J. 1966. The next 700 programming languages. Communications of the
+ACM. Vol. 9, No. 3, pp. 157-64.
+Turner, D.A., 1981. Aspects of the implementation of programming languages.
+D.Phil. thesis, University of Oxford. February.
+Wadler, P. 1985. A Splitting Headache - and Its Cure. Programming Research Group,
+Oxford. January.

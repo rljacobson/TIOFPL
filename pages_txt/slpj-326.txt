@@ -1,0 +1,42 @@
+328
+Chapter 19 G-code - Definition and Implementation
+Notice the way in which cell allocation in the heap takes place by loading
+data into the heap at the point pointed to by the HP register using auto-
+increment addressing. This neatly combines the operations of allocating a cell
+and loading data into it.
+The second column shows that it is possible to keep track of the value of HP
+at code generation time. This will prove useful in performing optimizations.
+This code is adequate, but not especially intelligent, because it has many
+redundant pushes and pops. For example, the last instruction of the second
+MKAP sequence could be merged with the first instruction of the UPDATE
+sequence to give
+movai -12(%HP),r1
+This kind of optimization has been well studied elsewhere [ Wulf et al., 1975;
+Bauer and Eickel, 1976; Aho and Ullman, 1977], but one of the basic ideas is
+so simple and gives such good results that we describe it in the next section.
+19.3.2 Optimization Using a Stack Model
+The idea of this optimization is that during code generation we should
+maintain a model of what is on the stack at any given time. We call this the
+simulated stack. The simulated stack is a compile-time stack, which holds the
+specification of values that would have been in the run-time stack if we had
+used a straightforward code generation scheme (as in the previous section),
+For example, possible entries in the simulated stack, together with the values
+they specify, are:
+5, the literal value 5;
+NEG, the address of the $NEG function cell;
+SEE
+heap 20, the address of the cell at offset 20 from the HP pointer value at
+the start of execution of the supercombinator;
+iv) stack 2, the value at offset 2 from the EP stack pointer value at the start of
+execution of the supercombinator.
+Figure 19.4 illustrates by redoing our example, which shows a considerable
+reduction in the number of VAX machine instructions generated. Notice
+how important it is that garbage collection does not take place during a
+supercombinator execution. If it did so, all the heap offsets might be rendered
+erroneous.
+The simulated stack will be empty at the end of the execution of a
+supercombinator. The EVAL instruction needs special treatment, which we
+discuss in the next section.
+As a by-product of this code generation we get the amount of heap used by
+the supercombinator, so the compiler can generate the code to check for heap
+exhaustion at the beginning of the supercombinator (but see EVAL, below).

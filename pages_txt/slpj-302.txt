@@ -1,0 +1,36 @@
+304
+Chapter 18 The G-machine
+0. The pointer to the root of the current redex therefore has an offset of 0,
+and the last argument has an offset of 1 (see Figure 18.5).
+(ii) d, the depth of the current context minus one.
+From these we can calculate the offset of a variable, x, from the top of the
+stack as (d - p x), counting the top element of the stack as having an offset of
+0.
+(Note: the G-machine paper [Johnsson, 1984] uses 'r' instead of 'p' and 'n'
+instead of 'd'. It also uses slightly different conventions for n and r (n = d+1
+and r x = 1 + p x).)
+For example, consider the context shown in Figure 18.6. The depth of the
+context is 5, so d=4. The function p maps the variable x to 2 and y to 1, and we
+write
+p = [x=2, y=1]
+The offset of the value of x from the top of the stack is
+(d - p x) = (4 - 2) = 2
+Stack base
+Root of redex
+Argy
+Current
+context
+> Arg x
+Intermediate
+values
+Stack top
+Figure 18.6 An example context
+18.5.2 The R Compilation Scheme
+We can now give the complete definition of the compilation scheme F we
+referred to above:
+FI[ f x1 X2 . . . Xn = E ]]
+= GLOBSTART f,n; RI[ E ]] [x1=n, x2=n-1, . . .,Xn=1] n
+where f stands for a supercombinator name. The 'GLOBSTART f,n' is a G-code
+pseudo-instruction which labels the beginning of a function called f, which
+takes n arguments. Then F calls a function R to compile code for the body, E,
+of the supercombinator, passing it the correct p and d (in that order).

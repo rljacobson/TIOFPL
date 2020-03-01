@@ -1,0 +1,39 @@
+64
+Chapter 4 Structured Types and the Semantics of Pattern-matching
+complicated definition, the failure of all the guards would cause the next
+equation to be tried (see example below).
+Regarding all of an equation after the first = sign as a 'right-hand side', we
+can now give a new translation scheme, TR, which translates right-hand sides:
+TRI[ ths I translates the right-hand side of a definition
+= (IF TE[ G1 ] TE[ A1 1
+(IF TE[ G2 ] TE[ A2 ]
+(IF TE[ Gn ] TE[ An ] FAIL) .. .))
+where A, is an expression and Gi is a boolean-valued expression.
+Now we can use TR instead of TE to translate the right-hand sides of
+function definitions. As an example, recall the definition of funnyLastElt:
+funnyLastElt (x:xs) = x,
+x<0
+funnyLastEit (x:[])
+= X
+funnyLastElt (x:xs) = funnyLastElt xs
+We can now translate it to
+funnyLastElt = Av.( ((\(CONS x xs). IF (< x 0) x FAIL) v)
+I ((X(CONS x NIL) .x) v)
+0 ((\ (CONS x xs).funnyLastElt xs) v)
+[ ERROR)
+If the first equation matches, but the guard fails, then the IF returns FAIL, and
+the next equation is tried.
+In Miranda, the final guard Gn may be omitted, which is equivalent to giving
+a final guard of True. In this case, the innermost IF is of the form
+IF TRUE E1 FAIL
+which can be optimized to
+E1
+For example, the definition of factorial
+factorial n = 1,
+n=0
+= n * factorial (n-1)
+would be translated to
+factorial = Av.( ((An. IF (= n 0) 1 (* n (factorial (- n 1)))) v)
+I ERROR)
+This can be simplified further, since the pattern-match cannot fail, and this
+special case will be spotted by the transformations of Chapter 5.

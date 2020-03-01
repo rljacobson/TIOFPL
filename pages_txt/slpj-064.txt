@@ -1,0 +1,43 @@
+Section 4.2 Translating Miranda into the enriched lambda calculus
+63
+where p1, ..., Pm are patterns, into
+f = Avi. . . AVm -(((Api'. . . APm' . E') V1 .. . Vm) [ ERROR)
+where V4, ..., Vm are new variables that do not occur free in E, the pi' are the
+results of translating the pi, and E' is the result of translating E. The only new
+complication is that we must specify what happens in case of failure. Suppose f
+is applied to m arguments, and the first pattern-match fails:
+(Api'. . .Apm' . E') E1 E2 ... Em - FAIL E2 . .. Em
+rule for FAIL:
+Then we want the whole expression to fail, so we need to add a reduction
+FAIL E -> FAIL
+Now we can continue reduction:
+FAIL E2 E3 . .. Em -> FAIL E3 . . . Em - ...
+FAIL
+The translation is readily extended for the case when f is defined by several
+given above:
+equations. To see an example of this in action, consider the definition of xor
+xor False y
+=y
+xor True False = True
+xor True True = False
+Combining the rules of this section and the last allows us to transform this to
+xor = Ax. Ay . ( ((AFALSE. Ay. y) x y)
+( Notice that the arguments are matched from left to right)
+0 ((ATRUE.AFALSE. TRUE) x y)
+0 ((\TRUE .ATRUE. FALSE) x y)
+[ ERROR)
+4.2.6 Conditional Equations
+Next, we describe how to translate conditional equations into the enriched
+lambda calculus. Consider the following Miranda definition:
+gcd a b = god (a-b) b, a>b
+= gcd a (b-a), a<b
+=
+a,
+a=b
+It is easy to see that the right-hand side of this definition could be translated to
+(IF (> a b) (gcd (- a b) b)
+(IF (< a b) (gcd a (- b a))
+(IF (= a b) a FAIL)))
+Notice that if all the guards fail, then FAIL is returned by the nested IF
+expression. (In the case of god this can never occur, and a very clever compiler
+might be able to discover this fact and optimize the last IF.) In a more

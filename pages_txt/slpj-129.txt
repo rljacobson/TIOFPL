@@ -1,0 +1,41 @@
+128
+Chapter 7 List Comprehensions
+name is unfortunate, since they operate on lists rather than sets, and since the
+word 'abstraction' already has too many other meanings.)
+List comprehensions are analogous to set comprehensions in Zermelo-
+Frankel set theory. An example of a set comprehension in mathematics is
+B = {square x I x e A & odd x }
+that is, the squares of the odd elements of the set A. For example, if A is
+{1,2,3} then B is (1,9}. The corresponding list comprehension in Miranda is
+ys = [ square x 1 x <- xs; odd x ]
+The only difference in notation is that the curly braces are changed to square
+brackets, the & is changed to a semi-colon, and the symbol E is changed to <-,
+which is pronounced 'drawn from'. A much more important difference is that
+the result is a list, not a set. Thus, if xs is [1,2,3] then ys is [1,9] and if xs is [3,2,1]
+then ys is [9,1].
+In general, a list comprehension has the form,
+[<expression> | <qualifier>; ...; <qualifier>]
+as 'odd x').
+where each <qualifier> is either a generator (such as 'x <- xs') or a filter (such
+Here are some more examples of list comprehensions. The function cp finds
+the Cartesian product of two lists:
+cp xs ys = [ (x,y) | x <- xs; y <- ys ]
+For example,
+cp ['a','b'] [1,2,3] = [ ('a',1), ('a' ,2), ('a',3),
+('b', 1), ('b',2), ('b',3) ]
+Note that the last generator changes most rapidly
+The function pyth returns a list of all Pythagorean triangles with sides of
+total length less than n:
+pyth n = [ (a,b,c) ( a, b, c <- [1..n];
+a +b+c <= n;
+square a + square b = square c ]
+(Here [1..n] returns the list of numbers from 1 to n, and a generator such as
+'x,y <- zs' is shorthand for 'x <- zs; y <- zs'.) This function may be
+written a little more efficiently as
+pyth n = [ (a,b,c) I a <- [1 ..n];
+b <- [1 ..n-a];
+c <- [1 ..n-a-b];
+square a + square b = square c ]
+A later qualifier may refer to a variable defined in an earlier one, but not vice
+versa.
+The function sort sorts a list into ascending order. The method used is that

@@ -1,0 +1,46 @@
+48 Chapter 3 Translating a High-level Functioncl Language into the Lambda Calculus
+TE[[ Exp ] transplates the expression Exp
+TE[ k I
+TE[ v I
+(assumes no name-changing)
+TEL E, E2 ]
+TE[ Et infix E2 ]
+TE[ Et ] TE[ E2 ]
+TE[ E1 $v E2 ]
+TE[ infix ] TE[ E, ] TEL E2 ]
+TE[ v ] TE[ E1 ] TE[ E2 ]
+where k
+is a literal constant or built-in operator
+V
+is a variable
+E1
+is an expression
+infix
+is an infix operator
+TD[[ Def ] translates the definition Def
+TDI v =E ]
+TD[ f vi . .. Vn = E ]
+V = TE[ E ]
+= f = AV.. .AVn - TEI E ]
+where v, v1, f are variables
+E
+is an expression
+Figure 3.3 Translation schemes TE and TD (simple versions)
+into the letrec definition
+square = An . * n n
+The body of the definition is translated, and a lambda abstraction is
+generated around it. We can generalize this as follows:
+TD[[ f vi ... Vn =E ]] = f = Avi.. . AVn . TELL E I
+where f, V1, ...,Vn are variables and E is an expression.
+3.6 An Example
+We have now shown how to translate a simple subset of Miranda into the
+enriched lambda notation. Our progress is summarized in Figure 3.3.
+To illustrate the translation in action, consider the following Miranda
+program:
+average a b = (a+b)/2
+average 2 (3+5)
+This will be transformed to
+letrec
+TDI average a b = (a+b)/2 ]]
+in
+TEI[ average 2 (3+5) ]

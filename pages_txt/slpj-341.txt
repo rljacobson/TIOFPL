@@ -1,0 +1,45 @@
+Section 20.3 Direct execution of built-in functions
+343
+We can now use E by replacing all uses of the C-EVAL sequence in the R
+scheme with a call to E (see Figure 20.3). The RI[ Et Ez II rule is used if none
+of the special cases is applicable; it has not changed since Figure 20.1, and is
+only put in here as a reminder.
+As well as allocating less store and using fewer G-code instructions, these
+optimizations have the effect of reducing the number of calls to EVAL. This
+means that there will be longer code sequences with no uses of EVAL, which
+may mean that an implementation is able to keep things in registers rather
+more effectively.
+RI NEG E ] p d
+EI E I p d; NEG;
+RI + E1 E2 ] pd
+UPDATE (d+1); POP d; RETURN
+E[ E2 1 p d; E[ E1 ]] p (d+1); ADD;
+RI CONS E1 E2 1 p d
+UPDATE (d+1); POP d; RETURN
+= C[[ E2 ] p d; C[ E1 1 p (d+1); CONS;
+RI[ HEAD E ] p d
+UPDATE (d+1); POP d; RETURN
+=
+E[ E 1 p d; HEAD;
+RI IF Ec Et Er I p d
+UPDATE (d+1); POP d; RETURN
+= E[[ Ec ] p d; JFALSE L;
+R[ E: ] p d;
+LABEL L;
+RI[ E: E2 ] p d
+RI E: Ipd
+= CI E: E2 1 p d;
+UPDATE (d+1); POP d; UNWIND
+The cases for i, f, x, let and letrec are unchanged.
+Figure 20.3 Modifications to the R scheme to optimize known functions
+20.3.3 The RS and ES Schemes
+There is still one important hole in the new optimizations we have developed
+in this section. Consider the expression
+(HEAD E1 E2)
+We expect E1 to evaluate to a CONS cell, whose head will be a function which
+is applied to Ez. Let us compile it with the R scheme:
+RI HEAD E1 E2 ]] p d
+= C[[ HEAD E: E2 1 p d; UPDATE (d+1); POP d; UNWIND
+We have been unable to take advantage of the optimization of HEAD given
+in the preceding sections, because of the second argument Ez. This problem
+can occur with any built-in function which can deliver a function as its result;

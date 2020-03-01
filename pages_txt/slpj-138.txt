@@ -1,0 +1,40 @@
+Section 7.5 Pattern-matching in comprehensions
+137
+Notice that if the pattern p is replaced by a variable v then
+((AV .[E 1 Q)) E') 0 []
+- [E | Q][E'/] [ []
+[E | Q][E'/v]
+(by B-reduction)
+(by definition of [)
+so the rule for variables is just a special case of the rule for patterns. .
+Here is an example using the new reduction rules:
+[x | [x] <- [ [1,2], [5], []. [2] ]:]
+- ((\[x] .[x ! ]) [1,2]) [ [] ) ++
+((X[x].[x 1 ]) [5]) 0 [] ) ++
+(((A[x] .[x ! D) [])
+00) ++
+( [] 0 ([z] ([ ( x] [x]v))
+(by rules (1') and (2'))
+- (FAIL [ []) ++ ([5] 0 []) ++ (FAIL [ []) ++ ([2] 0 [])
+(by the rules of pattern-matching and rule (5))
+- [] ++ [5] ++ [] ++ [2]
+[5, 2]
+(by definition of [)
+which is the desired result, as described in Section 7.1.
+The modification to the translation scheme is analogous to the modification
+to the reduction rules. The only rule which contains a generator is rule (a):
+(a) TE[[ [E | v <- L; Q] ] = flatMap (Av.TE[[ [E : Q] I) TEI[ L I
+For patterns, this is modified to:
+(a') TE[ [E | p <- L; Q] I
+flatMap (Au. (((\TE[[ p I.TE[[ [E I Q] I) u) [ NIL )) TE[[ L I
+where u is a new variable which does not occur free in p, E or Q.
+Notice that the subexpression
+((ATE[[ P I.TEI[ [E I Q] I) u) I NIL
+is in exactly the right form to be further translated by the pattern-matching
+compiler described in Chapter 5. Moreover, in the case that the pattern p is
+just a variable v, applying the pattern-matching compiler to rule (a') will yield
+the same result as rule (a), so again the rule for variables is just a special case
+of the rule for patterns. Further, just as one can show that rule (a) follows
+(2').
+from rules (1) and (2), one may show that rule (a') follows from rules ( 1') and
+Finally, the optimal translation scheme may be generalized in a similar way.

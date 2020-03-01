@@ -1,0 +1,52 @@
+Section 9.7 The type-checker
+181
+(i) Associate new type schemes with the variables xs. These schemes will
+have no schematic variables, in accordance with our decision to insist
+that all occurrences of a defined name in the right-hand sides of a
+recursive definition should have the same type.
+(ii) Type-check the right-hand sides. If successful, this will yield a
+substitution and a list of types which may be derived for the right-hand
+sides if the type environment is constrained by the substitution.
+(iii) Unify the types derived for the right-hand sides with the types associated
+with the corresponding variables, in the context of that substitution. This
+is in accordance with our decision that the right-hand sides of recursive
+definitions must receive the same types as occurrences of the corres-
+ponding variables. Should the unification succeed, that constraint can be
+met.
+(iv) We are now in much the same situation as we were in with expressions of
+LET form, when the definitions had been processed, and it remained to
+type-check the body e, after updating the type environment with
+appropriate schematic types.
+tcletrec :: type_env -> name_supply
+-> [vname] -> [vexp] -> vexp
+-> reply (subst, type_exp)
+tcletrec gamma ns xs es e
+= tcletrect gamma ns0 nbvs e (tcl (nbvs ++ gamma) ns1 es)
+where (ns0,ns') = split ns
+(ns1,ns2) = split ns'
+nbvs
+= new_bvars xs ns2
+new_bvars xs ns = map new_bvar (xs $zip (name_sequence ns))
+tcletrec1 gamma ns nbvs e FAILURE
+= FAILURE
+tcletrec1 gamma ns nbvs e (OK (phi,ts))
+= tcletrec2 gamma' ns nbvs' e (unifyl phi (ts $zip ts') )
+where ts'
+= map old_bvar nbvs'
+nbvs'
+= sub_te phi nbvs
+gamma' = sub_te phi gamma
+old_bvar (x,SCHEME [] t) = t
+tcletrec2 gamma ns nbvs e FAILURE
+= FAILURE
+tcletrec2 gamma ns nbvs e (OK phi)
+= tclet2 phi (tc gamma" ns1 e)
+where ts
+= map old bvar nbvs'
+nbvs'
+sub_te phi nbvs
+gamma'
+= sub_te phi gamma
+gamma" = add_decls gamma' ns0 (map fst nbvs) ts
+(ns0,ns1) = split ns
+The definition of the type-checker is now complete.

@@ -1,0 +1,42 @@
+390
+Chapter 22 Strictness Analysis
+22.3.4 Order of Analysis and Mutual Recursion
+We have described how to find the fixed points of self-recursive definitions,
+and we now extend this to cover mutual recursion. Consider the definitions
+fx = ...g . . .f. . .
+gy = ...f. ..g. . .
+Here we cannot fully analyze either function before the other; instead we
+must perform the fixed point iterations simultaneously, thus
+f#*o x = 0
+f#1 x = ...g#o. . .f#o. .
+g#o y = 0
+f#2 X = . ..g#1. ..f#1. . .
+9#1 y = ...#o. ..9#o. . .
+9#2 y = .. .f#1. ..9#1. ..
+It is slightly more efficient (and gives the same result) to use f#, in g#1, since
+f#, is now available (assuming we perform each step of the f iteration before
+the corresponding g step).
+versa, thus
+Suppose the definition of a function f involves a function g but not vice
+f = ...g. . .f. . .
+g = . ..g. . .
+Then we can safely first analyze g, find the fixed point of g#, and use this
+information in the subsequent analysis of f. This can prove very important
+when analyzing large systems of equations since finding the fixed point of f and
+g simultaneously is much more costly than analyzing g first, and using this
+information to analyze f. Unfortunately, functional programmers often write
+large collections of equations in a single letrec, so all the equations may
+potentially be mutually recursive. This is another reason for performing the
+dependency analysis described in Chapter 6, to separate definitions into
+minimal mutually recursive sets.
+22.4 Extensions to Mycroft's Work, and Other Work
+Mycroft's original work was restricted to first-order functions and flat
+domains (that is, domains without structured data types). Since higher-order
+functions and non-flat domains (providing structured data types, which may
+require lazy evaluation) are both important features of functional languages
+these restrictions were severe. Fortunately, recent work has extended the
+original ideas to cover these areas.
+22.4.1 Higher-order Functions
+Burn, Hankin and Abramsky [1985] have shown that the techniques
+developed to handle first-order functions have a natural extension to the
+higher-order case.

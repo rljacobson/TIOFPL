@@ -1,0 +1,47 @@
+264
+Chapter 16 SK Combinators
+Name
+Syntactic object
+8, 81. 82
+Expressions
+f, f1, 12
+Expressions with no inner As
+X
+A variable
+CV
+A constant (including function constants, such as +, Y,
+etc.), or a variable
+CI e ] Compiles e to SK combinators
+C[ e1 02 ] = CI e1 ] CI e2 ]
+C[ Ax.e ] = Ax [ C[e]]
+C[ cv ]
+= CV
+A x [[ f ] Abstracts x from f.
+A x I f1 f2 1
+=S (A x [[ f1 D) (A x [[ f2 D
+Ax [x]
+=
+A x [cv ]
+= K CV
+Figure 16.2 SK compilation algorithm
+the [[ I notation. We give it here because it is easy to express optimizations to
+the method using the [[ ]] notation, which we shall do in later sections.
+The Cfunction compiles an expression into combinators, while the A function
+(which C calls) compiles the body of a lambda abstraction by abstracting the
+variable from the body. The only notational addition is that the function A
+takes two parameters instead of just one: a variable and an expression in [[]
+brackets.
+Notice that we apply C to the body of a lambda abstraction before applying
+A; this ensures that any inner lambdas are dealt with first, so that A only has to
+deal with atoms and applications. Unfortunately, this also means that the
+algorithm is quadratic, because the expression has A applied to it once for
+each enclosing lambda.
+Let us compile the same expression ((\x. + x x) 5) using the new notation:
+CI (Ax. + x x) 5 1
+CI (Ax. + x x) I CI 5 1
+= Ax ( CI[ + x x] 15
+=
+A x [[+ x x15
+=S (Ax [ +x]) (Ax[[x1)5
+= S (S (A x [[ + 1) (A x [[ x 1) 15
+= S (S (K +) 1) 15

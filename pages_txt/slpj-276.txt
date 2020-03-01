@@ -1,0 +1,31 @@
+276
+Chapter 16 SK Combinators
+sponding combinators. To give a concrete example, consider the lambda
+abstraction
+Ax. Ay . + (+ x y) x
+This has the syntax tree
+AX
+Ay
+The annotated syntax tree, together with its associated combinator represen-
+tation, looks like this:
+@ sc
+S' C.I
+@ bb
+B' B +
+@ cb
+C' Bel
+B + 1
+Annotated syntax tree
+Combinator representation
+The combinator representation is diagrammatic, and when flattened out
+looks like this:
+S' C (B' B + (C' B (B + 1) 1)) !
+The Is in the left-hand tree indicate leaf nodes (they are bona fide 1
+combinators). Some of these Is would not be present in the compiled
+combinator form because of 7-optimization, so if we convert the annotated
+syntax tree to combinators we would get a slightly suboptimal combinator
+expression. Notice that not all nodes have the same number of annotations;
+the bottom node has only one because only x gets sent to it.
+The simple equivalence between director strings and combinators
+mentioned above gives a more systematic basis for the choice of combinators
+we made in the first part of this chapter.

@@ -1,0 +1,42 @@
+Section 23.4 Transient store usage
+405
+Now the transient store is discarded as evaluation proceeds rather than
+being held until the end, and stack usage is constant too. In addition, the
+G-machine optimizations will work better, given the knowledge that the first
+parameter of sum1 will be evaluated. An unboxed G-machine implement
+tation will compute sum1 without using any transient store at all.
+23.4.2 Excessive Sharing
+The goal of laziness is to avoid recomputing values by sharing them. Some-
+times, however, the evaluation of an expression can cause it to grow in size so
+much that it would be cheaper to recompute it later than to hold on to its
+evaluated form until later.
+Meira [1985] gives a nice example of this. Consider a function powerList,
+which takes a list as its argument and returns a list of all possible sublists of the
+original list (obtaining a sublist by omitting elements from the original list).
+Here is a possible definition of powerList:
+powerList []
+=[[]]
+powerList (x:xs) = pxs ++ map (cons x) pxs
+where
+pxs = powerList xs
+The second equation simply says that to get all possible sublists of (x:xs),
+return all sublists of xs together with x stuck on the front of all sublists of xs.
+length 20:
+This is fine, but suppose we wanted to count the number of sublists of a list of
+length (powerList [1. .20])
+We might hope that length would eat up the list produced by powerList as it was
+produced. Unfortunately, after powerList has produced all the sublists of the
+list [2. .20], and they have been consumed by length, powerList is still hanging
+on to all those sublists for use in the part after the ++. Hence all 2" of these
+sublists will exist in store at one time, and the machine will run out of store.
+The program has appalling 0(2") transient residency. This residency happens
+because we share the use of pxs in powerList, rather than recomputing it.
+A simple rephrasing of the program thus:
+powerList []
+= [[] ]
+powerList (x:xs) = powerList xs ++ map (cons x) (powerList xs)
+will cause those sublists to be recomputed, and the function will now have
+constant residency. A very minor change to the program has produced a
+dramatic change in run-time behavior. Notice that a clever compiler might
+optimize' the second program into the first, by performing common sub-
+expression analysis.

@@ -1,0 +1,43 @@
+Section 10.7 Tagged pointers
+191
+In a boxed system, the tag of a cell completely determines which fields of
+the cell are pointers and which are not; for example, the two fields of an
+application cell are always pointers (see Figure 10.4).
+In contrast, in an unboxed system, any field which may contain a pointer
+may also contain an unboxed object. For example, a field of an application cell
+may either be a pointer or an unboxed (i.e. non-pointer) object (see Figure
+10.5). Hence, all such fields must have an extra bit, called the pointer-bit, to
+distinguish pointers from unboxed objects. Fields now look like this:
+Pointer-bit
+A pointer field:
+1
+Address
+A non-pointer field:
+0
+A data value
+A minor shortcoming of unboxed objects for run-time type-checked
+systems is that unboxed objects are not tagged (since tags are attached to cells
+not fields). In Figure 10.4, the N tag on numbers enables the + built-in
+operator to check that its arguments are indeed numbers, whereas this is not
+possible with a basic unboxed system. However, an unboxed system can still
+incorporate run-time type-checking by reducing the number of bits in the
+unboxed object sufficiently to fit a tag into the field as well. Non-pointer fields
+would then look like this:
+0
+Tag
+A data value
+Even for compile-time type-checked systems it is vital that built-in
+functions (such as +) are able to distinguish evaluated operands from
+unevaluated ones (so that an unevaluated operand can first be evaluated).
+Fortunately this is easy because if the operand is a pointer the tag on the cell
+pointed to will show whether it is evaluated or not; and if the operand is a
+non-pointer then it is an unboxed object which requires no further evaluation.
+10.7 Tagged Pointers
+Some implementations put a tag into pointer fields also, thus
+Tag
+Address
+For example, both the SKIM [Clarke et al., 1980] and NORMA [Richards,
+1985] reduction machines do this, though they use the tag in different ways.
+NORMA regards the pointer tag as a cache for the tag of the cell pointed to.
+Thus if the pointer tag is valid (one value of the pointer tag is reserved for
+INVALID) it contains the tag of the cell to which the pointer points. Like any

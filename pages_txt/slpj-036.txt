@@ -1,0 +1,44 @@
+Section 2.6 Summary
+35
+It is clear that Fi cannot be converted into F2 using the conversion rules of the
+lambda calculus. To a mathematician, however, a function is a 'black box',
+and two functions are the same if (and only if) they give the same result for
+each possible argument. This sort of equality of functions is called extensional
+equality. The function denoted by Fi and that denoted by F2 are certainly
+(extensionally) equal, so we may write
+Eval[[ Fi ] = Eval[[ F2 ]
+So Fi and F2 are not interconvertible, but they do denote the same function.
+If
+To summarize the main conclusion:
+E1 + E2
+then
+Evail[ E1 ]] = Eval[[ E2 1
+but not necessarily the other way around.
+We can therefore regard conversion as a weak form of reasoning about the
+equality of expressions. It can never cause us to believe that two expressions
+are equal when they are not, but it may not allow us to prove the equality of
+two expressions which are in fact equal. From this point of view, reduction is a
+still weaker form of inference.
+2.6 Summary
+A working understanding of the lambda calculus will prove extremely useful
+for the rest of the book, and in this chapter we have tried to give a compact
+summary of the material we will require. The treatment has necessarily been
+rather superficial, and the reader is again referred to Stoy [1981] or
+Barendregt [1984] for fuller treatments.
+References
+Barendregt, H.P. 1984. The Lambda Calculus - Its Syntax and Semantics, 2nd edition.
+North-Holland.
+Church, A. 1941. The Calculi of Lambda Conversion. Princeton University Press.
+Curry, H.B., and Feys, R. 1958. Combinatory Logic, Vol. 1. North-Holland.
+Kennaway, J.R. 1984. An Outline of Some Results of Staples on Optimal Reduction
+Orders in Replacement Systems. CSA/19/1984. School of Information Systems,
+University of East Anglia. March.
+Levy, J.J. 1980. Optimal reductions in the lambda calculus. In Essays on Combinatory
+Logic, pp. 159-92. Hindley and Seldin (editors). Academic Press.
+Rosser, J.B. 1982. Highlights of the history of the lambda calculus. Proceedings of the
+August.
+ACM Symposium on Lisp and Functional Programming, Pittsburgh, pp. 216-25.
+Schonfinkel, M. 1924. Uber die Bausteine der mathematischen Logik. Mathematische
+Annalen. Vol. 92, pp. 305-16.
+Scott, D. 1981. Lectures on a Mathematical Theory of Computation. PRG-19.
+Programming Research Group, Oxford. May.

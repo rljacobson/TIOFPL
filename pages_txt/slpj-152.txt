@@ -1,0 +1,36 @@
+Section 8.5 How to find types
+151
+recursion, we take the point of view that to do this would be to sweep the
+problem under the carpet.)
+The type-checking algorithm can still be developed when pattern-matching
+is present in the language. Indeed for practical reasons it is better to type-
+check while the program is still close to the form in which it was entered, in
+recognize.
+order that error messages can refer to program text that the programmer can
+8.5 How to Find Types
+Presumably, when we construct an expression E in a program, we reason to
+ourselves that it is well typed. As a product of this reasoning, we are in a
+position to say what the type is of any subexpression E' of E. We can, as it
+were, label each subexpression with the type which we think it has. When we
+enter that expression into the text of our program, that 'labelling' has been
+lost. It is the job of the type-checker to reason out the type structure of the
+expression once again, and to recover the labelling.
+If we accept that type-checking is a species of inference, this raises the
+question as to what forms of inference we may validly employ in checking the
+type of an expression. We shall not go so far as to try to state those forms of
+inference explicitly (akin to an exercise in formal logic), but rather by
+considering a sufficient variety of examples (as it were, particular syllogisms),
+try to work up some confidence that we can tell the difference between right
+and wrong inference.
+8.5.1 Simple Cases, and Lambda Abstractions
+In order to make enough space to expose the type structure of an expression,
+let us lay it out as a tree, where at the top we have the variables and constants,
+and as we proceed down towards the root, we pass through nodes labelled
+with the constructors applied in the formation of the expression. For an
+expression
+example containing both application and abstraction nodes, take the
+(AX. Ay . Az. x z (y z))
+Laid out as a tree this becomes
+AX . Ay . AZ .
+Each node in this tree corresponds to a subexpression of the original
+expression, and should therefore possess a type. Assign arbitrary type labels

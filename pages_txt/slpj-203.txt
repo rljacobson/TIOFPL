@@ -1,0 +1,33 @@
+Section 11.6 The spine stack
+203
+11.2. Now the arguments are all readily available, and the number of
+arguments is given by the depth of the stack. Furthermore, the vertebrae
+themselves are also accessible from the stack. This will prove to be crucially
+important once we start to consider how to perform a reduction (in Chapter
+reduction.
+12), since the root of the redex is overwritten with the result of performing the
+Stack base
+Stack top
+Figure 11.2 The spine stack
+When we recursively evaluate the arguments to a built-in function, we need
+a brand new stack. Fortunately,
+(i) the existing stack will not change until the argument evaluation is
+complete,
+(ii) the new stack can be discarded when the argument evaluation is
+complete,
+so the new stack can be built directly on top of the old one. We must, however,
+take care to save the depth of the old stack first, so that we can restore it when
+evaluation of the argument is completed. Most implementations have a
+separate stack, called the dump, for this purpose. Alternatively, the depth of
+the old stack can be saved on the stack itself. This technique is rather
+reminiscent of the stack frames of imperative languages.
+11.6.1 Pointer-reversal
+In some ways the stack is rather a nuisance because its size has no convenient
+bound, so it is not clear how much space to allocate to it. This problem is
+particularly pressing in machines specifically designed to do reduction, where
+the stack might have to be embodied in hardware.
+It turns out that a clever trick, known as pointer-reversal, allows us to get
+away without a separate stack at all. It is borrowed from a well-known
+garbage collection technique (the Deutsch-Schorr-Waite algorithm [Schorr
+we unwind it.
+and Waite, 1967]), and consists of simply reversing the pointers in the spine as

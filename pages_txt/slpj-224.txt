@@ -1,0 +1,39 @@
+224
+Chapter 13 Supercombinators and Lambda-lifting
+takes several (value) parameters, which does not refer to any global variables,
+and which has no side-effects.
+13.2.1.2 Supercombinators of arity zero and CAFs
+A supercombinator of arity zero (that is, having no As at the front) is just a
+constant expression (remember that it has no free variables). These super-
+example,
+combinators are often called constant applicative forms or CAFs. For
+3
++ 4 5
++
+3
+are all CAFs. The last example makes the point that CAFs can still be
+functions.
+Since a CAF has no As at the front, they are never instantiated. Hence, no
+shared.
+code need be compiled for it, since a single instance of its graph can freely be
+13.2.1.3 Combinators
+is the case:
+A 'supercombinator' sounds like a special sort of 'combinator' and indeed this
+DEFINITION
+A combinator is a lambda expression which contains no occurrences of a
+free variable [Barendregt, 1984].
+A combinator is a 'pure' function in the sense that the value of a combinator
+applied to some arguments depends only on the values of the arguments, and
+not on any free variables. The term 'combinator' has a long pedigree [Curry
+and Feys, 1958].
+Thus some lambda expressions are combinators, and some combinators are
+supercombinators.
+13.2.2 A Supercombinator-based Compilation Strategy
+If only all the lambda abstractions in our program were supercombinators!
+Then it would be easy to compile them all, for the reasons mentioned in the
+last section. Real programs, of course, have many lambda abstractions which
+are not supercombinators, but it turns out to be relatively straightforward to
+transform the program so that it contains only supercombinators. This will be
+our strategy, and we embark on the transformation in Section 13.3.
+For the sake of clarity we will often give names to supercombinators. These
+names are entirely arbitrary, since the lambda abstractions are anonymous,

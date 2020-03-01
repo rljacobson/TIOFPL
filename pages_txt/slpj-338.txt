@@ -1,0 +1,38 @@
+340
+Chapter 20 Optimizations to the G-machine
+since most globals (such as built-in functions, and supercombinators) plainly
+do not need to be evaluated. However, the global might be a CAF (a
+zero-argument supercombinator), in which case it may be reducible, so the
+EVAL is mandatory. There is scope for a simple optimization here, by omitting
+the EVAL in non-CAF cases, and it will have a large performance benefit. The
+optimization can, however, be carried out by a peephole optimizer (see
+Section 20.10), so we do not perform it here.
+The other point of interest is that we have used RETURN instead of UNWIND
+for the integer case, because we know that the integer cannot be applied to
+anything (assuming that the program was type-checked), and hence the
+expression being evaluated must now be in WHNF.
+20.3 Direct Execution of Built-in Functions
+This is probably the next most important optimization we will study, and it
+concerns the compilation of expressions such as (P x1 x2) when
+(i) P is a built-in function;
+(ii) all its arguments are present.
+In many such cases we will be able to compile far superior code by directly
+executing P.
+20.3.1 Optimizations to the R Scheme
+As our first example, consider compiling (CONS E, Ez) with the R scheme:
+RE CONS E: E2 ]] p d
+= C[[ CONS E1 E2 ]] p d; UPDATE (d+1); POP d; UNWIND
+With the present scheme we construct the graph of ($CONS E; Ez), and then
+promptly unwind it. When the unwind completes we will find $CONS at the tip
+of the spine, we will discover that it does indeed have enough arguments, and
+so we will enter the code for $CONS. This will form a CONS node from its two
+arguments and RETURN.
+We can short-circuit this completely predictable process by executing the
+CONS directly, like this:
+RI CONS E, E2 ] p d
+= CI[ E2 ]] p d; CI[ E1 ]] p (d+1); CONS;
+UPDATE (d+1); POP d; RETURN
+We construct the graphs for Ez and E1, execute the CONS G-code instruction
+to form a CONS cell, update the root of the redex and RETURN. This allocates
+fewer nodes in the heap, uses fewer G-code instructions, and avoids executing
+the code for the $CONS function we developed in Chapter 18. So we win all

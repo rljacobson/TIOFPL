@@ -1,0 +1,44 @@
+Section 2.1 The syntax of the lambda calculus
+13
+A lambda abstraction is rather similar to a function definition in a
+conventional language, such as C:
+Inc( x )
+int x;
+{ return( x + 1 ); }
+The formal parameter of the lambda abstraction corresponds to the formal
+parameter of the function, and the body of the abstraction is an expression
+rather than a sequence of commands. However, functions in conventional
+languages must have a name (such as Inc), whereas lambda abstractions are
+'anonymous' functions.
+The body of a lambda abstraction extends as far to the right as possible, so
+that in the expression
+(Ax. + x 1) 4
+the body of the Ax abstraction is (+ x 1), not just +. As usual, we may add
+extra brackets to clarify, thus
+(Ax. (+ x 1)) 4
+When a lambda abstraction appears in isolation we may write it without any
+brackets:
+Ax. + x 1
+2.1.5 Summary
+We define a lambda expression to be an expression in the lambda calculus, and
+Figure 2. 1 summarizes the forms which a lambda expression may take. Notice
+that a lambda abstraction is not the same as a lambda expression; in fact the
+former is a particular instance of the latter.
+<exp> :: = <constant>
+Built-in constants
+<variable>
+Variable names
+<exp> <exp>
+A <variable>.<exp>
+Applications
+Lambda abstractions
+This is the abstract syntax of lambda expressions. In order to write down
+such an expression in concrete form we use brackets to disambiguate its
+structure (see Section 2.1.2).
+We will use lower-case letters for variables (e.g. x, f), and upper-case
+letters to stand for whole lambda expressions (e.g. M, E).
+The choice of constants is rather arbitrary; we assume integers and
+booleans (e.g. 4, TRUE), together with built-in functions to manipulate
+them (e.g. AND, IF, +). We also assume built-in list-processing functions
+(e.g. CONS, HEAD).
+Figure 2.1 Syntax of a lambda expression (in BNF)

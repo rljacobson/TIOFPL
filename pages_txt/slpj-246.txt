@@ -1,0 +1,40 @@
+246
+Chapter 15 Fully Lazy Lambda-lifting
+instances, and hence may be shared. To formalize this we need a new
+definition.
+DEFINITION
+A subexpression E of a lambda abstraction L is free in L if all variables in E
+are free in L. A maximal free expression or MFE of L is a free expression
+which is not a proper subexpression of another free expression of L. ( E is a
+proper subexpression of F if and only if E is a subexpression of F and
+E + F.)
+Examples
+In the following lambda abstractions the maximal free expressions of the Ax
+abstractions are underlined.
+(1) (Ax. sqrt x)
+(2)
+(Ax.x (sqrt 4))
+(3) (Ay .Ax. + x (* y y))
+(4) (Ay . Ax. + (* y y) x)
+(5) (Ax.(Ax.x) x) (here the (Ax.x) is free despite the name clash)
+To achieve full laziness, therefore, when performing a B-reduction we must
+not instantiate the maximal free expressions of the lambda abstraction.
+Instead of instantiating them we must substitute a pointer to the single shared
+instance in the body of the lambda abstraction. This key idea was first
+recognized by Wadsworth [1971]. To illustrate, recall our example from the
+previous section
+letrec f = g 4
+g = \x . Ay . + y (sqrt x)
+in + (f 1) (f 2)
+The reduction sequence begins in the same way
++ (f 1) (f 2)
++ (- 1) (. 2)
+((\x.Ay. + y (sqrt x)) 4)
++
+(. 1) (- 2)
+(Ay. + y (sqrt 4))
+But now we see that (sqrt 4) is free in the Ay abstraction, and hence should not
+be instantiated when the abstraction is applied. Thus we get
++
+(- 1) (+ 2 5)
+(Ay. + y (sqrt 4))

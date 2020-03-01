@@ -1,0 +1,42 @@
+References
+429
+ALICE (Applicative Language Idealized Computing Engine) is a parallel
+reduction machine based at Imperial College, London [Darlington and
+Reeve, 1981]. The reduction model is a slight variant of supercombinator
+reduction, but the architecture permits generalizations of the model
+to be explored. It is constructed using Inmos Transputers which access
+grobally addressable memory using a multistage network switch [Cripps
+and Field, 1983]. Locality is not a major issue, since the graph is held
+in globally addressable memory. ALICE became operational in February
+1986.
+As part of the DAPS project (Distributed Applicative Parallel Systems), a
+group at Yale University is implementing a parallel graph reduction engine
+called Alfalfa [Hudak, 1985]. The parallel reduction model is based on serial
+combinators [Hudak and Goldberg, 1985b], a variant of fully lazy super-
+combinators. The hardware base is a 128-node Intel Hypercube [Intel, 1985],
+a distributed multiprocessor without shared memory, in which processors
+communicate using messages. From an abstract point of view, this is not
+unlike the Rediflow architecture, but the research is more closely focused on
+purely functional languages. As with Rediflow, the absence of shared
+memory means that locality and granularity are major issues.
+GRIP (Graph Reduction In Parallel) is a parallel supercombinator graph
+reduction machine under construction at University College London [Peyton
+Jones et al., 1985; Clack and Peyton Jones, 1986], funded by the UK Alvey
+Directorate. In contrast with the other projects described, GRIP is based on a
+bus architecture, which places an inherent limit on the achievable parallelism
+[Peyton Jones, 1986]. The intention is to deliver significantly better
+performance for a given cost than more ambitious designs.
+24.9 Summary
+We have seen that functional languages are a good medium in which to write
+parallel programs, and that graph reduction provides a secure basis for
+exploiting the concurrency of a multiprocessor to execute them.
+Parallel implementations of functional languages are now beginning to
+appear, and the next few years should see the testing in practice of some of the
+assertions made in this chapter. It is an exciting field.
+References
+Clack, C.D., and Peyton Jones, S.L. 1985. Generating Parallelism from Strictness
+February.
+Analysis. Internal Note 1679, Dept Comp. Sci., University College London.
+Clack, C.D., and Peyton Jones, S.L. 1986. The four-stroke reduction engine. In ACM
+Conference on Lisp and Functional Programming, Boston. pp. 220--32, August.
+Cripps, M.D., and Field, A.J. 1983. An Asynchronous Structure-independent

@@ -1,0 +1,21 @@
+References
+219
+the only source of cycles in many implementations. This form of Y is therefore
+sometimes called cyclic Y or knot-tying Y.
+Cyclic graphs give important economies in the use of storage. Using the
+acyclic version of Y means that the graph representing (Y f) grows without
+limit as each recurrent (Y f) redex is evaluated. In contrast, using a cyclic
+version of Y means that (Y f) is represented by a single cell. Hence cyclic
+graphs give finite representations of some infinite objects (such as recursive
+functions and some infinite data structures).
+The principal disadvantage of a cyclic Y is that the presence of cycles
+prevents the use of simple reference-counting garbage collection (see Chapter
+17).
+References
+Hughes, R.J.M. 1985. Lazy memo functions. In Proceedings of the IFIP Conference on
+Functional Programming Languages and Computer Architecture, Nancy, pp.
+129-46. Jouannaud (editor). LNCS 201. Springer Verlag. September.
+Mago, G.A. 1980. A cellular computer architecture for functional programming.
+IEEE Computer Society COMPCON, pp. 179-87.
+Wadsworth, C.P. 1971. Semantics and pragmatics of the lambda calculus, Chapter 4.
+PhD thesis, Oxford.

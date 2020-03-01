@@ -1,0 +1,36 @@
+Section 6.2 Transforming let and letrec
+117
+It seems hard to improve on these two properties, so we now generalize the
+method to handle any let(rec)-expression. Given a definition of the form
+P = B
+where p is a refutable pattern, we use the following transformation:
+p = B = (t vi . . . Vn) = ((Ap. (t vi . . . Vn)) B) | ERROR
+where t is a product constructor of arity n. The resulting definition now has an
+irrefutable pattern on the left-hand side. We call this the conformality
+transformation, and it applies separately to any definition in a let or letrec
+which has a refutable pattern on the left-hand side.
+The variables vi ... vn are simply the variables that appear anywhere in the
+pattern p. This suggests a new definition.
+DEFINITION
+For any pattern p, the set of variables of p, abbreviated Var(p), is defined
+thus:
+if p is a variable v, then Var(p) = (v)
+if p is a constant k, then Var(p) = ( }
+if p is a structured pattern (c p1 . . . Pr),
+then Var(p) = Var(p1) U ... U Var(pr)
+Now we see that the variables vi ... Vn in the conformality transformation
+are simply the variables of p, namely Var(p). Hence, we can express the
+conformality transformation as follows:
+p = B = (tvi ... Vn) = ((\p. (t v. . . . Vn)) B) | ERROR
+where {Vi, ..., Vn } = Var(p),
+t is a product constructor of arity n.
+We would like to use the pattern-matching compiler of Chapter 5 to
+transform the new right-hand side of the definition to an efficient form, and a
+small modification to the conformality transformation will make its result
+directly amenable to such transformation:
+p = B = (tv ... Vn) = let v = B
+in ((Ap . (t vi . . . vn)) v) | ERROR
+where {v1, ..., Vn } = Var(p),
+t is a product constructor of arity n,
+v is a new variable which is distinct from all the vi.
+The pattern-matching compiler relies on the fact that the pattern-matching

@@ -1,0 +1,42 @@
+190
+Chapter 10 Program Representation
+10.5 Compile-time versus Run-time Typing
+Some functional languages are polymorphically typed (see Chapter 8), and
+type-checked at compile-time. In this case, only enough distinct tags are
+required to identify system objects uniquely and to distinguish data objects of
+a given type from each other (e.g. to distinguish a CONS cell from NIL). Thus
+relatively few distinct tags are required, and a tag is typically represented in
+eight bits or fewer.
+Other languages rely on run-time type-checking, where each built-in
+operator checks the type of its arguments before proceeding. This requires
+that each data type be distinguishable from all the others used in the program.
+Such run-time type-checked languages normally have only a fixed set of types,
+and do not allow the user to introduce new types, so a fixed-size tag is still
+sufficient.
+Even in a type-checked system it is often considered desirable to carry
+around type information at run-time to aid in system debugging. This is
+problematic in languages that allow the programmer to introduce new types,
+because there is no bound to the number of types which have to be distin-
+guishable. In this case an escape mechanism is normally used for user-defined
+types, whereby the first field of the cell representing the object carries a
+unique type identification.
+10.6 Boxed and Unboxed Objects
+In Figure 10.4 each number seems to require a cell to itself. This seems rather
+profligate, since a field of a cell is normally large enough to contain a number.
+Thus, instead of a field pointing to a cell which contains a number, it would be
+better to put the number directly in the field. For example, the tree repre-
+senting (+ 4 2) using unboxed representations would look like Figure 10.5
+(compare Figure 10.4).
+Data objects which can be completely described by a single field are called
+unboxed, while those which are represented by one or more cells are called
+boxed (the cell 'boxes' the data object). Typical candidates for an unboxed
+representation are integers, booleans, characters and built-in operators
+(which can be identified by a small integer or code pointer). For example,
+Figure 10.4 incorporates boxed representations of integers and built-in
+functions, while Figure 10.5 gives them unboxed representations. It is clear
+that significant savings in the number of cells allocated can be achieved by
+using unboxed representations.
+@
+2
+@
+Figure 10.5 The concrete tree of (+ 4 2) (unboxed representations)

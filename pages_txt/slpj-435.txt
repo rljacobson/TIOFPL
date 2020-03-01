@@ -1,0 +1,46 @@
+Appendix
+437
+User-defined Types
+The user may introduce new types. This is done by an equation using ::=. For example a
+type of labelled binary trees (with numeric labels) would be introduced as follows,
+tree ::= Nilt | Node num tree tree
+This introduces three new identifiers - tree which is the name of the type, and Nilt and
+Node which are the constructors for trees. Nitt is an atomic constructor, while Node takes
+constructors:
+three arguments, of the types shown. Here is an example of a tree built using these
+t1 = Node 7 (Node 3 Nilt Niit) (Node 4 Nilt Nilt)
+Notice that constructors always begin with an upper-case letter (and any identifier
+beginning with an upper-case letter is assumed by the compiler to be a constructor).
+To analyze an object of user-defined type, we use pattern-matching. For example
+here is a definition of a function for taking the mirror image of a tree:
+mirror Nilt = Nilt
+mirror (Node a x y) = Node a (mirror y) (mirror x)
+User-defined types can be polymorphic - this is shown by introducing one or more
+generic type variables as parameters of the ::= equation. For example, we can
+generalize the definition of tree to allow arbitrary labels, thus:
+tree * ::= Nilt i Node * (tree *) (tree *)
+etc.
+this introduces a family of tree types, including tree num, tree bool, tree(char->char)
+The types introduced by ::= definitions are called 'algebraic types'. Algebraic types
+are a very general idea. They include scalar enumeration types, e.g.
+color ::= Red | Orange | Yellow | Green | Blue i Indigo | Violet
+and also give us a way to do union types, for example:
+bool_.or_num ::= Left bool | Right num
+It is interesting to note that all the basic data types of Miranda could be defined from
+first principles, using ::= equations. For example here are type definitions for bool,
+(natural) numbers and lists,
+bool ::= True | False
+nat ::= Zero | Suc nat
+list * ::= Nil | Cons * (list *)
+Having types such as num built in is done for reasons of convenience and efficiency - it
+isn't logically necessary.
+It is also possible to associate 'laws' with the constructors of an algebraic type, which
+are applied whenever an object of the type is built. For example we can associate laws
+with the Node constructor of the tree type above, so that trees are always balanced. We
+omit discussion of this feature of Miranda here - interested readers will find more
+details in the references [Thompson, 1986; Turner, 1985].
+In addition to algebraic types as sketched above, there are two other ways in which
+the Miranda programmer can introduce new types (these are not discussed in the main
+part of this book, but we mention them for completeness). These are:
+(i) Type synonyms
+The Miranda programmer can introduce a new name for an already existing type. We

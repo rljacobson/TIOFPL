@@ -1,0 +1,38 @@
+26
+Chapter 2 The Lambda Calculus
+In the remainder of this section, therefore, we will show that the lambda
+calculus is capable of expressing recursive functions without further exten-
+sion. This is quite a remarkable feat, as the reader may verify by trying it
+before reading the following sections.
+2.4.1 Recursive Functions and Y
+Consider the following recursive definition of the factorial function:
+FAC = (An. IF (= n 0) 1 (* n (FAC (- n 1))))
+The definition relies on the ability to name a lambda abstraction, and then
+to refer to this name inside the lambda abstraction itself. No such construct is
+provided by the lambda calculus. The problem is that lambda abstractions are
+anonymous functions, so they cannot name (and hence refer to) themselves.
+We proceed by simplifying the problem to one in which recursion is
+expressed in its purest form. We begin with a recursive definition:
+FAC = An. (. . . FAC . . .)
+(We have written parts of the body of the lambda abstraction as '. ..' to focus
+attention on the recursive features alone.)
+By performing a B-abstraction on FAC, we can transform its definition to:
+FAC = (Afac. (An. (. . . fac . . .))) FAC
+We may write this definition in the form:
+FAC = H FAC
+(2.1)
+where
+H = (Afac. ( An. (. . . fac . . .)))
+The definition of H is quite straightforward. It is an ordinary lambda
+abstraction and does not use recursion. The recursion is expressed solely by
+definition (2.1).
+The definition (2.1) is rather like a mathematical equation. For example, to
+solve the mathematical equation
+x? - 2 =x
+we seek values of x which satisfy the equation (namely x = -1 and x = 2).
+Similarly, to solve (2.1) we seek a lambda expression for FAC which satisfies
+(2.1). As with mathematical equations, there may be more than one solution.
+The equation (2.1)
+FAC = H FAC
+states that when the function H is applied to FAC, the result is FAC. We say that
+FAC is a fixed point (or fixpoint) of H. A function may have more than one

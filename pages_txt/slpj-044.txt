@@ -1,0 +1,40 @@
+Section 3.2 The enriched lambda calculus
+43
+The use of Y renders the definition non-recursive, so we can then use a
+let-expression, whose semantics has already been defined.
+The case of multiple definitions requires the use of pattern-matching, and
+so is postponed until Chapter 6.
+3.2.3 Pattern-matching let- and letrec-expressions
+We will also allow patterns, as well as variables, to appear on the left-hand side
+of definitions in lets and letrecs. We have not yet defined what a pattern is, so
+we postpone the topic until Chapter 6. However, a variable is just a simple
+form of pattern, so simple let(rec)-expressions are just simple forms of pattern-
+matching let(rec)-expressions.
+3.2.4 Let(rec)s versus Lambda Abstractions
+So far we have regarded the ordinary lambda calculus as the target language,
+into which we will transform the program, and let(rec)-expressions as
+intermediate embellishments. However, there are strong efficiency reasons
+for including simple let(rec)-expressions in the target language, rather than
+transforming them into the ordinary lambda calculus.
+Specifically, the transformation of a let-expression
+let v = B in E
+into the application of a lambda abstraction
+(AV. E) B
+is using a sledgehammer (lambda abstraction) to crack a nut (let-expressions).
+The lambda abstration (Av.E) could be applied to many arguments, but it is in
+fact only ever applied to one, namely B. The generality of lambda abstraction
+is not required, and the special case (that of application to a unique argument)
+can be exploited by the more sophisticated compilers described later in this
+book.
+This issue manifests itself in a number of ways:
+(i) Miranda is a polymorphically typed language, and in Chapter 8 we give
+an algorithm for type-checking programs. Unfortunately, it is not
+possible to type-check the program once it has been transformed into the
+ordinary lambda calculus, but the addition of simple let(rec)-expressions
+is sufficient to solve the problem.
+(ii) In all implementations except the very simplest, let-expressions can be
+evaluated very much more efficiently than the corresponding application
+of a lambda abstraction. This applies to all the implementations
+described from Chapter 14 onwards.
+(ii) A related problem is that the transformation of letrec-expressions into
+the ordinary lambda calculus compels us to use Y to express recursion

@@ -1,0 +1,56 @@
+332
+Chapter 19 G-code - Definition and Implementation
+question is an integer cell (we assume a boxed implementation for the
+moment). Then no evaluation need take place, and the code is rather simple:
+INT_EVAL:
+The Eval code for an integer cell.
+rsb
+Return from Eval
+The same applies to function cells and CONS cells. Application nodes are a
+different story, however. In this case we need to push the current stack S
+(implemented by EP) onto the dump D (implemented by the system stack),
+and then UNWIND the application.
+AP_EVAL
+The Eval code for an application cell.
+<Test for SP stack overflow>
+AP_UNWIND:
+mov! %EP,-(SP)
+Push current stack onto dump
+Fall through to AP_UNWIND
+ro is a copy of top stack element
+r1 is its tag
+First we save the current stack on the dump, checking first for dump overflow,
+and then behave like UNWIND (see next section). Notice that to save the
+current stack on the dump we need only save the current stack pointer on the
+system stack. Logically, the new stack only contains a single element, which is
+the top element of the old stack, so we do not need to alter the stack pointer
+itself. The depth of the current stack can be found by comparing the old stack
+pointer (found on top of the system stack) with the current stack pointer (in
+EP).
+19.4.3 Implementing UNWIND
+Here is the VAX machine code sequence that might be generated for an
+UNWIND G-code instruction:
+mov! (%EP), 10
+Top of stack to ro
+movl ((0),r1
+Tag to r1
+jmp *0_Unwind(r1)
+Jump to Unwind code
+The element on top of the stack is fetched into 10 (without popping the stack),
+its tag is fetched into r1, and an indexed jump to the Unwind code is made (not
+a jsb).
+Now suppose that the cell in question is an application cell. What should the
+AP_UNWIND code do? It should simply push the head of the cell on the stack
+and UNWIND it again. Remembering that ro points to the cell in question, we
+get:
+AP_UNWIND:
+The Unwind code for an application cell
+<Check for EP stack overflow>
+movl Head(r0), ro
+Get head
+movl ro,-(%EP)
+Push it
+movl (10),r1
+Get tag in r1
+jmp *0_Unwind(r1)
+Unwind it

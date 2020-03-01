@@ -1,0 +1,41 @@
+346
+Chapter 20 Optimizations to the G-machine
+Just as optimizing the R scheme provoked us into developing the E scheme,
+so the RS scheme has a counterpart, the ES scheme, given in Figure 20.5.
+Notice that the structure of the ES scheme is exactly the same as that of the RS
+scheme; they differ only in the ES[[ f ]] and ES[[ x ] cases. Figure 20.6
+optimizations.
+summarizes the modifications to the R and E schemes to use the new
+ES[ E ]] pdn
+completes the evaluation of an expression, the top n ribs of which have
+already been put on the stack.
+ES constructs instances of the ribs of E, putting them on the stack, and
+then completes the evaluation in the same way as E.
+ES[ f ] pdn
+= PUSHGLOBAL f; MKAP n; EVAL
+ES[ x Ipdn
+= PUSH (d - p x); MKAP n; EVAL
+ESI[ HEAD E ] p d n
+= E[ E ] p d; HEAD; MKAP n; EVAL
+ES[ IF Ec Et Et ] pd n = E[[ Ec ] pd; JFALSE L1;
+ES[ Et I p d n; JUMP L2;
+LABEL L1;
+ES[ E: Ipdn
+LABEL L2
+ES[ E1 E2 ] pd n
+= CI E2 I p d;
+ES[ E1 3 p (d+1) (n+1)
+Note: ES cannot encounter a let or letrec.
+Figure 20.5 The ES compilation scheme
+R[ E: E2 ] p d = RS[[ E1 E2 1 p d 0
+E[ E: E2 ] p d = ES[[ E1 E2 ]] p d 0
+Figure 20.6 Modifications to R and E to use RS and ES
+20.3.4 7-reduction and Lambda-lifting
+In Section 13.3.1 we showed how redundant supercombinator parameters
+could be eliminated by 7-reduction. For a G-machine implementation, this is
+actually undesirable, unless it eliminates a supercombinator definition, which
+is always a good thing.
+To see why it is undesirable, consider the definition
+$F x y = IF E1 E2 y
+where E, and Ez do not use y. Now, it is true that
+$F X = IF E1 E2

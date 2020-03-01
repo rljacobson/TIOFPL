@@ -1,0 +1,33 @@
+360
+Chapter 20 Optimizations to the G-machine
+It turns out, therefore, that we can safely combine the V and D stacks, and
+this seems altogether the nicest choice. If it is used then the let and letrec
+cases of the B scheme should conclude with POP instead of SLIDE,
+because the naked value is on the dump, not the S stack.
+20.10 Peephole Optimizations to G-code
+We now come to some optimizations which can most easily be regarded as
+peephole optimizations to the G-code. A peephole optimizer fits between the
+G-code compiler and the code generator. It looks at short consecutive
+sequences of G-code instructions, and replaces them by some shorter or more
+optimal sequence.
+20.10.1 Combining Multiple SLIDEs and MKAPs
+Imagine compiling this expression with the C scheme:
+let x = Ex
+in letrec y = Ey
+X = Ez
+in E
+The end of the code will be the sequence:
+. SLIDE 2; SLIDE 1
+Clearly these can be combined to the single instruction
+. SLIDE 3
+This sort of optimization is exactly what peephole optimizers are for. We may
+describe the optimization like this:
+SLIDE k1; SLIDE k2 => (SLIDE K1+k2)
+using => to denote the optimization. In a similar way, the C scheme
+generates multiple MKAP instructions:
+CI E1 Ez E3 ]] pd
+= C[[ E3 ]] p d; C[[ E2 I p (d+1); C[[ E1 1 p (d+2); MKAP; MKAP
+optimization
+These MKAP sequences can be combined into an 'MKAP n' instruction by the
+MKAP k1; MKAP k2 => MKAP (k1+k2)
+where we regard MKAP as equivalent to 'MKAP 1'.

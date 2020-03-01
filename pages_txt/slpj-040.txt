@@ -1,0 +1,39 @@
+Section 3.2 The enriched lambda calculus
+39
+(ii) To a much greater extent than is the case for imperative languages,
+functional languages are largely syntactic variations of one another, with
+relatively few semantic differences. Using the second method allows the
+transformations we present to be applied easily to other languages, by
+altering only the translation of the high-level language into the enriched
+lambda calculus.
+Figure 3.1 depicts the overall plan of action. We will use the term ordinary
+lambda calculus to refer to the language described in Chapter 2, and enriched
+lambda calculus to refer to the language introduced here.
+The enriched lambda calculus is simply the ordinary lambda calculus
+augmented with extra constructs, chosen to allow an easy translation from
+Miranda. For each construct we will
+(i) say what it looks like (give its syntax);
+(ii) say what it means (give its semantics).
+The semantics for each construct can be given by providing a simple trans-
+formation which shows how to express that construct in terms of the ordinary
+lambda calculus. Then we could, in principle, translate from Miranda into the
+ordinary lambda calculus by first translating into the enriched lambda
+calculus, and then using the semantics of each construct repeatedly to
+transform the expression into an ordinary lambda expression.
+While this method generates correct results, far greater efficiency is
+attainable by using more complicated transformations, but we can always
+confirm their correctness by reference to the inefficient version.
+Miranda program
+A simple translation
+(specific to Miranda)
+Expression in the
+enriched lambda calculus
+Multiple transformations
+(independent of Miranda)
+Expression in the
+ordinary lambda calculus
+Figure 3.1 Translation of Miranda into the lambda calculus
+3.2 The Enriched Lambda Calculus
+The enriched lambda calculus is a superset of the ordinary lambda calculus, so
+that any expression in the ordinary lambda calculus is also an expression in the
+enriched lambda calculus. The syntax for function application, lambda

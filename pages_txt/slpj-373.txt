@@ -1,0 +1,41 @@
+Section 21.2 Generalizing tail calls
+375
+Root of W-redex
+-V4:@
+Root of $F-redex-
+R@
+n4: E4
+n3: E3
+n2: E2
+n1:E1
+f:W
+This is just an augmented version of Figure 21.3 showing a stack element
+below the context in which $F executes. In this case we want DISPATCH to
+rearrange the stack to:
+Root of W-redex
+-V4: @
+n4: E4
+r: @
+n4:E4
+n3: E3
+V2: @
+n3: E3
+n2: E2
+V1:@
+n2: E2
+n1: E1
+f:W n:E:
+Now the root of the $F-redex has been correctly updated, and a new context
+has been set up ready to enter W. The occurrences of Et-E4 are shared, of
+course. Notice that E1, Ez and Es have remained unchanged in the same
+positions in the stack (which conveniently saves sliding them around).
+Here, then, are the two rules for DISPATCH which cover this case. The first
+covers the case when there are not enough arguments for the function to
+reduce, so evaluation is complete and a return is made to the caller.
+<f:n1:n2:. ..:nk:?:Vk+1:. . .:Vd: [], G[f=FUN a C], DISPATCH k: [], (S,C') :D>
+(k<d<a) => <vd:S, G V1=AP-WHNF f n1
+VI=AP-WHNF VI-1 ni, (1<i<k)
+1, C', D>
+[r =AP-WHNF VK-1 nk
+In this rule, k is the argument to DISPATCH, a is the arity of the function on top
+of the stack, and d is the number of arguments available. Notice that the

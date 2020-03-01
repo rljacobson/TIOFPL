@@ -1,0 +1,38 @@
+Section 17.3 Developments in reference-counting
+count even though it is not accessible from anywhere else (and hence
+garbage). Recent developments in this area are discussed below.
+17.3 Developments in Reference-counting
+The overheads of reference-counting, and its inability to recover cyc
+structures, have often led to its dismissal as a garbage collection technique
+except in specialized contexts. However, recent work has made progre
+towards alleviating these problems, and the inherently real-time and dist
+buted nature of reference-counting is becoming increasingly attractive
+parallel architectures gain in importance.
+17.3.1 Reference-counting Garbage Collection of Cyclic Structures
+Hughes [1982] has suggested an extension to the conventional referen
+counting algorithm that would allow it to reclaim circular structures, based
+previous work by Bobrow [1980].
+The key idea is simple and elegant. We regard the accessible data in t
+heap as a directed graph, and divide this graph into its strongly connect
+components. In this context we recall that
+(i) a graph is strongly connected if, for any two nodes A and B, there is a pa
+from A to B, and vice versa;
+(ii) a strongly connected component of a graph is a maximal strong
+connected subgraph.
+Now, it is clear that
+(i) if one node of a strongly connected component is accessible, then all
+nodes are (and vice versa);
+(ii) if we coalesce all the nodes in each strongly connected component, th
+the resulting derived graph is acyclic.
+But now, since the derived graph is acyclic, it is amenable to convention
+reference-counting garbage collection; and when a node of the derived gra
+becomes unreferenced, all the nodes of the corresponding strongly connect
+component have become unreferenced.
+Hughes therefore suggests adding a second reference-count field to ea
+node, which either contains the shared reference-count for the strong
+connected component of which the node is a part, or is used to point at
+node which does hold the shared reference-count. He gives algorithms
+incrementally maintaining the information about which components
+strongly connected, and shows that they are rather cheap, except where
+strongly connected component is broken up.
+It appears that this technique can successfully alleviate the 'circular da

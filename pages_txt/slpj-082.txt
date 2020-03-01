@@ -1,0 +1,38 @@
+Section 5.2 The pattern-matching compiler algorithm
+81
+5.2 The Pattern-matching Compiler Algorithm
+A Miranda function definition of the form
+f pi,1 . . . Pi.n = E1
+f Pm,1 . . . Pm,n = Em
+can be translated into the enriched lambda calculus definition
+f = Aut. . . Aun. ((Ap1,1'. . . . AP1,n' . E1') U1 . . . Un)
+0 . . .
+I ((\pm,1'. .. . APm.n' . Em') Uj . . . Un)
+I ERROR
+where the U, are new variables which do not occur free in any Ei, and the Er
+and pij' are the result of translating the E; and pi, respectively. It was shown
+how to do this translation in Chapter 4, using the TD translation scheme.
+This section shows how to transform the definition of f into a form which
+uses case-expressions, removing all use of pattern-matching lambda abstrac
+tions. The transformation applies to the entire body of the Au:. . .Aun
+abstraction, except that we generalize slightly to allow an arbitrary expression
+instead of ERROR.
+For the sake of simplicity, we assume that constant patterns have been
+replaced by conditional equations, as described in Section 4.2.1.
+5.2.1 The Function match
+Our goal, then, is to transform an expression of the form
+((AP1,1. . .AP1,n. E1) U1 . . . Un)
+I E
+1 ((APm,1. ... APm,n. Em) Ui . . . Un)
+(5.1)
+into an equivalent expression which uses case-expressions rather than
+pattern-matching lambda abstractions.
+The transformation is a bit complicated, and so we will use some new
+notation to describe it. Specifically, we will use a function match, which takes
+as its arguments the various parts of the input expression, namely the pi,j, E:
+and uj, and produces as its output the transformed expression. The function
+match is similar to the TD and TE translation schemes introduced in Chapter 3,
+except that both its input and its result are enriched lambda calculus expres-
+sions. Furthermore, the double square bracket syntax becomes somewhat
+cumbersome, so we use a syntax like Miranda instead.
+Here, then, is the call to match which we will use to compile the expression

@@ -1,0 +1,26 @@
+212
+Chapter 12 Graph Reduction of Lambda Expressions
+Normal order evaluation
+to weak head normal form
++
+Substitute pointers
+= Lazy evaluation
++
+Update redex root
+with result
+This implementation strategy is called lazy graph reduction.
+12.2 Reducing a Built-in Function Application
+Suppose the redex consists of a built-in function applied to the correct number
+of arguments. First of all, any arguments whose values are needed must be
+evaluated by recursively invoking the evaluator. Then the built-in function
+can be executed, and the result physically overwrites the root of the redex.
+For example, consider the expression (+ 6 (* 3 4)), which has the graph
+@$
+We first select node $ for reduction, but discover that + needs to evaluate its
+arguments. So we recursively invoke the evaluator on the first argument, only
+to discover that it is already in WHNF. Then we invoke the evaluator on the
+second argument, which causes node # to be selected for reduction. Again,
+we recursively reduce the arguments of the * (they are already in WHNF),
+and now we can execute the *. The result of this multiplication overwrites
+node #, thus
+As always, we see that fragments of the original graph remain, subsequently

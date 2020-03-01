@@ -1,0 +1,36 @@
+306
+Chapter 18 The G-machine
+18.5.3 The C Compilation Scheme
+The C compilation scheme compiles code to construct an instance of an
+expression. It is a function with the following behavior:
+(i) Arguments: the expression to be compiled, plus p and d, which specify
+where the arguments of the supercombinator are to be found in the stack.
+(ii) Result: a G-code sequence which, when executed, will construct an
+instance of the expression, with pointers to the supercombinator
+arguments substituted for occurrences of the corresponding formal
+parameters, and leave a pointer to the instance on top of the stack.
+To define C fully, we must specify the result of the call
+CI E Ipd
+for every possible expression E. The expression E can take a number of forms
+(see Figure 18.3), and we define C by specifying it separately for each form of
+E. The cases are described in the following sections.
+18.5.3.1 E is a constant
+There are actually two cases to consider here. First, suppose E is an integer, i
+(or a boolean, or other built-in constant value). All we need do is to push a
+pointer to the integer onto the stack (or the integer itself in an unboxed
+implementation), an operation which is carried out by the G-code instruction
+PUSHINT i
+We may write the compilation rule like this:
+C[[ i ] pd = PUSHINT i
+Secondly, suppose E is a supercombinator or built-in function, called f. We
+must push a pointer to the function onto the stack, using the G-code
+instruction
+PUSHGLOBAL f
+We write the rule in the same way as before:
+CI[ f I p d = PUSHGLOBAL f
+18.5.3.2 E is a variable
+The next case to consider is that of a variable, x. The value of the variable is in
+the stack, at offset (d - p x) from the top, and the G-code instruction
+PUSH (d - p x)
+will copy this item onto the top of the stack. Hence we may write the rule
+C[[ x ] pd = PUSH (d - p x)

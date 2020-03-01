@@ -1,0 +1,51 @@
+334
+Chapter 19 G-code - Definition and Implementation
+the current stack. If the former is less than the latter, there are too few
+arguments, so it jumps to F_Return where the old stack is restored and the
+INT_UNWIND).
+current evaluation completes with a return to the caller (just as for
+If there are enough arguments, the next four instructions rearrange the
+current context ready for the main body of code for F, which begins at
+F_EXEC. This entry point will be used in Chapter 21.
+A 'FUN k C' node is therefore represented as a cell with a tag but no fields.
+The tag gives access to the entry points which know about k and C.
+19.4.4 Indirection Nodes
+A major advantage of this method of implementing generic operations is that
+new node types can be added without changing anything except to provide an
+entry table for the new node type. As an example of this, we will now describe
+how to introduce indirection nodes into the implementation.
+Thus far we have described an implementation of the G-machine which
+performs the update at the end of a reduction by copying the root of the result
+of the reduction over the root of the redex. As we described at length in
+Section 12.4, we could instead overwrite the root of the redex with an
+indirection to the result. The section also discussed the trade-offs between the
+two approaches, but we will now show how some minor and local changes to
+our implementation can change the G-machine from using copying to using
+indirection nodes.
+We need to perform only two changes:
+(i) We must introduce a new cell type, an indirection cell, complete with its
+pointer.
+entry table. It will only have one field, which contains the indirection
+(ii) We must change the implementation of the UPDATE instruction.
+The only work associated with the first change is to provide target code
+sequences for each generic operation. They are all rather easy. For example,
+IND-UNWIND - the Unwind code for an indirection cell - looks like this:
+movl 4(10), r0
+Get the indirection pointer
+movi 10,(%EP)
+Overwrite top stack element
+movl (10),r1
+Get tag
+jmp *0_Unwind(r1)
+Jump to Unwind code
+The overwriting of the stack element 'shorts out' the indirection, so that it
+does not appear as a vertebra in the stack. The Eval code for an indirection
+cell, IND-EVAL, is similarly simple:
+mov! 4(10), r0
+movl 10,(%EP)
+Get the indirection pointer
+movl (10),r1
+Overwrite top stack element
+Get tag
+imp * 0_Eval(r1)
+Continue Eval

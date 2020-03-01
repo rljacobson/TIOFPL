@@ -1,0 +1,38 @@
+Section 22.5 Annotating the program
+391
+For example, consider
+hof g x y = (g (hof (K 0) x (- y 1))) +
+where
+(if (= y 0) x (hof 1 3 (- y 1)))
+K xy = x
+and
+I X = X
+Performing abstraction in a straightforward way, we get
+hof# g x y = & (g (hof# (K# 1) x y)) (& y (1 x (hof# I# 1 y)))
+We need to take some care when looking for a fixed point to ensure that
+successive approximations deliver the same result for all values of g. Since g is
+a function, it can take a whole lattice of values (three values in this case: (K 0),
+I and (K 1)), and this makes the finding of fixed points even more computa-
+tionally expensive. This example is a particularly interesting one, since it turns
+out that we have to go to the fourth approximation to find a fixed point.
+22.4.2 Non-flat Domains
+Strictness analysis of non-flat domains tells us, for example, when a particular
+code.
+application of CONS is strict. Knowing this may enable us to generate better
+Recent work by Hughes [1985] and Wadler [1985a] offers extensions of
+strictness analysis to cover this area.
+22.4.3 Other Related Work
+Wray [1986] describes a strictness analysis algorithm which, unusually, seems
+not to be based on abstract interpretation.
+Another compile-time technique, designed to transform list-processing
+programs into a highly efficient form, is Wadler's listless transformer [Wadler,
+1984 and 1985b]. The listless transformer is able to compile certain kinds of
+list-processing functions into a finite state machine, which runs without
+consuming any heap.
+22.5 Annotating the Program
+The purpose of strictness analysis is to annotate the program for the benefit of
+subsequent phases of the compiler. So far in this chapter we have shown how
+to derive the abstract version of each supercombinator from its definition. We
+now show how to use this information to add annotations to the program.
+Suppose that we have produced the abstract versions of each of our
+supercombinators. There are two distinct ways in which we can use these

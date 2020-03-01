@@ -1,0 +1,284 @@
+\chapter{Introduction}
+
+This book is about implementing functional programming languages using
+\textit{lazy graph reduction}, and it divides into three parts.
+
+The first part describes how to translate a high-level functional language
+into an intermediate language, called the lambda calculus, including detailed
+coverage of pattern-matching and type-checking. The second part begins with
+a simple implementation of the lambda calculus, based on graph reduction,
+and then develops a number of refinements and alternatives, such as super-
+combinators, full laziness and SK combinators. Finally, the third part
+describes the G-machine, a sophisticated implementation of graph reduction,
+which provides a dramatic increase in performance over the implementations
+described earlier.
+
+One of the agreed advantages of functional languages is their semantic
+simplicity. This simplicity has considerable payoffs in the book. Over and
+over again we are able to make semi-formal arguments for the correctness of
+the compilation algorithms, and the whole book has a distinctly mathematical
+flavor - an unusual feature in a book about implementations.
+
+Most of the material to be presented has appeared in the published
+literature in some form (though some has not), but mainly in the form of
+conference proceedings and isolated papers. References to this work appear
+at the end of each chapter.
+
+\section{Assumptions}
+This book is about implementations, not languages, so we shall make no
+attempt to extol the virtues of functional languages or the functional
+programming style. Instead we shall assume that the reader is familiar with
+functional programming; those without this familiarity may find it heavy
+going. A brief introduction to functional programming may be found in
+Darlington [1984], while Henderson [1980] and Glaser et al. [1984] give more
+substantial treatments. Another useful text is Abelson and Sussman [1985]
+which describes Scheme, an almost-functional dialect of Lisp.
+
+An encouraging consensus seems to be emerging in the basic features of
+high-level functional programming languages, exemplified by languages such
+as SASL [Turner, 1976], ML [Gordon et al., 1979], KRC [Turner, 1982],
+Hope [Burstall et al., 1980], Ponder [Fairbairn, 1985], LML [Augustsson,
+1984], Miranda [Turner, 1985] and Orwell [Wadler, 1985]. However, for the
+sake of definiteness, we use the language Miranda as a concrete example
+throughout the book (When used as the name of a programming language,
+Miranda' is a trademark of Research Software Limited.) A brief intro-
+duction to Miranda may be found in the appendix, but no serious attempt is
+made to give a tutorial about functional programming in general, or Miranda
+in particular. For those familiar with functional programming, however, no
+difficulties should arise.
+
+Generally speaking, all the material of the book should apply to the other
+functional languages mentioned, with only syntactic changes. The only
+exception to this is that we concern ourselves almost exclusively with the
+implementation of languages with \textit{non-strict semantics} (such as SASL, KRC,
+Ponder, LML, Miranda and Orwell). The advantages and disadvantages of
+this are discussed in Chapter 11, but it seems that graph reduction is probably
+less attractive than the environment-based approach for the implementation
+of languages with strict semantics; hence the focus on non-strict languages.
+However, some functional languages are strict (ML and Hope, for example),
+and while much of the book is still relevant to strict languages, some of the
+material would need to be interpreted with care.
+
+Generally speaking, all the material of the book should apply to the other
+functional languages mentioned, with only syntactic changes. The only
+exception to this is that we concern ourselves almost exclusively with the
+implementation of languages with \textit{non-strict semantics} (such as SASL, KRC,
+Ponder, LML, Miranda and Orwell). The advantages and disadvantages of
+this are discussed in Chapter 11, but it seems that graph reduction is probably
+less attractive than the environment-based approach for the implementation
+of languages with strict semantics; hence the focus on non-strict languages.
+However, some functional languages are strict (ML and Hope, for example),
+and while much of the book is still relevant to strict languages, some of the
+material would need to be interpreted with care.
+
+The emphasis throughout is on an informal approach, aimed at developing
+understanding rather than at formal rigor. It would be an interesting task to
+rewrite the book in a formal way, giving watertight proofs of correctness at
+each stage.
+
+\section{Part I: Compiling High-level Functional Languages}
+It has been widely observed that most functional languages are quite similar to
+each other, and differ more in their syntax than their semantics. In order to
+simplify our thinking about implementations, the first part of this book shows
+how to translate a high-level functional program into an \textit{intermediate language}
+which has a very simple syntax and semantics. Then, in the second and third
+parts of the book, we will show how to implement this intermediate language
+using graph reduction. Proceeding in this way allows us to describe graph
+reduction in considerable detail, but in a way that is not specific to any
+particular high-level language.
+
+The intermediate language into which we will translate the high-level
+functional program is the notation of the lambda calculus (Figure~\ref{fig:implfunctprog}). The
+lambda calculus is an extremely well-studied language, and we give an introduction 
+to it in Chapter 2.
+
+\begin{figure}[h]
+\setlength{\unitlength}{0.14in} % selecting unit length
+\centering % used for centering Figure
+\psscalebox{1.0 1.0} % Change this value to rescale the drawing.
+{
+\begin{pspicture}(0,-2.0)(9.8,2.0)
+\psframe[linecolor=black, linewidth=0.04, dimen=outer](9.8,2.0)(0.0,1.2)
+\rput[bl](1.89,1.4){High - level language program}
+\psline[linecolor=black, linewidth=0.04, arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.0]{<-}(4.9,0.4)(4.9,1.2)(4.9,1.2)(4.9,1.2)(4.9,1.2)
+\psframe[linecolor=black, linewidth=0.04, dimen=outer](9.8,0.4)(0.0,-0.4)
+\rput[bl](0.9,-0.2){Program Expressed in lambda notation}
+\psline[linecolor=black, linewidth=0.04, arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.0]{<-}(4.9,-1.2)(4.9,-0.4)(4.9,-0.4)(4.9,-0.4)(4.9,-0.4)
+\psframe[linecolor=black, linewidth=0.04, dimen=outer](9.8,-1.2)(0.0,-2.0)
+\rput[bl](1.89,-1.755){High - level language program}
+\rput[bl](5.38,0.6){Part I}
+\rput[bl](5.38,-1.0){Part II and III}
+\end{pspicture}
+}
+\caption{Implementing a functional program} % title of the Figure
+\label{fig:implfunctprog} % label to refer figure in text
+\end{figure}
+
+
+The lambda calculus is not only simple, it is also sufficiently expressive to
+allow us to translate any high-level functional language into it. However,
+translating some high-level language constructs into the lambda notation is
+less straightforward than it at first appears, and the rest of Part I is concerned
+with this translation.
+
+Part I is organized as follows. First of all, in Chapter 3, we define a language
+which is a superset of the lambda calculus, which we call the enriched lambda
+calculus. The extra constructs provided by the enriched lambda calculus are
+specifically designed to allow a straightforward translation of a Miranda
+program into an expression in the enriched lambda calculus, and Chapter 3
+shows how to perform this translation for simple Miranda programs.
+
+After a brief introduction to pattern-matching, Chapter 4 then extends the
+translation algorithm to cover more complex Miranda programs, and gives a
+formal semantics for pattern-matching. Subsequently, Chapter 7 rounds out
+the picture, by showing how Miranda's ZF expressions can also be translated
+in the same way. (Various advanced features of Miranda are not covered,
+such as algebraic types with laws, abstract data types, and modules.)
+
+Much of the rest of Part I concerns the transformation of enriched lambda
+calculus expressions into the ordinary lambda calculus subset, a process which
+is quite independent of Miranda. This language-independence was one of the
+reasons for defining the enriched lambda calculus language in the first place.
+Chapter 5 shows how expressions involving pattern-matching constructs may
+be transformed to use case-expressions, with a considerable gain in efficiency.
+Then Chapter 6 shows how all the constructs of the enriched lambda calculus,
+including case-expressions, may be transformed into the ordinary lambda
+calculus.
+
+Part I concludes with Chapter 8 which discusses type-checking in general,
+and Chapter 9 in which a type-checker is constructed in Miranda.
+
+\section{Part II: Graph Reduction}
+
+The rest of the book describes how the lambda calculus may be implemented
+using a technique called graph reduction. It is largely independent of the later
+chapters in Part I, Chapters 2--4 being the essential prerequisites.
+
+As a foretaste of things to come, we offer the following brief introduction to
+graph reduction. Suppose that the function \ml{f} is defined (in Miranda) like this:
+\begin{mlcoded}
+f\, x = (x + 1) $*$ (x -- 1)
+\end{mlcoded}
+This definition specifies that \ml{f} is a function of a single argument \ml{x}, which
+computes `\ml{(x + 1) $*$ (x -- 1)}'. Now suppose that we are required to evaluate
+\begin{mlcoded}
+f\, 4
+\end{mlcoded}
+that is, the function \ml{f} applied to \ml{4}. We can think of the program like this:
+\begin{center}
+\pstree[nodesep=4pt,levelsep=5ex]{ \TR{\ml{@}} }{  \TR{\ml{f}} \TR{\ml{4}} }
+\end{center}
+where the \ml{@} stands for function application. Applying \ml{f} to \ml{4} gives
+\begin{center}
+	\pstree[nodesep=4pt,levelsep=5ex]{ \TR{\ml{$*$}} }{  
+		\pstree{\TR{\ml{+}}}{ \TR{\ml{4}} \TR{\ml{1}} }
+		\pstree{\TR{\ml{--}}}{ \TR{\ml{4}} \TR{\ml{1}} }
+	}
+\end{center}
+(Note: in the main text we will use a slightly different representation for
+applications of \ml{$*$}, \ml{$+$} and \ml{$-$}, but this fact is not significant here.) We may now
+execute the addition and the subtraction (in either order), giving
+\begin{center}
+	\pstree[nodesep=4pt,levelsep=5ex]{\TR{\ml{$*$}}}{ \TR{\ml{5}} \TR{\ml{3}} }
+\end{center}
+Finally we can execute the multiplication, to give the result
+\begin{center}
+\ml{15}
+\end{center}
+
+From this simple example we can see that:
+\begin{numbered}
+\item Executing a functional program consists of evaluating an expression.
+\item A functional program has a natural representation as a tree (or, more
+generally, a graph).
+\item Evaluation proceeds by means of a sequence of simple steps, called
+reductions. Each reduction performs a local transformation of the graph
+(hence the term graph reduction).
+\item Reductions may safely take place in a variety of orders, or indeed in
+parallel, since they cannot interfere with each other.
+\item Evaluation is complete when there are no further reducible expressions.
+\end{numbered}
+Graph reduction gives an appealingly simple and elegant model for the
+execution of a functional program, and one that is radically different from the
+execution model of a conventional imperative language.
+
+We begin in Chapter 10 by discussing the representation of a functional
+program as a graph. The next two chapters form a pair which discusses first the
+question of deciding which reduction to perform next (Chapter 11), and then
+the act of performing the reduction (Chapter 12).
+
+Chapters 13 and 14 introduce the powerful technique of \textit{supercombinators},
+which is the key to the remainder of the book. This is followed in Chapter 15
+with a discussion of \textit{full laziness}, an aspect of lazy evaluation; this chapter can
+be omitted on first reading since later material does not depend on it.
+
+Chapter 16 then presents \textit{SK combinators}, an alternative implementation
+technique to supercombinators. Hence, this chapter can be understood
+independently of Chapters 13--15. Thereafter, however, we concentrate on
+supercombinator-based implementations.
+
+Part II concludes with a chapter on \textit{garbage collection}.
+
+\section{Part Ill: Advanced Graph Reduction}
+
+It may seem at first that graph reduction is inherently less efficient than more
+conventional execution models, at least for conventional von Neumann
+machines. The bulk of Part III is devoted to an extended discussion of the
+G-machine, which shows how graph reduction can be compiled to a form that
+is suitable for \textit{direct execution} by ordinary sequential computers.
+
+In view of the radical difference between graph reduction on the one hand,
+and the linear sequence of instructions executed by conventional machines on
+the other, this may seem a somewhat surprising achievement. This (fairly
+recent) development is responsible for a dramatic improvement in the speed
+of functional language implementations.
+
+Chapters 18 and 19 introduce the main concepts of the G-machine, while
+Chapters 20 and 21 are devoted entirely to optimizations of the approach.
+The book concludes with three chapters that fill in some gaps, and offer
+some pointers to the future.
+
+Chapter 22 introduces \textit{strictness analysis}, a compile-time program analysis
+method which has been the subject of much recent work, and which is crucial
+to many of the optimizations of the G-machine.
+
+Perhaps the major shortcoming of functional programming languages,
+from the point of view of the programmer, is the difficulty of estimating the
+space and time complexity of the program. This question is intimately bound
+up with the implementation, and we discuss the matter in Chapter 23.
+graph reduction.
+
+Finally, the book concludes with a chapter on parallel implementations of
+graph reduction.
+
+\pg
+
+\section*{References}
+
+\begin{references}
+	\item Abelson, H., and Sussman, G.J. 1985. \textit{Structure and Interpretation of Computer
+	Programs}. MIT Press.
+	\item  Augustsson, L. 1984. A compiler for lazy ML. \textit{Proceedings of the ACM Symposium on
+	Lisp and Functional Programming, Austin}. August, pp. 218--27.
+	\item Burstall, R.M., MacQueen, D.B., and Sanella, D.T. 1980. \textit{Hope: an experimental
+	applicative language}. CSR-62--80. Department of Computer Science, University of
+	Edinburgh. May.
+	\item  Darlington, J. 1984. Functional programming. In \textit{Distributed Computing}. Duce
+(Editor). Academic Press.
+	\item  Fairbairn, J. 1985. Design and implementation of a simple typed language based on the
+lambda calculus. PhD thesis, \textit{Technical Report 75}. University of Cambridge. May.
+	\item  Glaser, H., Hankin, C., and Till, D. 1984. \textit{Principles of Functional Programming}.
+Prentice-Hall.
+	\item  Gordon, M.J., Milner, A.J., and Wadsworth, C.P. 1979. \textit{Edinburgh LCF}. LNCS 78.
+Springer Verlag.
+	\item  Henderson, P. 1980. \textit{Functional Programming}. Prentice-Hall.
+	\item  Turner, D.A. 1976. \textit{The SASL language manual}. University of St Andrews. December.
+	\item  Turner, D.A. 1982. Recursion equations as a programming language. In \textit{Functional
+Programming and Its Applications}, Darlington et al. (editors), pp. 1-28. Cam-
+bridge University Press.
+	\item  Turner, D.A. 1985. Miranda -- a non-strict functional language with polymorphic
+types. In \textit{Conference on Functional Programming Languages and Computer
+Architecture, Nancy}, pp. 1-16. Jouannaud (editor), LNCS 201. Springer Verlag.
+	\item  Wadler, P. 1985. \textit{Introduction to Orwell}. Programming Research Group, University of
+Oxford.
+\end{references}

@@ -1,0 +1,43 @@
+Section 9.3 Success and failure
+165
+If t1 and 12 are of type type_exp, and we know what types they represent, then
+(arrow t1 12) will represent the type of functions from t1 to 12. Using Miranda's
+dollar notation for infixes, we may write this in the form (t1 $arrow 12), which
+adheres more closely to the informal notation.
+The other type-forming operations we have mentioned could be
+represented in a similar way:
+int
+:: type_exp
+int
+= TCONS "int" []
+cross :: type_exp -> type_exp -> type_exp
+cross t1 12 = TCONS "cross" [t1,12]
+list :: type_exp -> type_exp
+list t
+= TCONS "list" [t]
+The function tvars_in returns a list of the variable names that occur in a type
+expression. (The list may contain repetitions.)
+tvars_in :: type_exp -> [tvname]
+tvars_in t = tvars_in' t []
+where
+Ivars_in' (TVAR x) | = x:!
+tvars_in' (TCONS y ts) | = foldr tvars_in' I ts
+9.3 Success and Failure
+Since type-checking is something that can succeed or fail, we have to choose a
+mechanism for representing success and failure within Miranda.
+We shall use the type (reply *) for the type of the values of a function which
+may succeed (returning an object of type * ) or fail (returning no indication as
+to why) .
+reply * ::= OK * | FAILURE
+It would not be acceptable for a practical type-checker to return no indication
+as to why a check has failed. One might then use a slightly more complicated
+operator, such as
+reply' * ** ::= OK' * 1 FAILURE' **
+which is capable of returning error information. It is notoriously difficult to
+write error-handling code without obscuring the code to handle correct cases,
+so we will use instead the simpler, less informative operator. Any error
+detected while type-checking will be propagated up to the top level without
+further examination of the program. Here, too, there may be grounds for
+complaint, which we counter with the same excuse.
+(There is more than one way to represent success and failure. An
+alternative approach to the one taken here is described by Wadler [1985].)

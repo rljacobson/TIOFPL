@@ -1,0 +1,52 @@
+436
+Appendix
+solutions, without necessarily incurring the penalty of actually constructing all the
+solutions. In fact if we only want the first solution we can print hd (queens 8) and the
+remainder of the solution list will not be instantiated. (Note: in the definition of checks,
+the infix operator V means logical 'or'.)
+Polymorphic Strong Typing
+Miranda is strongly typed. That is, every expression and every subexpression has a
+type, which can be deduced at compile-time, and any inconsistency in the type structure
+of a script results in a compile-time error message. We here briefly summarize
+Miranda's notation for its types.
+The three primitive types are called num, bool and char. The type num comprises
+integer and floating point numbers (the distinction between integers and floating point
+numbers is handled at run-time - this is not regarded as being a type distinction).
+If T is type, then [T] is the type of lists whose elements are of type T. For example,
+[[1,2],[2,3],[4,5]] is of type [num]], that is it is a list of lists of numbers.
+If T1 to Tn are types, then (T1,...,Tn) is the type of tuples with objects of these types
+as components. For example, (True,"hello",36) is of type (bool,[char],num).
+If Ti and T2 are types, then T1->T2 is the type of a function with arguments in T1 and
+results in T2. For example the function sum is of type [num]->num. The function
+associative.
+quadsolve, given earlier, is of type num->num->num->[num]. Note that -> is right-
+Miranda scripts can include type declarations. These are written using :: to mean 'is
+of type'. For example:
+sq :: num -> num
+sq n =n * n
+The type declaration is not necessary, however. The compiler is able to deduce the type
+of sq from its defining equation. Miranda scripts often contain type declarations even
+though they are not really necessary, since these are useful for documentation (and
+they provide an extra check, since the type-checker will complain if the declared type is
+inconsistent with the inferred one).
+Types can be polymorphic, in the sense of Milner [1978]. This is indicated by using
+the symbols * * * * ** etc. as an alphabet of generic type variables. For example, the
+identity function, defined in the Miranda library as
+id x = x
+has the following type
+id :: * -> *
+This means that the identity function has many types, namely all those which can be
+obtained by substituting an arbitrary type for the generic type variable, e.g.
+num->num, bool->bool, (*->**) -> (*->**) and so on.
+We illustrate the Miranda type system by giving types for some of the functions so far
+defined in this appendix
+fac :: num
+-> num
+sum :: [num] -> num
+reverse :: [*] -> [=]
+fst :: (*, * *) ->
+snd :: (*,**) -> * *
+foldr :: (*->**->**)
+perms :: [*] -> [[*]i
+-> * * -> [*] -> **
+queens :: num -> [[num]]

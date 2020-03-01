@@ -1,0 +1,25 @@
+Six
+TRANSFORMING THE ENRICHED
+LAMBDA CALCULUS
+Having now defined the semantics of pattern-matching, we are in a position to
+show how to transform all the constructs of the enriched lambda calculus into
+the ordinary lambda calculus.
+Section 6.1 shows how to transform pattern-matching lambda abstractions
+into the ordinary lambda calculus, while Section 6.2 deals with let- and
+letrec-expressions; Sections 6.3 and 6.4 deal with case-expressions and the |
+operator.
+6.1 Transforming Pattern-matching Lambda Abstractions
+In order to translate Miranda function definitions involving pattern-matching
+into the enriched lambda calculus, we had to introduce pattern-matching
+lambda abstractions as a new construct. In this section we will show how they
+can be transformed into the ordinary lambda calculus. For each form of (Ap. E)
+we will give an equivalent form that does not use pattern-matching lambda
+abstractions.
+In the case when the pattern p is a variable there is nothing to do, because
+no pattern-matching is involved. The remaining cases are when the pattern is
+a constant, a product-constructor pattern or a sum-constructor pattern. These
+are dealt with in the following three subsections.
+6.1.1 Constant Patterns
+This section shows how to transform a pattern-matching lambda abstraction
+(AK. E), with a constant pattern k, into the ordinary lambda calculus. First of
+104

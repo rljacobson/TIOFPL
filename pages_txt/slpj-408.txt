@@ -1,0 +1,42 @@
+410
+Chapter 24 Parallel Graph Reduction
+of parallelism. Raw processing power is now cheap, through replication of
+silicon, but mechanisms for connecting processors together so that they
+cooperate to achieve a common goal are hard to build. Inextricably connected
+with this challenge is the challenge of programming a parallel machine, and
+partitioning the program in a way that minimizes communication.
+In specific application areas it may be fairly easy to partition the problem so
+as to minimize communication. For example, in a multi-user Unix machine it
+is easy to assign a processor to each process awaiting execution. Less trivially,
+vector processors such as the Cray-1, or array processors such as the ICL
+DAP, have an arrangement of processing elements specifically adapted for
+the efficient execution of vector- or array-structured problems.
+Programming vector or array processors is, however, a highly skilled and
+somewhat arcane art. In order to exploit the parallelism of the machine fully,
+the programmer needs an intimate understanding of its workings and of the
+workings of the compiler. The investment required to produce such programs
+is very large - an investment of 10 man-years' work or more in a single
+program is not unusual - and small program modifications risk destroying the
+program's finely balanced optimizations. Furthermore, such programs are
+often extremely complex, not because the task is complex, but in order to
+exploit the architecture most effectively.
+An alternative approach is to have a number of processing elements
+connected together with some kind of network, each independently executing
+its own program (an MIMD machine). Such a machine is relatively easy to
+build, but gives no clues about how best to program it. The problem of
+dividing the task up into concurrent subtasks, programming these subtasks in
+a sequential language and arranging the intertask communication is left
+entirely to the programmer. Even when the program is written it is hard to be
+sure that it is correct, and concurrency gives much scope for transient and
+irreproducible bugs which only occur under particular circumstances.
+The challenge, then, is to produce a parallel programming system,
+including both architecture and a programming methodology, which
+(i) is feasible to program (this is the overriding consideration);
+(ii) is highly concurrent (this allows us to buy speed with raw processing
+power);
+iii) minimizes communication.
+24.2 Parallel Functional Programming
+24.2.1 The Opportunity for Parallelism
+One of the most attractive features of functional programming languages is
+that they are not inherently sequential, as conventional imperative languages
+are. At any moment there are a number of redexes in the program graph, and

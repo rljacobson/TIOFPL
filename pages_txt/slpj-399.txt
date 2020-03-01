@@ -1,0 +1,45 @@
+Section 23.3 The space behavior of lazy functional programs
+401
+combinators:
+(drop (- n 1)) will be lifted out of the Axs abstraction, giving two super-
+$drop n
+= $L (= n 0) ($drop (- n 1))
+$L NO DN1 xs = IF NO xS (DN1 (TAIL xs))
+Consider now the value of f:
+f = $drop 1000
+$L (= 1000 0) ($drop (- 1000 1))
+$L FALSE ($L (= 999 0) ($drop (- 999 1)))
+$L FALSE ($L FALSE ($L (= 998 0) ($drop (- 998 1))))
+etc.
+The second argument to $L can be reduced again and again. Of course, f
+alone will never be expanded with successive reductions like this. However,
+on the first occasion when f is applied to a list, the ($drop (- 1000 1)) expres-
+sion will be reduced, and the result will overwrite the ($drop (- 1000 1))
+redex. Also the (= 1000 0) redex will be evaluated, and the result will
+overwrite the (= 1000 0) redex. Therefore the graph representing f will grow
+in the manner indicated above, until it is 1000 levels deep.
+Nothing has gone wrong. The system is simply preserving full laziness. The
+next time f is applied to a list, many fewer reductions will have to be done,
+because the recursion has been unrolled in advance. This is closely analogous
+to the optimization sometimes performed by conventional compilers of loop
+unrolling, in which the body of a loop is duplicated as many times as the loop
+was to iterate in order to avoid performing a test on each iteration. Sensible
+compilers only do this when the number of iterations is small, but our
+preoccupation with full laziness has led us to an implementation which unrolls
+loops regardless of the extra storage cost incurred.
+Our campaign to save reduction steps by full laziness has succeeded, but at
+a substantial cost in terms of memory usage. Worse still, it is not at all obvious
+from the program that this will happen, nor is there any easy way to reason
+about the storage use of such functions.
+This unpleasant phenomenon is called a space leak (because memory space
+leaks away invisibly) or dragging (because f drags around an unexpectedly
+large graph). This memory cost caused by space leaks means that the program
+may run out of memory and fail to complete evaluation, but, more insid-
+iously, it will also mean that less memory is available for the rest of the
+computation, so garbage collection will be more frequent. Thus there is a time
+cost associated with memory usage which should ideally be set against the
+time saving from saving reduction steps.
+No good automatic solutions are known to this problem. One trick that the
+programmer can use to avoid it is to define two new functions:
+newDrop n xs = newDrop1 xs n
+newDrop1 xs n = drop n xs

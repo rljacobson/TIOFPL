@@ -1,0 +1,42 @@
+428
+Chapter 24 Parallel Graph Reduction
+It is for this reason that locality plays such a key role in parallel reduction
+machine architecture.
+24.7.3 Locality versus Concurrency
+There is one easy way to achieve perfect locality: execute all tasks and allocate
+all cells on a single processor/memory unit! This shows up the tension
+between locality and concurrency. When is it best to export a task to another
+processor (to maximize concurrency), and when is it best to perform it locally
+(to maximize locality)?
+We cannot expect any general answers to this question. For particular
+programs a good task distribution may suggest itself, and one approach is to
+allow the programmer to annotate his program to indicate this [Hudak and
+Smith, 1985]. The alternative is to develop effective heuristics for distributing
+the tasks through the machine. It seems intuitively plausible that a heavily
+loaded processor should export tasks to a lightly loaded neighbor, and this
+leads to the idea of load balancing [Keller and Lin, 1984] (also called diffusion
+scheduling [Hudak and Goldberg, 1985a]). The idea is that tasks are 'pushed
+away' from busy processors; in addition it would improve locality if tasks were
+'drawn towards' memory units to which they have global references.
+The granularity of the task is also important, since it is more worthwhile to
+export a large computation than a small one.
+Much more experience will need to be gained before we can make any
+confident assertions about achieving locality in a parallel machine.
+24.8 Parallel Reduction Machine Projects
+A number of research teams are in the process of building parallel graph
+reduction machines. The details of their architecture are beyond the scope of
+this book, but we mention some current projects here to serve as a starting-
+point for further reading.
+The Rediflow project at the University of Utah is a substantial
+research program aimed at unifying the ideas of reduction and dataflow in a
+single parallel architecture (hence the name) [Keller, 1985]. Rediflow is the
+successor to the AMPS (Applicative Multiprocessor System) project [Keller
+et al., 1979]. The reduction model is considerably more general (and complex)
+than that described in this chapter. The architecture consists of a collection of
+processor/memory/switch units, called Xputers, where the switching portion
+of the Xputers collectively forms a multistage communications network, over
+which the processors communicate using message-passing. Each Xputer is
+directly connected to a fixed number of neighboring Xputers, regardless of
+the total number of Xputers in the network, so the machine is readily
+extensible. The graph is distributed over the memories of the Xputers, so
+locality and granularity are major issues.

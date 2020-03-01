@@ -1,0 +1,34 @@
+228
+Chapter 13 Supercombinators and Lambda-lifting
+thus completing the transformation of the program into supercombinators.
+So far we have not made any explicit mention of recursion. This topic is so
+important that we devote the whole of the next chapter to it.
+Following Johnsson [1985], we call the transformation from lambda
+expressions to supercombinators 'lambda-lifting' since all the lambda
+abstractions are lifted to the top level.
+13.3.1 Eliminating Redundant Parameters
+In this section and the next we will consider two simple optimizations to the
+lambda-lifting algorithm. Consider the expression
+Ax . Ay . - y x
+It is actually a supercombinator as it stands, but suppose we blindly applied
+our algorithm as described above. First we choose the Ay abstraction, noting
+that x is free, and transform it to
+$Y xy = - y x
+AX . $Y x
+(Here we have chosen to use x instead of w as the name of the extra parameter
+to the $Y supercombinator. This choice is arbitrary, but we will normally
+choose the same name as the free variable being abstracted.) Now dealing
+with the Ax abstraction, we get
+$Y x y = - y x
+$X X = $Y x
+$X
+It is clear that we can simplify the definition of $X to
+$X = $Y
+(This is just n-reduction, of course.) Having done this we see that $X itself is
+redundant, and $X can be replaced wherever it occurs by $Y, giving
+$Y Xy = - y x
+$Y
+So there are two optimizations to consider:
+(if)
+Remove redundant parameters from definitions by n-reduction.
+Where this produces redundant definitions, eliminate them.

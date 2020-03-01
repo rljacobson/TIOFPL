@@ -1,0 +1,40 @@
+Section 22.2 Using abstract interpretation to do strictness analysis
+383
+22.1.2 History and References
+The pioneers in the field of abstract interpretation were Cousot and Cousot
+[1977]. Since then the theory has been extended by Mycroft [1981], whose
+doctoral thesis explained how the Cousots' theory could be applied to
+functional languages. In particular, he presented a formal explanation of
+strictness analysis, albeit limited to first-order functions and a poor treatment
+of data structures. His presentation is primarily theoretical, so we give a
+practical exposition of the approach in the following sections.
+Since then substantial advances have been made, and the formal basis for
+abstract interpretation greatly clarified. Burn, Hankin and Abramsky give an
+excellent treatment of the topic, and their paper is strongly recommended
+[Burn et al., 1985]. It addresses all the issues that are glossed over in this
+chapter.
+22.2 Using Abstract Interpretation to do Strictness Analysis
+Abstract interpretation is a general tool, and we choose the abstraction
+function and abstract interpretation to be appropriate for the questions we
+wish to answer. In this section we will develop an abstract domain and
+abstraction mapping which are suitable for strictness analysis.
+22.2.1 Formulating the Question
+First of all, we must pose the question we wish to answer in a formal way.
+Informally, the question is: 'does this function always need the value of its
+argument?' If we were given the answer to this question for all super-
+combinators, we could compile better code for the supercombinators
+(Chapter 20), or evaluate the argument in parallel (Chapter 24).
+Recall from Section 2.5.4 that a function is strict if and only if it always
+needs the value of its argument. The formal definition was:
+a function f is strict if and only if
+fl = 1
+(22.1)
+That is, given a non-terminating argument, f will not terminate. Of course, f
+could be failing to terminate for reasons other than trying to evaluate its
+argument, but the net result is the same. Certainly if (22.1) holds then it is safe
+to evaluate the argument before the call off (or in parallel with it).
+The notion extends naturally to functions of several arguments. For
+in y if
+instance, if g is a function of three arguments (x, y and z) we say that it is strict
+g x lz = 1 for any
+x and z

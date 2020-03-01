@@ -1,0 +1,39 @@
+Section 9.4 Solving equations
+167
+The crucial property of scomp is that
+sub_type (scomp phi psi) = (sub_type phi) . (sub_type psi)
+(Remember that function composition is represented by an infix dot.)
+The identity substitution id_subst has the property that
+sub_type id subst t = t
+for all t::type_exp. It can be defined by:
+id_subst :: subst
+id_subst tvn = TVAR tvn
+A delta substitution is one that affects one variable only. We define:
+delta :: tvname -> type_exp -> subst
+delta tvn t tvn' = t,
+= TVAR tvn'
+tvn = tvn'
+Hence, (sub_type (delta tvn t)) is the function that maps a type expression to
+one that contains t where before it had (TVAR tvn).
+In fact, all the substitutions we need will be built up from the identity
+form.
+substitution id subst by composition on the left with substitutions of delta
+In general, a substitution may associate a variable with a value which itself
+contains variables. If those variables in turn are given values different from
+themselves, then the substitution is not 'fully worked out'. When we work out
+a set of equations
+X1 = ti; . . .; Xk = tk
+by substituting t; for x: at all of its occurrences in ti,. . ., tk, we may have to
+iterate the substitution many times before the equations stabilize to their final
+forms. (Of course, this iterative process does not terminate if there is a
+circularity in the equations.) In general, we are interested in obtaining 'fully
+worked out' substitutions, which do not have to be re-applied. The next
+definition is intended to capture what we mean by such a substitution.
+A substitution phi is idempotent if
+(sub_type phi) . (sub_type phi) = sub_type phi
+or equivalently, if (phi $scomp phi) = phi. In other words, if you apply the
+substitution twice, you get nothing different the second time. A type
+expression t is a fixed point of a substitution phi if
+sub_type phi t = t
+by phi.
+In particular, if (TVAR x) is a fixed point of phi, then we say that x is unmoved

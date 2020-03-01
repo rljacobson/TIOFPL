@@ -1,0 +1,40 @@
+288
+Chapter 17 Storage Management and Garbage Collection
+(only update operations can cause this), they are constrained to go via an entry
+table associated with the younger region.
+Now the youngest region can be garbage-collected independently, using
+Baker's algorithm, so long as we preserve all cells referenced from its entry
+table. In general, any region can be garbage-collected without touching any
+older information. So all we have to do is to garbage-collect young regions
+(where garbage collection will be fruitful) more often than older ones (where
+it will be less fruitful, but eventually necessary).
+17.6 Avoiding Garbage Collection
+Another approach to garbage collection is to try to avoid it altogether. Wadle
+[1984] suggests a technique for compiling a certain class of functional program
+into a finite state machine with a fixed number of registers and no heap. This, in
+effect, performs memory allocation in advance (rather as a conventiona
+Pascal program has no problem with memory allocation). He calls hi
+compiler the listless transformer.
+The functional programs to which this technique is applicable are, no
+surprisingly, those that can be evaluated using bounded internal storage. Thi
+includes, for example, functions that find the length of a list, add up a list
+concatenate or merge two lists, or divide a list into two lists of odd and eve
+elements. It excludes, however, functions that sort a list, append a list
+itself, or work on tree-shaped data.
+Clearly the applicability of the method is limited, but where appropriate
+is extremely effective, since the finite state machine can be made very fast.
+Wadler has a working implementation of his listless transformer, written
+KRC.
+17.7 Garbage Collection in Distributed Systems
+Efforts to develop garbage collectors which work in parallel with usef
+computation have gained new impetus with the advent of parallel arch
+tectures, where the problem generalizes to many computation and garba
+collection processes.
+Most work has been addressed to architectures with a single large addre
+space (closely coupled systems), for example Hudak [1983a and 1983b] a
+Ben-Ari [1984].
+Other efforts have been directed towards loosely coupled systems in whi
+the heap is distributed between a number of processing elements, a
+accessing a cell held by another processing element is recognized as
+relatively expensive operation. Examples include Mohamed-Ali [1984] a
+Hughes [1985].

@@ -1,0 +1,25 @@
+Twenty-two
+STRICTNESS ANALYSIS
+In Chapter 20 we saw the usefulness of being able to determine in advance
+whether a function would eventually evaluate its argument(s). As we will see
+later, in Chapter 24, this information is also useful to determine points at
+which parallel evaluation of the program can be begun. In this chapter we will
+discuss a method of compile-time analysis, called strictness analysis, which can
+determine which arguments a function is sure to evaluate.
+The chapter is based on Clack and Peyton Jones [1985].
+22.1 Abstract Interpretation
+Strictness analysis is one of several compile-time optimizations that can be
+achieved through abstract interpretation of the program text.
+We begin by giving an informal introduction to abstract interpretation, to
+set the framework for the rest of the chapter. In doing so, we try to give an
+intuitive grasp of the technique, and inevitably we gloss over several
+important theoretical issues. Fortunately, the intuitive approach leads us to a
+correct implementation. Unlike the rest of the book, this chapter makes use
+of some basic domain theory, including fixed points [Stoy, 1981].
+22.1.1 An Archetypical Example: The Rule of Signs
+Abstract interpretation is a technique for deducing information about a
+program from its text, by executing an abstract version of the program. An
+appropriate abstraction is chosen according to what information is wanted.
+As an example, suppose we wanted to know the sign of
+34 * (-5) * (-3993)
+380

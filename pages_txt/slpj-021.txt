@@ -1,0 +1,43 @@
+20
+Chapter 2 The Lambda Calculus
+Both denote the same function, namely the function which always delivers the
+result 3 regardless of the value of its argument, and we might hope that they
+were interconvertible. This hope is justified, as the following sequence of
+conversions shows:
+IF TRUE ((Ap.p) 3)
+IF TRUE 3
+tstat
+(XX. IF TRUE 3 x)
+(1x.3)
+The final step is the reduction rule for IF.
+An alternative method of proving convertibility of expressions denoting
+functions, which is often more convenient, is to apply both expressions to an
+arbitrary argument, w, say:
+IF TRUE ((\p. p) 3) w
+(Ap. p) 3
+(Ax.3) w
+3
+- 3
+Hence
+(IF TRUE ((Ap.p) 3)) + (Ax. 3)
+This proof has the advantage that it only uses reduction, and it avoids the
+explicit use of n-conversion. If it is not immediately clear why the final step is
+justified, consider the general case, in which we are given two lambda
+expressions Fi and F2. If we can show that
+F1 W - E
+and
+F2 W - E
+where w is a variable which does not occur free in Fi or F2, and E is some
+expression, then we can reason as follows:
+F1
+(Aw. F1 w)
+(Aw. E)
+(Aw. F2 W)
+F2
+and hence F1 < F2.
+It is not always the case that lambda expressions which 'ought' to mean the
+in Section 2.5.
+same thing are interconvertible, and we will have more to say about this point
+2.2.6 The Name-capture Problem
+As a warning to the unwary we now give an example to show why the lambda
+calculus is trickier than meets the eye. Fortunately, it turns out that none of

@@ -1,0 +1,45 @@
+Section 20.3 Direct execution of built-in functions
+345
+RS[ E ] pdn
+completes a supercombinator reduction, in which the top n ribs of the
+body have already been put on the stack.
+RS constructs instances of the ribs of E, putting them on the stack, and
+then completes the reduction in the same way as R.
+RS[ f ] pdn
+= PUSHGLOBAL f; MKAP n;
+UPDATE (d-n+1); POP (d-n); UNWIND
+RS[ x Ipd n
+= PUSH (d - p x); MKAP n;
+UPDATE (d-n+1); POP (d-n); UNWIND
+RS[ HEAD E ] p d n
+= E[[ E ] p d; HEAD; MKAP n;
+UPDATE (d-n+1); POP (d-n); UNWIND
+RS[[ IF Ec Et Er ] pd n = El[ Ec ] p d; JFALSE L1;
+RS[ E: ]] p d n;
+LABEL L1;
+RS[[ Er I pd n
+RS[ E: E2 1 p d n
+= CI E2 I p d;
+RSI[ E1 ]] p (d+1) (n+1)
+Note: RS cannot encounter a let or letrec.
+Figure 20.4 The RS compilation scheme
+fact that the stack has gained one element as a result of the initial PUSH and
+lost n elements as a result of the 'MKAP n'. No case is needed for an integer,
+since the appearance of an integer at this point would mean that it was being
+used as a function.
+Now we have done the hard work, and Figure 20.4 summarizes the RS
+scheme. The occurrence of a let or letrec would cause RS problems, since it
+assumes that the n ribs constructed so far occupy successive stack locations.
+Fortunately it is easy to ensure that RS can never encounter a let or letrec, by
+transforming any expression of the form
+(letrec <definitions> in E1) E2
+into
+letrec <definitions> in (E1 E2)
+This is precisely achieved by the algorithm described in Section 15.5.4.
+Notice that we do not need special cases for functions such as NEG, + and
+CONS, because their result must be a data object, and hence will be caught by
+the R scheme.
+It may seem that all this is a lot of work to cope with a few unusual cases.
+However, it has one other major benefit: it is readily generalized to optimize
+supercombinators as well as built-in functions, a subject we tackle in Chapter
+21.

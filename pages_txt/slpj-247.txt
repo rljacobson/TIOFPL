@@ -1,0 +1,37 @@
+Section 15.3 Lambda-lifting using maximal free expressions
+247
+abstraction.
+The instance contains a pointer back to the (sqrt 4) in the body of the
++ (
+(- 1) (+ 2 5)
+(Ay . +y 2)
++
+(. 1) 4
+(Ay . + y 2)
+- + (+ 1 5) 4
++ 3 4
+2
+7
+Now the (sqrt 4) is only evaluated once, as we had hoped.
+15.3 Lambda-lifting using Maximal Free Expressions
+In order to achieve full laziness in the lambda reducer of Chapter 12 we
+appear to need to identify maximal free expressions dynamically. As we noted
+there, this is rather difficult to do efficiently
+Fortunately, it turns out that we can modify the lambda-lifting algorithm so
+that a straightforward implementation of the resulting supercombinator
+program is automatically fully lazy. The algorithm was invented by Hughes
+[1984].
+15.3.1 Modifying the Lambda-lifting Algorithm
+The modification we need is to abstract the maximal free expressions, rather
+than free variables, when lambda-lifting a lambda abstraction.
+In our running example, the function g has the lambda abstraction
+Ax. Ay. + y (sqrt x)
+When doing lambda-lifting on the Ay abstraction, we abstracted x out as an
+extra parameter, since it occurs free. Instead we should abstract out the entire
+(free) subexpression (sqrt x) as an extra parameter, thus generating the
+supercombinator
+$g1 sqrtx y = + y sqrtx
+The name 'sqrtx' is an arbitrary name invented for the extra parameter. We
+replace the Ay abstraction with the supercombinator $g1 applied to the
+subexpression, thus:
+Ax.$g1 (sqrt x)

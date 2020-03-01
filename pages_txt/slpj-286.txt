@@ -1,0 +1,40 @@
+286
+Chapter 17 Storage Management and Garbage Collection
+structure problem', and thus allow exploitation of the other desirable
+characteristics of reference-counting. Aertes [1981] describes an essentially
+identical system. Brownbridge [1985] describes a different reference-
+counting technique, also claimed to be capable of recovering circular
+structures.
+Interestingly, all of these techniques will only work for implementations
+free of side-effects. In other words, they will work for implementations of
+functional languages, but not for Lisp (at least, not if the program uses
+RPLACs). Perhaps this is a new point in favor of functional languages!
+17.3.2 One-bit Reference-counts
+The logical extreme of the limited width reference-count idea is a one-bi
+reference-count field. This is not a new idea [Wise and Friedman, 1977].
+Recently, however, a number of researchers noticed that instead of storing
+a one-bit reference-count in the cell it would be possible to store the reference-
+count in the pointer. A single bit in each pointer identifies the pointer as being
+a unique reference or a shared reference. Cells are created with a unique
+reference to them; when a unique reference is duplicated, both copies become
+shared references. When a unique reference is discarded the cell to which i
+points can be immediately re-used; when a shared reference is discarded n
+recovery is possible. Like all elegant ideas it is marvellously obvious i
+retrospect.
+The principal advantage of storing the reference-count in the pointer is tha
+it completely eliminates the extra store accesses required to increment an
+decrement reference-counts.
+The benefits of even such a narrow reference-count are dramatic. Stoye
+al. [1984] report that up to 70% of all garbage cells are recovered immediate
+they become unused in the SKIM SK combinator reduction machine. Furth
+performance improvement is gained in the SKIM implementation becau
+reclaimed cells are often re-used immediately, rather than being attached
+the free list.
+17.3.3 Hardware Support for Reference-counting
+Much of the time overhead of reference-counting would be alleviated
+hardware support were available. Wise [1985] describes hardware for
+'smart' memory module, capable of detecting when one pointer is overwritt
+with another. When this occurs, the module sends a 'decrement' message
+the module which holds the cell pointed to by the old pointer, and
+'increment' message to the module which holds the cell pointed to by the n
+pointer.

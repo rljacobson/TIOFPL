@@ -1,0 +1,39 @@
+114
+Chapter 6 Transforming the Enriched Lambda Calculus
+Repeated application of the transformation will simplify the pi successively,
+until the letrec is simple.
+6.2.6 Transforming Irrefutable letrecs into Irrefutable lets
+In showing how to eliminate letrec-expressions altogether, we could take as
+our starting-point the simple letrec-expressions produced by the transform-
+ation described in the preceding section. However, it is slightly more efficient
+to start from an earlier stage, the irrefutable letrec-expressions.
+First of all, we recall from Section 3.2.2 how to transform a simple letrec
+containing only a single definition:
+(letrec v = B in E) = (let v = Y (\v.B) in E)
+We simply use the built-in function Y, which was introduced in Section 2.4, to
+make the definition non-recursive. Now that the definition is non-recursive,
+we can use let instead of letrec, and the job is done.
+When there is more than one definition, we apply the following sequence of
+two transformations. First of all, we apply the transformation
+letrec p1 = Bi = letrec (t pi . . . Pn) = (t B1 . . . Bn) in E
+Pn = Bn
+in E
+where t is a product constructor of arity n.
+In other words, we simply package up the right-hand sides into a tuple and
+match it against a product pattern on the left-hand side. Furthermore, since
+the p: are irrefutable, the pattern (t pi . . . pn) is also irrefutable.
+Now the letrec contains only a single definition with an irrefutable pattern
+on its left-hand side, and we can proceed by analogy with the simple case
+described above, using Y. This analogy yields the following transformation:
+letrec p = B in E = let p = Y (Ap. B) in E
+where p is an irrefutable pattern.
+Y is used exactly as before, to make the definition non-recursive. The new
+feature is the use of a pattern-matching lambda abstraction, where we used
+only a simple lambda abstraction before. The result is a let-expression with an
+irrefutable pattern on its left-hand side, which is therefore amenable to the
+transformations of Section 6.2.4.
+To see this transformation in action, consider the following letrec-
+expression:
+letrec x = CONS 1 y
+y = CONS 2 x
+in x

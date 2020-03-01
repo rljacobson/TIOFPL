@@ -1,0 +1,86 @@
+INDEX
+1, 31-33, 69, 71, 73, 105-109, 125, 383-6
+1, 40, 51, 57, 61, 76, 94, 96, 125
+B' combinator, 272
+a-conversion, 18, 21, 226, 263
+B compilation scheme (see compilation
+B-abstraction, 18, 226
+scheme, B)
+B-conversion, 15, 18
+basic block, 329
+B-reduction, 15, 41, 226
+basic value, 357
+n-conversion, 19, 20, 269
+block move, 231
+n-reduction, 19, 122, 228, 230, 248, 253, 256,
+block-structured language, 221
+276
+blocking a task, 414, 421
+effect on lambda-lifting, 346
+body
+of definition, 41
+of function, 12
+A compilation scheme (see compilation
+bottom, 31, 99
+scheme, A)
+bound, by let(rec)-expression, 41
+abstract data type, 438
+bound variable (see variable, bound)
+abstract domain, 383
+boxed representation, 190, 320, 326, 332,
+abstract interpretation, 259, 380, 382
+335, 356
+abstracting a free variable, 226
+brackets, 11, 40
+abstraction, 382
+built-in function, 11, 31, 17, 46, 200, 212,
+acyclic graph (see graph, acyclic)
+313
+ADD, 323
+built-in type, 53
+agent, 414, 424
+algebraic type, 437
+Algo168, 146
+Ccombinator, 269
+ALICE, 426, 429
+C' combinator, 272
+ALLOC, 309, 323
+C compilation scheme (see compilation
+allocation (see storage allocation)
+scheme, C)
+alternative, 58, 432
+CLetrec compilation scheme (see compilation
+AND, 12
+scheme, CLetrec)
+annotation, director string, 275
+cache, 427
+annotation, strictness (see strictness
+CAF (see constant applicative form)
+annotation)
+CALL, 377
+append, 432
+call-by-need, 193
+applicative order, 195
+call-by-value, 193
+AP-WHNF, 354, 376, 423
+case analysis, 52
+argument evaluation (see evaluating
+case-expression, 3, 40, 50, 51, 75, 79, 81,
+arguments)
+121
+arity, 52, 223
+CASEJUMP, 317, 341, 363
+arity check, 333, 373
+CASE-n, 300, 317, 341, 344, 362
+array, 189
+CASE-T, 123, 125
+array processor, 410
+cdr-coding, 284
+association list, 173
+cell, 187, 320, 325
+fixed-size, 187, 188, 192
+variable-size, 187, 189, 192, 215
+B combinator, 268
+cell lifetime, 287
+character, 432
+439

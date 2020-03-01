@@ -1,0 +1,44 @@
+Section 6.3 Transforming case-expressions
+123
+where s1, . . ., Sn are the constructors of a sum type T. We can transform this
+case-expression using the following transformation:
+case v of
+S1 V1,1 . . . V1,1
+1= E1
+. . .
+Sn Vn.1 . . . Vn,In
+En
+CASE-T v (UNPACK-SUM-S1 (AV1,1. . . AV1,m . E1) v)
+(UNPACK-SUM-Sn (AVn,1. . . AVn,in- En) v)
+The function CASE-T, of which there is one for each sum type T, selects one
+argument:
+of its n arguments depending on the constructor used to build its first
+CASE-T (si a1 . . . an) bi . . . bi . . . bn = bi
+CASE-T 1
+bi ... bi . . . bn = 1
+where T is a sum type. Operationally speaking, CASE-T evaluates its first
+argument and returns the argument corresponding to the constructor.
+We could use CASE-T to translate the definition of reflect, for which we have
+the following case-expression (see Section 4.4):
+reflect = At. case t of
+LEAF n
+LEAF n
+BRANCH t1 12
+BRANCH (reflect 12) (reflect t1)
+Applying the transformation gives:
+reflect
+= At. CASE-tree
+t
+(UNPACK-SUM-LEAF (An. LEAF n) t)
+(UNPACK-SUM-BRANCH
+(At1 . At2. BRANCH (reflect t2) (reflect t1)) t)
+This is a more satisfactory definition than the one we produced in Section
+6.1.3, because it will execute in fewer reductions, and because no check for
+FAIL need be made by CASE-tree. Furthermore, UNPACK-SUM-LEAF is
+guaranteed only to be applied to leaves, so it need not check the constructor of
+its argument, thus giving a further gain in efficiency. Similar remarks apply to
+UNPACK-SUM-BRANCH.
+6.3.3 Using a let-expression Instead of UNPACK
+The transformations given in the previous sections both introduced a new
+lambda abstraction. For all but the simplest implementations, simple let-
+expressions can be implemented much more efficiently than lambda

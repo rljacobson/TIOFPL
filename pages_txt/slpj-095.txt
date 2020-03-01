@@ -1,0 +1,41 @@
+94
+Chapter 5 Efficient Compilation of Pattern-matching
+The function matchVarCon is given a list of equations that either all begin
+with a variable or all begin with a constructor. It calls matchVar or matchCon, as
+appropriate.
+matchVarCon k us qs def
+= matchVar k us qs def,
+isVar (hd qs)
+= matchCon k us qs def,
+isCon (hd qs)
+The function matchVar implements the variable rule.
+matchVar k (u:us) qs def
+= match k us [(ps, subst e u v) I (VAR v : ps, e) <- qs] def
+The functions matchCon and matchClause implement the constructor rule.
+The call (choose c qs) returns all equations that begin with constructor c.
+matchCon k (u:us) qs def
+= CASE u [matchClause c k (u:us) (choose c qs) def | c <- cs]
+where
+cs = constructors (getCon (hd qs))
+matchClause c k (u:us) qs def
+= CLAUSE c us' (match (k'+k)
+(us'++us)
+[(ps'++ps, e) | (CON c ps' : ps, e) <- qs]
+def )
+where
+k' = arity c
+us' = [makeVar (i+k) | i <- [1 . .k'] ]
+choose c qs = [q I q <- qs; getCon q = c]
+This completes the Miranda program for the pattern-matching compiler.
+5.4 Optimizations
+This section discusses some optimizations to the pattern-matching compiler.
+Section 5.4.1 describes an optimization which gives greater efficiency when
+compiling overlapping equations. This involves further uses of [ and FAIL, and
+Section 5.4.2 describes how these may often be eliminated.
+5.4.1 Case-expressions with Default Clauses
+If overlapping equations are allowed, then sometimes the pattern-matching
+compiler described above may transform a small set of equations into a
+defined by:
+case-expression that is much larger. For example, consider the function
+unwieldy [] [] = A
+unwieldy xs ys = B xs ys

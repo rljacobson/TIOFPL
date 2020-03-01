@@ -1,0 +1,56 @@
+92
+Chapter 5 Efficient Compilation of Pattern-matching
+5.3.3 Equations
+An equation is a list of patterns paired with an expression:
+equation == ([pattern], expression)
+We will use the letter q to denote equations, or else write (ps,e).
+We need functions to determine if an equation begins with a variable or a
+constructor. If it begins with a constructor, we also need a function to return
+that constructor.
+is Var
+:: equation -> bool
+isVar (VAR v
+: ps, e)
+= True
+isVar (CON c ps' : ps, e) = False
+isCon
+:: equation -> bool
+isCon q
+getCon
+=~(isVar q)
+:: equation -> constructor
+getCon (CON c ps' : ps, e)= c
+5.3.4 Variable Names
+We need some way of generating the new variable names, u1, u2, and so on.
+To do this we introduce a function makeVar that, given a number, returns a
+variable name.
+makeVar
+:: num -> variable
+makeVar k = "_u" ++ show k
+For example, (makeVar 3) returns '_u3'. Here we preface each new variable
+name with '_' to avoid it being confused with any variable already in the
+program.
+5.3.5 The Functions partition and foldr
+The implementation of the mixture rule uses a function called partition. The
+call
+(partition f xs) returns
+list
+[xs1, ..., XSn] such
+that
+XS = XS1 ++ ... ++ xsn, and such that f x = f x' for any elements x and x'
+in xsi, i from 1 ton, and such that f x # f x' for any elements x in xs; and x' in
+XS1+1, i from 1 ton-1. For example,
+partition odd [1,3,2,4,1] = [ [1,3], [2,4], [1] ]
+The function partition is defined as follows:
+partition
+partition f []
+:: (* -> * *) -> [*] -> [ [*] ]
+partition f [x]
+= []
+=
+[ [x] ]
+partition f (x:x':xs) = tack x (partition f (x':xs)), f x = f x'
+= [x] : partition f (x':xs),
+otherwise
+tack x xss
+= (x : hd xss) : t xss

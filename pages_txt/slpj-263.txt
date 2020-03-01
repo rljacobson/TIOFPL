@@ -1,0 +1,44 @@
+Section 16.1 The SK compilation scheme
+263
+16.1.2 Compilation and Implementation
+The S, K and I transformations together constitute a complete compilation
+algorithm (the SK compilation algorithm), which will transform any lambda
+expression into an expression involving only S, K, I and constants!
+Here, then, is the SK compilation algorithm to compile an expression e:
+WHILE e contains a lambda abstraction DO
+(1) Choose any innermost lambda abstraction of e.
+(2) If its body is an application, apply the S-transformation.
+(3) Otherwise its body must be a variable or constant, so apply
+the K or I transformation as appropriate.
+END
+By transforming the innermost lambda abstractions first we ensure that the
+body of the chosen lambda abstraction contains no lambdas. This, inciden
+tally, means that we do not run into any a-conversion problems, either during
+compilation or evaluation of the combinator expression; a very desirable
+property in view of the subtle problems encountered in Chapter 2.
+As an example, let us compile the expression ((Ax. + x x) 5).
+(Ax. + x x) 5
+S (Ax. + x) (Ax.x) 5
+S (S (Ax. +) (Ax.x)) (Ax.x) 5
+s (S (\x. +) 1) (Ax.x) 5
+X
+S (S (\x.+) 1) 1 5
+S (S (K +) 1) 15
+The successive lines show the state of the expression at successive iterations of
+the algorithm's WHILE loop. To reassure ourselves that the algorithm has
+produced an equivalent expression, we can evaluate the result using the
+reduction rules for the combinators:
+S (S (K +) 1) 1 5
+S (K +) 1 5 (1 5)
+K + 5 (1 5) (1 5)
++ (1 5) (1 5)
++ 5 (1 5)
++ 5 5
+T T
+10
+To summarize, we have developed a compilation algorithm which will
+compile any expression into an expression involving only S, K, I and constants
+(including built-in functions). All the variables have disappeared! Recursion
+may be dealt with using Y, as previously explained in Chapter 6. Y is then
+treated as a built-in function by the combinator compilation algorithm.
+Figure 16.2 expresses the SK compilation algorithm more formally using

@@ -1,0 +1,42 @@
+Section 4.2 Translating Miranda into the enriched lambda calculus
+57
+proofs by structural induction [Burstall, 1969] and program transformation
+[Burstall and Darlington, 1977]. It was incorporated into many later
+languages such as Hope, KRC, ML, Miranda and Orwell.
+4.2 Translating Miranda into the Enriched Lambda Calculus
+We must now demonstrate how to translate Miranda function definitions
+involving pattern-matching into the enriched lambda calculus. In the process
+of doing so we will introduce pattern-matching lambda abstractions and the [
+operator, two of the constructs in the enriched lambda calculus whose
+explanation was postponed.
+4.2.1 Introduction to Pattern-matching
+We begin this section by illustrating some further aspects of pattern-
+matching, which have to be handled by an implementation. (Not all the
+illustrations should be taken as examples of good programming style. Some
+happen!)
+are expressly chosen to demonstrate all the possible nasty things that can
+Recall the definition of reflect:
+reflect (LEAF n)
+= LEAF n
+reflect (BRANCH t1 12) = BRANCH (reflect 12) (reflect t1)
+The terms (LEAF n) and (BRANCH t1 12) occurring on the left-hand side of
+these equations are called patterns. When reflect is applied to an argument, the
+argument is first evaluated to see whether it matches the pattern (LEAF n) or
+(BRANCH t1 12). It will certainly match one or the other, because the type-
+checker ensures that reflect is only applied to objects of type (tree *), for some
+type *. For example, if reflect is applied to an expression which evaluates to
+bound to E2.
+(BRANCH E1 E2), the second equation is selected, with t1 bound to E; and 12
+In the preceding example, the order in which the equations were written
+definition
+was immaterial, but this is not always the case. Consider the Miranda function
+factorial 0 = 1
+factorial n = n * factorial (n-1)
+The order of the equations in this definition is significant. In the evaluation
+of (factorial x), there are two cases to choose from: either x matches 0 (that is, x
+evaluates to 0), so the first equation is chosen, or it does not, so the second
+case is chosen with n bound to x. The equations are tried out one at a time,
+from top to bottom. If they had been written in the other order then the first
+equation would always match. In this situation we say that the patterns
+overlap. (As we shall see in Chapter 5, there are good reasons to avoid writing
+overlapping patterns, but occasionally they prove useful. )

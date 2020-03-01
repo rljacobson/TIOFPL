@@ -1,0 +1,41 @@
+Section 20.6 Avoiding EVALs
+353
+$F X = IF (= x 0) 0 ($F (- x 1))
+$F is clearly strict in x, and the strictness analyzer can spot this. So the
+definition as annotated by the strictness analyzer would look like this:
+$F x = IF ! (= ! x ! 0) 0 ($F ! (- ! x ! 1))
+Hence, when $F is called recursively, its argument is known to be already
+evaluated. However, $F does not know that this is always true, so it will go
+ahead and call EVAL on its parameter during the calculation of (= x 0).
+What we would like is another supercombinator $F_NOEVAL which
+behaves just like $F except that it assumes that its argument is evaluated
+already. Then we could use $F_NOEVAL for the recursive call, and avoid the
+redundant evaluation of x.
+$F_NOEVAL is so like $F that it can share much of its code. All that is needed
+is to move the EVAL of x to the beginning of the code for $F, and then
+$F_NOEVAL can be implemented as an entry point to $F just after this
+EVALuation. This suggests that
+the code for a supercombinator should begin with EVALs for each argument
+in which the supercombinator is strict.
+This requires that:
+(i) The strictness analyzer annotates supercombinator definitions as well as
+annotated:
+application nodes with strictness information. For example, $F might be
+$F ! X = ..
+to indicate that $F was strict in x.
+(ii) The information that certain arguments had been evaluated is kept in the
+context (o) using the mechanism outlined in the previous section.
+Having evaluated x at the beginning, we do not want to re-evaluate it!
+(iii) The NOEVAL entry of a function is used when we know that all its strict
+arguments are evaluated. The appropriate version of the function can be
+selected by RS or ES (in the general case), depending on whether its
+arguments are known to be evaluated. On entry to the function, the
+arguments are held in the (anonymous) top few stack locations, which is
+why o describes which stack locations are evaluated (rather than which
+variables are evaluated). Note: this optimization applies to built-in
+functions as well.
+Experience with the Ponder compiler suggests that this optimization turns out
+to be extremely worthwhile in practice.
+A further nice benefit is that, since many EVALs are moved to the beginning
+of the code for a function, the main body of code is less broken up with EVALS
+(which, remember, are tiresome - see Section 19.3.3).

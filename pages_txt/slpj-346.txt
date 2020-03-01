@@ -1,0 +1,48 @@
+348
+Chapter 20 Optimizations to the G-machine
+Now we can proceed as follows:
+RI[ FATBAR E1 E2 ] p d j s
+= RI E: ]pdLd;
+LABEL L; RI[ E2 ]] p d j s
+together with the rule
+RI[ FAIL ]] pd j s
+= POP (d-s); JUMP j
+The effect is the same as before. The 'POP (d-s)' instruction sets the stack to
+the level expected by the code at j, while the 'JUMP j' instruction sets the
+program counter; together they put the G-machine into the same state as it
+would have had when executing the code at j in the first version.
+The code is considerably more efficient, because the FAIL data value can no
+longer be generated, and hence it need never be tested for, nor do we need to
+provide a representation for it.
+All other R scheme cases pass on j and s unchanged. Similar optimizations
+apply to the E, RS and ES schemes. To avoid complicating all the compilation
+schemes with the extra parameters j and s, we will not incorporate the
+modifications in subsequent figures. However, Figure 20.7 summarizes the
+modifications required.
+The optimization is rather subtle, and its formal justification would be
+relatively more difficult than the others we are studying. At the very least it
+relies on the observation, made in Section 5.4.2, that FAIL can only be
+returned if it appears explicitly in the expression.
+RI FATBAR E1 E2 1 p d j s
+= RI E1 ] pdLd;
+LABEL L; R[ E2 1 p d j s
+R[[ FAIL ] p dj s
+= POP (d-s); JUMP j
+RSI[ FATBAR E1 E2 1 p d n j s
+= RSI E1 1 pdnLd;
+LABEL L; RS[ E2 I p d n j s
+RS[ FAIL ] pdnjs
+= POP (d-s); JUMP j
+E[ FATBAR E: E2 ]] p d j s
+= EI E1 ] pd L d; JUMP L1;
+LABEL L; E[[ E2 ] p d j s;
+LABEL L1
+E[ FAIL ] pd j s
+= POP (d-s); JUMP j
+ES[ FATBAR E1 E2 ] p d n j s
+= ES[[ E: ] pd n L d; JUMP L1;
+LABEL L; ES[[ E2 ] p d n j s;
+LABEL L1
+ES[ FAIL ] pdn js
+= POP (d-s); JUMP j
+Figure 20.7 Modifications to R, RS, E and ES schemes for FATBAR

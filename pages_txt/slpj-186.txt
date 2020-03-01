@@ -1,0 +1,30 @@
+186
+Chapter 10 Program Representation
+to the argument 4, giving a function (+ 4), which is then applied to the
+argument 2. Figure 10.1 shows a slightly more complicated example.
+Figure 10.1 The tree of (+ 3 (* 2 8))
+A lambda abstraction (Ax. body) is represented thus:
+AX
+body
+The Ax tells that the node is a lambda abstraction and gives the formal
+parameter.
+The graph of the expression (CONS E1 E2) will look like this
+E2
+CONS
+E1
+(E1 and Ez stand for arbitrary expressions, as usual. ) The result of evaluating it
+will be a CONS cell, which we depict like this:
+E2
+application).
+where the ":' tag labels the node as a CONS cell (just as @ labels a node as an
+10.2 The Graph
+The process of reduction performs successive transformations on the syntax
+tree. During this process the tree becomes a graph, for reasons that will
+become clear in Chapter 12. We use the term 'graph' here in the sense of
+'network', a collection of nodes connected together by some directed edges.
+Figure 10.2 shows an example graph.
+Node A
+Node B
+-Node C
+Node D
+Figure 10.2 An example graph

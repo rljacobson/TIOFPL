@@ -1,0 +1,45 @@
+252
+Chapter 15 Fully Lazy Lambda-lifting
+Notice that we cannot eliminate the op parameter of $foldl, since it is used
+twice on the right-hand side.
+15.5 Implementing Fully Lazy Lambda-lifting
+We now turn our attention to algorithms for achieving the transformations
+required by fully lazy lambda-lifting.
+15.5.1 Identifying the Maximal Free Expressions
+How can we identify the maximal free expressions of a lambda abstraction?
+We can use the concept of lexical level-number introduced in Section 13.3.2,
+and compute the lexical level of expressions as well as variables. The lexical
+level of an expression should be the maximum of the levels of the free
+variables within it. Then when lambda-lifting a lambda abstraction at level n,
+we should take out as extra parameters any subexpressions within the body
+whose level is less than n.
+For example, in the base of the lambda abstraction for g, which is
+Ax. Ay . + y (sqrt x)
+the Ax abstraction is at level 1 and the Ay abstraction is at level 2. Hence the
+various subexpressions have level-numbers as follows
++
+level 0
+(+ y)
+level 2
+sqrt
+level 0
+(sqrt x)
+level 1
+(+ y (sqrt x))
+level 2
+To summarize:
+(i) The level-number of a constant is 0.
+ii) The level-number of a variable is the textual nesting depth of the lambda
+which binds it.
+(iii) The level-number of an application (f x) is the maximum of the level-
+numbers of f and x.
+Given an expression E, its native lambda abstraction is the enclosing lambda
+abstraction whose level-number is the same as that of E. Looking 'outwards
+from E' it is the first lambda abstraction which binds any variable in E.
+All the maximal free expression information can be determined, and
+lambda-lifting performed, in a single tree-walk over the expression:
+(i) On the way down the tree, the level-number of each lambda abstraction
+is recorded.
+(ii) On the way up, the level of each expression is computed, using the
+environment and the levels of its subexpressions. If it is applied to
+another expression with the same level-number, then the two are

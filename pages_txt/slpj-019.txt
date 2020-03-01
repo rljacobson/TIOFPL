@@ -1,0 +1,36 @@
+18
+Chapter 2 The Lambda Calculus
+functions can also be modelled as lambda abstractions. This is rather satis-
+fying from a theoretical viewpoint, but all practical implementations support
+built-in functions for efficiency reasons.
+2.2.2.4 Conversion, reduction and abstraction
+We can use the B-rule backwards, to introduce new lambda abstractions, thus
++ 41 + (Ax. + x 1) 4
+This operation is called B-abstraction, which we denote with a backwards
+reduction arrow '<-'. B-conversion means B-reduction or B-abstraction, and
+we denote it with a double-ended arrow ''. Thus we write
++ 41 , (Ax. + x 1) 4
+The arrow is decorated with B to distinguish B-conversion from the other
+forms of conversion we will meet shortly. An undecorated reduction arrow
+"-' will stand for one or more B-reductions, or reductions of the built-in
+functions. An undecorated conversion arrow *-' will stand for zero or more
+conversions, of any kind.
+Rather than regarding B-reduction and B-abstraction as operations, we can
+regard B-conversion as expressing the equivalence of two expressions which
+look different' but 'ought to mean the same'. It turns out that we need two
+more rules to satisfy our intuitions about the equivalence of expressions, and
+we turn to these rules in the next two sections.
+2.2.3 Alpha-conversion
+Consider the two lambda abstractions
+(Ax. + x 1)
+and
+(ny. + y 1)
+Clearly they 'ought' to be equivalent, and a-conversion allows us to change
+the name of the formal parameter of any lambda abstraction, so long as we do
+so consistently. So
+(Ax. + x 1) - (Ay . + y 1)
+where the arrow is decorated with an a to specify an a-conversion. The newly
+introduced name must not, of course, occur free in the body of the original
+lambda abstraction. a-conversion is used solely to eliminate the sort of name
+clashes exhibited in the example in the previous section.
+Sometimes a-conversion is essential (see Section 2.2.6).

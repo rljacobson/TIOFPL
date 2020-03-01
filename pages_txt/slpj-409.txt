@@ -1,0 +1,43 @@
+Section 24.2 Parallel functional programming
+411
+in principle they could all be reduced simultaneously. Thus the hope offered
+by functional languages is that
+parallel execution of functional programs, through concurrent graph
+reduction, may be possible without adding any new language constructs or
+detailed program tuning.
+If taken without qualification this statement is rather misleading, since it
+seems to promise 'parallelism without tears', and as we remarked above,
+cooperation is always expensive. We can, however, take the statement as
+highlighting an opportunity, namely that functional programming offers a
+fruitful line of approach to the challenge of parallelism.
+The idea of concurrent execution of programs without adding new language
+constructs is not new. The Fortran compiler for the Cray-1 vector processor
+is designed to spot vectorizable sections of programs written in (almost)
+ordinary Fortran. However, as we have remarked already, the effective
+way that
+use of the Cray relies on the programmer writing his program in such a
+(i) it is vectorizable;
+(ii) the compiler can spot that it is vectorizable.
+We hope that in the case of functional languages the parallelism is more
+general, so that the programmer's task is made easier. First, therefore, we will
+discuss the task of writing parallel functional programs.
+24.2.2 Writing Parallel Functional Programs
+It is tempting to believe that an arbitrary functional program would run much
+faster on a parallel graph reduction machine. This comforting belief is quite
+erroneous [Clack and Peyton Jones, 1985]. Many functional programs are
+essentially sequential (that is, at any moment there are few redexes in the
+graph). For example, an insertion sort program cannot insert the next
+element into the result until the previous insertion has completed (or at least
+partly completed). It is simply unreasonable to expect any old functional
+program to run fast on a parallel machine.
+In order to achieve good parallel performance the program must contain
+algorithmic parallelism. That is, the algorithm must contain gross inherent
+parallelism. The most obvious sort of algorithmic parallelism is given by
+divide and conquer algorithms, which divide the task at hand into two or more
+independent subtasks, solve these independently, and then combine the
+results to solve the original task. A standard example of such an algorithm is
+quicksort, which splits the set to be sorted into two subsets which can be
+sorted independently. Other examples include any kind of search algorithm
+(which covers many artificial intelligence applications) and large numerical
+computations. Experiments confirm that substantial parallelism is obtainable
+[Tighe, 1985; Clack and Peyton Jones, 1985].

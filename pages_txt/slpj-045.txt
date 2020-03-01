@@ -1,0 +1,36 @@
+44 Chapter 3 Translating a High-level Functional Language into the Lambda Calculus
+The resulting expression is not an efficient implementation, and a more
+sophisticated compiler may wish to handle recursion in a different way
+(see Chapter 14). Keeping the recursion explicit using letrec allows scope
+for these optimizations.
+To summarize, all our implementations, except the very simplest, will
+require the program to be transformed into the ordinary lambda calculus
+augmented with simple let(rec)-expressions. This approach makes a dramatic
+contribution to the efficiency of the resulting implementations. On the other
+hand, little seems to be gained by augmenting the language still further.
+3.3 Translating Miranda into the Enriched Lambda Calculus
+A program consists of a set of definitions, together with an expression to be
+evaluated. To keep these two components of the program separate we will use
+a box, like this:
+Set of definitions
+Expression to be evaluated
+For example, we could compute twice the square of 5 with the following
+Miranda program:
+square n = n*n
+2 * (square 5)
+(Note: Miranda is an interactive language, and defines a 'program' to be a set
+of definitions, while the 'expression to be evaluated' is typed by the user. For
+the rest of this book, however, we will use 'program' to mean 'a set of
+definitions together with an expression to be evaluated'.) Proceeding
+informally, we can translate this Miranda program into the enriched lambda
+calculus quite easily, to produce the expression
+let square = An . * n n
+in (* 2 (square 5))
+We now introduce some notation to help describe the translation process.
+Consider the translation of the Miranda expression (2 * (square 5)) into the
+lambda expression (* 2 (square 5)). We may regard this translation process
+as a function TE, which takes the Miranda expression as its input, and
+produces the lambda expression as its output. We write the translation like
+this:
+TE[[ 2 * (square 5) ] = * 2 (square 5)
+The double square brackets [[ ]] are used to enclose the Miranda expression,

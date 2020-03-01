@@ -1,0 +1,44 @@
+172
+Chapter 9 A Type-checker
+and must not be instantiated when instantiating the type scheme. As we
+remarked in Section 9.4, they behave in a similar way to the unknowns of
+a mathematical equation. For example, consider the simultaneous
+equations
+a1,1 X x1 +a1,2 X x2 = b1
+a2, 1 X X1 + 02,2 X X2 = b2
+We seek values for the unknowns x, and x2, by solving the equations, but
+they must be consistently instantiated, so that x, stands for the same value
+wherever it occurs (and likewise x2).
+By analogy, we will refer to the non-schematic variables of a type
+scheme as unknowns. They are the type variables whose values we seek
+by solving the system of type constraints implied by the structure of an
+expression.
+(In papers about type-checking, schematic variables are often called generic
+variables, and unknowns are called non-generic. We mention this only to
+make it easier to link up with the literature, and will not use that terminology
+here.)
+There is a partial analogy between type schemes and lambda abstractions.
+The schematic variables of a type scheme correspond to the formal parameter
+of a lambda abstraction, and the unknowns of a type scheme correspond to
+the free variables of a lambda abstraction. Applying a lambda abstraction to
+an argument involves constructing an instance of its body, substituting the
+argument for occurrences of the formal parameter (but copying free variables
+unchanged). This is very similar to the process of instantiating a type scheme,
+which involves constructing an instance of the type scheme template,
+substituting fresh type variables for occurrences of the schematic variables
+(but copying unknowns unchanged).
+We will represent type schemes by objects of the type
+type_scheme ::= SCHEME [tvname] type_exp
+A type variable occurring in a type scheme (SCHEME scvs e) is schematic if
+its name occurs in the list scvs, otherwise it is an unknown.
+unknowns_scheme :: type_scheme -> [tvname]
+unknowns_scheme (SCHEME scvs t) = tvars_in t $bar scvs
+where
+bar :: [*] -> [*] -> [*]
+bar xs ys = [ x <- xs I ~ (x $in ys) ]
+in :: * -> [*] -> bool
+in x' []
+= False
+in x' (x:xs) = True,
+X = X'
+= x' $in xs

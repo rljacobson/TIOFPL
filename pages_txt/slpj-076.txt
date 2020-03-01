@@ -1,0 +1,47 @@
+Section 4.4 Introducing case-expressions
+75
+testing for FAIL each time, as each equation in the function definition is tried in
+turn.
+Frequently, however, a single test would suffice to select the appropriate
+equation. For example, recall again the reflect function:
+reflect (LEAF n)
+= LEAF n
+reflect (BRANCH t1 t2) = BRANCH (reflect t2) (reflect t1)
+To apply reflect, it would suffice to test the argument, and select the first or
+second right-hand side according to whether it was a LEAF or a BRANCH.
+In this section, therefore, we introduce case-expressions, a convenient
+construct for describing a particularly simple form of pattern-matching which
+has this single-test property. Chapter 5 will then demonstrate how to translate
+Miranda function definitions into case-expressions, and Chapter 6 will show
+how case-expressions can be transformed into the ordinary lambda calculus.
+The net effect will be a significant improvement in the efficiency of the
+resulting program.
+Case-expressions are a notation for describing a simple form of pattern-
+matching. To begin with an example, we may translate the definition of reflect,
+using a case-expression, in the following way:
+reflect = At. case t of
+LEAF n
+BRANCH t1 12
+=>
+LEAF n
+BRANCH (reflect 12) (reflect t1)
+The important points about a case-expression are that the patterns are simple
+(that is, not nested) and exhaustive (that is, they cover all constructors of the
+type). This makes them particularly simple to implement.
+The general form of a case-expression is
+case v of
+C1 V1,1 . . . V1.r1
+E1
+Cn Vn, 1 . . . Vn,m = En
+where v is a variable, E1 ... En are expressions, the vij are distinct variables,
+and the C1 . . . cn are a complete family of constructors from a structured type
+declaration. The syntax of case-expressions was defined in Figure 3.2.
+Operationally, to evaluate this case-expression, v is first evaluated. Then,
+according to what constructor v was built with, the appropriate Er is selected
+and evaluated, with the vi,j bound to the components of v.
+Formally, the construct is defined to be equivalent to
+((X(C1 V1,1 . . . V1.M1) . E1) v)
+I ((A(Cn Vn,1 . . . Vn,mn) . En) v)
+but a case-expression is far more readable!
+Intuitively, case-expressions correspond to a multiway jump, whereas the
+equivalent expression using I corresponds to a sequential 'if. .. then...elseif. . .'

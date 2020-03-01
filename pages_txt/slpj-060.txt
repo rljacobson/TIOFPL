@@ -1,0 +1,49 @@
+Section 4.2 Translating Miranda into the enriched lambda calculus
+59
+starting with the next equation. Applying funnyLastEit to the list [1,2] would
+cause this behavior, since the first equation would match, but the guard fails,
+so the second and then third equations are tried.
+Finally, variables may be repeated on the left-hand side of an equation. For
+example, the function noDups eliminates adjacent duplicate elements in a list:
+noDups []
+[]
+noDups [x]
+=
+= [x]
+noDups (x:x:xs) = noDups (x:xs)
+noDups (x:y:ys) = x : noDups (y:ys)
+The third equation matches only if the first two elements of the argument list
+condition.
+are equal; the repeated use of x on the left-hand side implies the equality
+follows:
+We may summarize the features that the implementation must support as
+(i) overlapping patterns;
+) constant patterns;
+nested patterns;
+0333008
+multiple arguments;
+non-exhaustive sets of equations;
+conditional equations;
+vii) repeated variables.
+Given these complications it is unwise to rely on a purely intuitive under-
+standing of what a function definition using pattern-matching means. The rest
+of this section and the next is therefore devoted to providing a formal
+semantics of pattern-matching.
+4.2.2 Patterns
+First of all, we will need a precise definition of patterns.
+DEFINITION
+A pattern p is:
+or
+either a variable v,
+or
+a constant k, such as a number, a character, a boolean and so on.
+a constructor pattern, of the form (c pi . . . pr) where c is a con-
+structor of arity r, and pi, ..., Pr are themselves patterns.
+All of the variables in a pattern should be distinct.
+A pattern of the form (s pi . .. pr), where s is a sum constructor, is
+called a sum-constructor pattern, or sum pattern. A pattern of the form
+(t pi . .. Pr), where t is a product constructor, is called a product-
+constructor pattern, or product pattern.
+Note: according to this definition, patterns may not contain repeated
+variables, although Miranda allows them to do so. This point is discussed
+in Section 4.2.7.

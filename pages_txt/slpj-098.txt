@@ -1,0 +1,40 @@
+Section 5.4 Optimizations
+97
+we can easily transform conditional equations to avoid the use of I and
+FAIL, and we show how to do so below.
+(ii) In the variant of the pattern-matching compiler described in the last
+section, where the introduction of I and FAIL seems unavoidable. This
+problem motivates the discussion in Section 5.5, in which we describe a
+restricted class of function definitions that can always be compiled
+without using I and FAIL.
+5.4.2.1 Rules for transforming I and FAIL
+We now give some rules for transforming expressions involving I and FAIL to a
+of I.
+simpler form. In all cases their correctness follows directly from the semantics
+First, we may eliminate I if FAIL cannot occur on the left:
+E1 I E2 = E1
+provided that E1 cannot return FAIL.
+For example, this rule is used to derive the optimized version of the empty
+rule in Section 5.2.4.
+Second, we may eliminate I if FAIL definitely occurs on the right or left:
+E I FAIL = E and
+FAIL IE = E
+For example, these rules can be used to simplify the final definition of unwieldy in
+Section 5.4.1.
+Third, there is the following useful transformation involving IF:
+(IF E: E2 E3) | E = IF E1 E2 (E3 1 E)
+provided that neither E, nor E2 can return FAIL.
+attend to.
+This rule will be useful in simplifying conditional equations, which we now
+5.4.2.2 Eliminating I and FAIL from conditional equations
+The empty rule for match, which was described in Section 5.2.4, resulted in an
+expression of the form
+E1 0 .. . I Em I E
+Now, the E are just the right-hand sides of the original equations. If a
+right-hand side consisted of a set of guarded alternatives without a final
+'otherwise' case, then it will have been translated to the form:
+IF G1 A, (IF .. . . (IF Gg Ag FAIL) . .. )
+where g is the number of alternatives (see Section 4.2.6). If there was a final
+'otherwise' case (that is, a final alternative with no guard, so that the right-
+hand side never fails), then it would have been translated to the form:
+IF Gi A1 (IF . .. (IF Gg-1 Ag-1 Ag) . . . )

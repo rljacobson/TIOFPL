@@ -1,0 +1,42 @@
+Section 22.3 Coping with recursion
+389
+down to deciding when this fixed point has been reached. Notice that the
+application of any f#1 to any arguments will always terminate.
+The second bad method says 'we have reached a fixed point when the set of
+variables in which the approximations are strict remains unchanged from one
+because
+approximation to the next'. This copes with the previous counterexample,
+f#o is strict in { x, y, z }
+f#, is strict in { x, y }
+f#2 is strict in { y )
+f#3 is strict in {y }
+and we conclude that f# itself is strict in y alone. This method is attractive
+because it is quite easy to compute the set of strict variables for a function
+from its boolean expression. Unfortunately, this is not a genuine check for a
+fixed point, as the following counterexample shows:
+fxyz p = if (= p 0) (+ x z) (+ (fy 0 0 (- p 1)) (f z z 0 (- p 1)))
+The test is better, so the counterexample is more contorted! Working out the
+details of this example is left as an exercise. The results are
+f*o is strict in { x, y, z, p }
+f#1 is strict in { x, z, p }
+f#2 is strict in { z, p }
+f#*3 is strict in { z, p }
+f#4 is strict in {p }
+The second and third approximations are the same, so we might conclude that
+the AKC has converged. However, the fourth approximation shows that this
+is false. We call such false convergence a plateau, and it is these plateaus that
+defeat the second bad method.
+22.3.3 The Right Way
+The only correct way to find a fixed point is to assure ourselves that
+f#n X y z = f#n+1 x y z
+for any
+x, y, z
+This looks like an expensive test to perform, since there are 23 possible
+combinations of x, y and z, even in the first-order case. It turns out that in the
+worst case the cost of the test must be exponential in the number of arguments
+[Hudak and Young, 1986], but in practice it requires considerable contortion
+to invent examples with plateaus, so we expect rapid convergence in typical
+cases. A promising approach is therefore to develop representations and
+heuristics which will perform well in the common cases, and will still give
+correct answers (albeit more slowly) in the difficult cases.
+This question is discussed at some length in Clack and Peyton Jones [1985].

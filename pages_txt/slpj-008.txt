@@ -1,0 +1,27 @@
+Chapter 1 Introduction
+References
+Abelson, H., and Sussman, G.J. 1985. Structure and Interpretation of Computer
+Programs. MIT Press.
+Augustsson, L. 1984. A compiler for lazy ML. Proceedings of the ACM Symposium on
+Lisp and Functional Programming, Austin. August, pp. 218-27.
+Burstall, R.M., MacQueen, D.B., and Sanella, D.T. 1980. Hope: an experimental
+applicative language. CSR-62-80. Department of Computer Science, University of
+Edinburgh. May.
+Darlington, J. 1984. Functional programming. In Distributed Computing. Duce
+(Editor). Academic Press.
+Fairbairn, J. 1985. Design and implementation of a simple typed language based on the
+lambda calculus. PhD thesis, Technical Report 75. University of Cambridge. May.
+Glaser, H., Hankin, C., and Till, D. 1984. Principles of Functional Programming.
+Prentice-Hall.
+Gordon, M.J., Milner, A.J., and Wadsworth, C.P. 1979. Edinburgh LCF. LNCS 78.
+Springer Verlag.
+Henderson, P. 1980. Functional Programming. Prentice-Hall.
+Turner, D.A. 1976. The SASL language manual. University of St Andrews. December.
+Turner, D.A. 1982. Recursion equations as a programming language. In Functional
+Programming and Its Applications, Darlington et al. (editors), pp. 1-28. Cam-
+bridge University Press.
+Turner, D.A. 1985. Miranda - a non-strict functional language with polymorphic
+types. In Conference on Functional Programming Languages and Computer
+Architecture, Nancy, pp. 1-16. Jouannaud (editor), LNCS 201. Springer Verlag.
+Wadler, P. 1985. Introduction to Orwell. Programming Research Group, University of
+Oxford.

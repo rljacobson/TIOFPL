@@ -1,0 +1,41 @@
+12
+Chapter 2 The Lambda Calculus
+These include arithmetic functions (such as +, -, *, /) and constants (0, 1,
+. .), logical functions (such as AND, OR, NOT) and constants (TRUE,
+FALSE), and character constants ('a', 'b', . . .). For example
+5 4-
+1
+AND TRUE FALSE - FALSE
+We also include a conditional function, IF, whose behavior is described by the
+reduction rules:
+IF TRUE E. E. -
+IF FALSE E. E. ->
+We will initially introduce data constructors into the lambda calculus by
+using the built-in functions CONS (short for CONSTRUCT), HEAD and TAIL
+(which behave exactly like the Lisp functions CONS, CAR and CDR). The
+constructor CONS builds a compound object which can be taken apart with
+HEAD and TAIL. We may describe their operation by the following rules:
+HEAD (CONS a b) ->
+a
+TAIL (CONS a b) -> b
+We also include NIL, the empty list, as a constant. The data constructors will
+be discussed at greater length in Chapter 4.
+The exact choice of built-in functions is, of course, somewhat arbitrary, and
+further ones will be added as the need arises.
+2.1.4 Lambda Abstractions
+The only functions introduced so far have been the built-in functions (such as
++ and CONS). However, the lambda calculus provides a construct, called a
+lambda abstraction, to denote new (non-built-in) functions. A lambda
+abstraction is a particular sort of expression which denotes a function. Here is
+an example of a lambda abstraction:
+(Ax . + x 1)
+The A says 'here comes a function', and is immediately followed by a variable,
+x in this case; then comes a . followed by the body of the function, (+ x 1) in
+this case. The variable is called the formal parameter, and we say that the
+binds it. You can think of it like this:
+X
++
+X
+That function of x which adds x to 1
+A lambda abstraction always consists of all the four parts mentioned: the A,
+the formal parameter, the . and the body.

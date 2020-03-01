@@ -1,0 +1,43 @@
+418
+Chapter 24 Parallel Graph Reduction
+get around to evaluating Ec! In other words, we must also be careful that we do
+not employ so many agents on our job creation scheme that other work that is
+required is not done. The machine would not deliver incorrect answers, but it
+might take much longer to deliver the correct result.
+This suggests that we would need to divide tasks into two classes, vital tasks
+and speculative tasks. The results of vital tasks are known to be needed, while
+the results of speculative tasks may or may not be needed. Vital tasks should
+have a higher priority than speculative tasks, so that only if the machine has
+spare resources will speculative tasks be executed. Seen in this light, con-
+tasks.
+servative parallelism is simply a regime in which there are no speculative
+24.4.2.2 Managing speculative tasks
+At first, introducing a two-tier priority system seems quite innocuous, but in
+fact it poses some significant challenges:
+(i) A speculative task may become vital when it is subsequently discovered
+that its result is needed. Thus its priority must be upgraded. This is easy
+enough, but in addition some (but not all) of the tasks which it has
+already sparked must also become vital. Identifying exactly which of
+these subtasks must become vital is not easy, especially as they are being
+created dynamically.
+(ii) A speculative task may be discarded when it is subsequently discovered
+that its result is not needed after all. In this case the task must be killed,
+since it will otherwise continue to consume machine resources per-
+forming useless work. Furthermore, all the tasks it has sparked must also
+be killed, unless they are evaluating a piece of graph that is shared, and
+whose value is still required. Identifying this collection of subtasks is not
+easy either, especially as they might conceivably breed faster than they
+can be killed.
+Speculative tasks therefore add a considerable resource-management
+problem. Nevertheless, some parallel machines are taking this approach
+[Hudak, 1984].
+24.4.3 Too Little Parallelism
+The potential problem with conservative parallelism is the danger that too
+little parallelism will be generated to use effectively the parallelism provided
+by the implementation.
+However, as we remarked earlier, the major source of parallelism in any
+program is the algorithmic parallelism introduced by the programmer. This
+parallelism is normally of a conservative nature, in the sense that the results
+will be required of all the parallel computations which the programmer has in
+mind. Hence, sufficient conservative parallelism should be available.
+In many functional programs, much of this parallelism is obtained by

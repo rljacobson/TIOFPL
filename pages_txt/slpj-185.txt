@@ -1,0 +1,18 @@
+Ten
+PROGRAM REPRESENTATION
+At this stage, we assume that we have successfully translated the functional
+program into a lambda expression. In the next few chapters we will show how
+to execute the program, reducing the lambda expression to normal form.
+First of all we have to establish some representation for the lambda
+expression, as it is held in the computer's memory. This chapter outlines the
+possibilities.
+10.1 Abstract Syntax Trees
+In all implementations of graph reduction, the expression to be evaluated is
+held in the machine in the form of its syntax tree.
+The leaves of the tree are constant values (such as 0, 'a', TRUE), built-in
+functions (such as +, -, *), or variable names.
+The application of a function f to an argument x is represented thus:
+X
+The '@' sign is called the tag of the node, and indicates that the node is an
+application. We deal with functions of several arguments by currying:
+This tree denotes the expression (+ 4 2), which shows the function + applied

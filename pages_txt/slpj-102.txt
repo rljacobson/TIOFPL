@@ -1,0 +1,46 @@
+Section 5.5 Uniform definitions
+101
+For example, the order of the equations would matter in dummy if the 1 in the
+second equation were changed to a 2. Again, the proof of the theorem is a
+straightforward induction. These two theorems give us a simpler way of
+characterizing uniform equations, without referring to the pattern-matching
+compiler. Namely, a definition is uniform if and only if its left-hand sides are
+such that the order of the equations does not matter.
+It is also possible to show that every uniform definition is non-overlapping.
+The converse is not true: the function diagonal is non-overlapping but is not
+uniform. Researchers have often referred to 'lack of overlapping' as an
+important property, but perhaps they should refer to 'uniformity' instead,
+matter.
+since this is the property that guarantees that the order of equations does not
+Uniform equations are related to strongly left-sequential equations as
+defined by Hoffman and O'Donnell [1983], which are in turn related to
+sequential equations as defined by Huet and Levy [1979].
+Notice that although uniform equations are independent of 'top-to-bottom
+order, they still have a 'left-to-right' bias. For example, although the
+following definition is uniform:
+xor False x
+= X
+xor True False = True
+xor True True = False
+the same definition with the arguments interchanged is not:
+xor' x
+False = x
+xor' False True = True
+xor' True True = False
+Of course, we can always get around this bias by using extra definitions to
+rearrange the arguments. For example, we can define
+xor" x y = xor y x
+and then xor" is equivalent to xor', and both xor" and xor have uniform
+definitions.
+The existence of left-to-right bias is due to the semantics of pattern-
+matching that we have chosen. A different definition of pattern-matching that
+avoids left-to-right bias is possible; see Huet and Levy [1979].
+There is a second reason why uniform equations are important: they
+are easier to implement. The problems with implementing non-uniform
+definitions have been referred to implicitly in previous sections. In summary,
+they are as follows:
+(i) The resulting case-expressions may examine some variables more than
+(ii)
+once (see Section 5.2.6).
+The compiler must use a modified constructor rule to avoid duplicating
+the right-hand side of equations (see Section 5.4.1).

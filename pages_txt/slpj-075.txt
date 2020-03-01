@@ -1,0 +1,45 @@
+74
+Chapter 4 Structured Types and the Semantics of Pattern-matching
+Now, using lazy product-matching, the reduction of (addPair (PAIR 3 4))
+goes as follows:
+addPair (PAIR 3 4)
+(A(PAIR x y).+ x y) (PAIR 3 4)
+(Ax. Ay. + x y) (SEL-PAIR-1 (PAIR 3 4)) (SEL-PAIR-2 (PAIR 3 4))
+uttTT
+(Ay. + (SEL-PAIR-1 (PAIR 3 4)) y) (SEL-PAIR-2 (PAIR 3 4)
++ (SEL-PAIR-1 (PAIR 3 4)) (SEL-PAIR-2 (PAIR 3 4))
++ 3 (SEL-PAIR-2 (PAIR 3 4))
+1
++
+3 4
+This takes one reduction to apply the addPair lambda abstraction, and then
+two further reductions (subsequently) to reduce the two applications of
+SEL-PAIR. Contrast this with the effect of using strict product-matching:
+addPair (PAIR 3 4)
+(\(PAIR x y). + x y) (PAIR 3 4)
+(Ax. Ay . + x y) 3 4
+tttt
+(Ay . + 3 y) 4
++ 3 4
+7
+This uses fewer reductions, since the application of the addPair lambda
+abstraction also takes the argument apart. Furthermore, it uses less store
+since no temporary applications of SEL-PAIR are constructed. This suggests
+that we should use strict product-matching instead of lazy product-matching
+wherever this does not affect the semantics.
+In the case of addPair, it is clear that the argument will certainly be
+evaluated in the end, so it would do no harm to evaluate it at the time of
+function application (that is, to use strict product-matching). In general,
+whenever a function is strict in an argument (see Section 2.5.4) it is safe to use
+strict product-matching for that argument. The process of working out which
+functions are strict is called strictness analysis, and is discussed in Chapter 22.
+4.3.6 Summary
+This section has examined the semantics of pattern-matching in some detail,
+because much confusion has surrounded this area in the past. Figure 4.5
+summarizes the results of the section. The distinction between strict and lazy
+product-matching, and the use of I and FAIL, are both first described in
+Turner's thesis [Turner, 1981], but the present formulation based on
+structured types is due to the authors.
+4.4 Introducing case-expressions
+The transformations in the last section produce remarkably inefficient
+programs! The main reason for this is that pattern-matches are attempted,

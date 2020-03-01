@@ -1,0 +1,47 @@
+Section 20.9 Manipulating basic values
+357
+Even in an implementation which uses an unboxed representation of
+integers some work may have to be done to strip off the pointer bits before
+adding, and to add the pointer bit afterwards. This is much less serious than in
+the boxed case, but we would like to avoid it even so. For the rest of this
+section we will assume a boxed implementation, but everything applies
+(though with less weight) to an unboxed implementation.
+The inefficiency outlined above arises when we are manipulating basic
+values such as integers, characters, booleans and so on. A basic value with no
+box is called naked; those enclosed in a box are clothed. For efficiency reasons
+we would like to work with naked basic values wherever possible, only
+clothing them when unavoidable.
+We begin by defining explicit instructions to get naked basic values out of
+their boxes and to clothe them again. Thus the instruction GET takes the top
+item on the stack out of its box, leaving the result on top of the stack as a naked
+basic value. The instruction MKINT wraps an integer box around the top item
+on the stack. (In an unboxed implementation, these instructions would strip
+off and stick on the pointer bit. A trick that may help is to use a zero pointer bit
+for atoms, so that often nothing need be done to stick on the pointer bit.)
+We then redefine the instructions which operate on basic values, such as
+ADD, so that they operate on naked bit patterns. ADD will now take the top
+two words on the stack, treat them as 32-bit integers (or whatever), add them
+and put the result back on the stack. Clearly this is outside the hygienic world
+of graph reduction, but by the time such integers get back into the heap they
+will have been nicely boxed.
+How, then, can we compile our programs to use such instructions? We begin
+by defining a new compilation scheme B, which is just like E except that it
+leaves the result as a naked basic value on the stack. It therefore assumes that
+the result is indeed a basic value (and not a function, or a CONS cell, for
+example). We can obtain the B scheme by a direct transliteration of the E
+scheme (see Figure 20.10, which was prepared by performing minor edits on
+Figure 20.2). This assumes that certain G-code instructions, such as JFALSE,
+are altered to expect their arguments as naked basic values on the stack; this is
+discussed in detail below.
+The 'PUSHBASIC i' instruction pushes a naked basic value onto the stack,
+so one instruction suffices for basic values of all types. If B does not recognize
+the expression it is compiling, it evaluates it with E and then GETs the basic
+value out of its box.
+All that remains is to modify E and R to use B. They will use B in all contexts
+where the result is known to be a basic value. Figures 20.11 and 20.12 show the
+modifications required to the R and E schemes. Notice the way both R and E
+use B to compute the condition of an IF. E uses B to compute the results of all
+arithmetic operations, following it with a MKINT to clothe it. Finally, R has an
+optimization when the result of the whole supercombinator reduction is
+known to be an integer. In this case R uses B to compute the naked integer, and
+then uses 'UPDINT d' to update the root of the redex with the clothed value.

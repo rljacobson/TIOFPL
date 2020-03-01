@@ -1,0 +1,113 @@
+Index
+441
+failure
+of pattern-matching, 61
+HEAD, 12, 17, 300, 316, 323, 344
+of type-checker, 165
+head normal form, 199
+FALSE, 12
+heap, 192, 325, 338
+FAM (see Functional Abstract Machine)
+persistent, 282
+FATBAR, 125, 300, 347
+higher-order function, 390
+field, 52, 187, 325
+HNF (see head normal form)
+filter, 128, 435
+hole, 308, 351, 374
+fixed point, 26, 28, 388
+Hope, 2, 56, 80, 194
+of substitution, 167
+fixed-size cells (see cell, fixed size)
+fixpoint (see fixed point)
+I combinator, 260
+floating let(rec)s outwards (see let(rec)s,
++-transformation, 262
+floating)
+IF, 12, 105, 300, 317, 344
+formal methods, 136
+indirection cell, 214
+formal parameter, 12
+indirection node, 213, 217, 287, 334
+FP/M, 296
+infinite data structure, 194, 434
+frame pointer, 298
+infinite list, 195
+free occurrence, 17
+infinite types, 155
+freer, 230
+innermost spine reduction, 199
+free variable (see variable, free)
+input, 196, 197, 435
+free variable set, 250
+instance, 15, 157
+from-space, 282
+of lambda body, 207, 220
+full laziness, 5, 210, 220, 245, 267, 401
+instantiate function, 210, 220, 231
+delicacy of, 398
+instantiation, 210
+effect of recursion, 399
+lazy, 265
+redundant, 256
+intermediate code, 294
+Functional Abstract Machine, 378
+intermediate language, 2
+functional programming, parallel, 410
+irrefutable pattern (see pattern, irrefutable)
+Iswim, 56
+G-code, 294, 319
+G-machine, 5, 231, 293
+J combinator, 277
+parallel, 424
+J' combinator, 277
+garbage, 367
+UFAIL, 347
+garbage collection, 5, 281, 312, 326, 328, 330,
+JFALSE, 317, 323, 341
+335, 358, 401
+JFUN, 369
+garbage collector, 192, 209, 213, 217
+JUMP, 317, 323, 329
+generator, 128, 435
+generic operation, 330
+generic variable (see type variable, generic)
+K combinator, 260
+GET, 357
+Koptimization, 267
+global, 314
+K-n-i, 350
+GLOBSTART, 304
+K-transformation, 262
+grain of execution (see granularity)
+KRC, 2, 127, 194
+granularity, 279, 419, 428
+graph, 186, 233, 320
+acyclic, 120, 187
+lambda abstraction, 12, 13, 43
+concrete representation of, 187
+native, 252
+cyclic, 218, 233, 282, 285, 308
+pattern-matching, 40, 50, 57, 60, 76, 104
+G-machine, 320
+lambda calculus, 3, 9, 150
+G-machine representation, 325, 330
+denotational semantics, 28
+graph reduction, 208
+enriched, 3, 39, 50, 104, 133
+lazy, 1, 112
+operational semantics, 14, 28
+parallel, 5, 413
+ordinary, 39, 50, 104, 111
+supercombinator, 221
+syntax, 9
+graphical body, 234, 236
+lambda expression, 13
+GRIP, 429
+representation of, 185
+ground type, 140
+lambda-lifting, 150, 220, 221, 228, 379, 387
+guard, 58, 63, 432
+context-dependent, 258
+effect of n-reduction, 346
+fully lazy, 248

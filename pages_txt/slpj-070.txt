@@ -1,0 +1,43 @@
+Section 4.3 The semantics of pattern-matching lambda abstractions
+69
+4.3.2 The Semantics of Constant Patterns
+To describe the semantics of constant patterns we must specify the value of
+Eval[[ AK. E I
+where k is a constant. Its value is certainly a function, so we can specify it by
+giving the value of
+Eval [[ xk. E ] a
+for any argument a. There are three possibilities: either a is the same as k, or it
+is 1, or it is something else. This leads to the following semantic equations:
+Eval[[ Ak. E ]] a = Eval[[ E ]] if a = Eval[[ k ]]
+Eval[[ Ak. E ]] a = FAIL
+Eval[[ Ak. E ]] l = 1
+if a + Evalf[ k ]] and a # 1
+The first equation says that if (\k. E) is applied to something that evaluates to
+k, then the result comes from evaluating E. The second equation says that the
+result is FAIL if the argument evaluates to anything else, and the third equation
+specifies that, if the evaluation of the argument fails to terminate, then so does
+the whole application. As usual, these semantic equations specify reduction
+rules by implication. Thus, for example
+(A1. + 3 4) 1 - + 3 4
+(A1. + 3 4) 2 - FAIL
+It is also possible to regard constants as sum-constructors of arity zero, as
+outlined in Section 4.1.2.3, in which case the rules of this section become a
+special case of those of the next.
+4.3.3 The Semantics of Sum-constructor Patterns
+Next, we consider the case of constructor patterns, of the form (s p1 . . . Pr).
+Initially we will only consider sum patterns, since product patterns turn out to
+require special treatment. Here are the semantic rules for such patterns:
+Evall[ A(s pi . . . Pr). E ]] (s at . . .a,) = Eval[[ Api. . .Apr. E ]] a1 . . . ar
+Evall[ A(s pi ... pr). E ] (s' a1 . .. ar) = FAIL
+Evall[ A(s pi . . . P.) . E ] i
+= 1
+if s + s'
+Operationally, the rules work as follows. To apply (\(s pi .. . pr). E) to an
+argument A we first evaluate A to find out what sort of object it is. This implies
+that if the evaluation of A does not terminate then neither does the application
+in question (third rule). (Note: to 'evaluate A' we only evaluate it to
+constructor form; we do not evaluate its components. They will be evaluated
+lazy.)
+only if they are extracted and used. This is what it means for constructors to be
+If A evaluates to an object built with a constructor other than s, then the
+pattern-match fails (second rule). To see how this rule works, consider an

@@ -1,0 +1,42 @@
+192
+Chapter 10 Program Representation
+cache, this technique should be regarded purely as an optimization of the
+ordinary tagged-cell approach.
+In SKIM, however; there are no tags on cells at all. The only tags are in the
+fields. This has the advantage that a cell now consists of two identical fields
+(instead of two identical fields plus a tag), which allows a more uniform
+hardware design for SKIM. However, it means that a cell cannot change its
+tag; for example, an application cell must remain an application cell, because
+it would be impossible to change the tags of all pointers to the cell at once.
+This makes reduction slightly more awkward.
+In summary, both a pure tagged cell and a pure tagged pointer approach
+can adequately support reduction. The tagged cell approach makes reduction
+rather easier, but gives rise to a rather less uniform hardware implementation.
+The NORMA cacheing approach is more complex still, but may give some
+performance improvement.
+10.8 Storage Management and the Need for Garbage Collection
+As reduction proceeds we will need to build new pieces of graph. In order to
+do so we have to allocate new cells. Cells are allocated from a (large) area of
+storage called the heap, which is simply an unordered collection of cells. The
+term 'heap' emphasizes that the physical adjacenty of two cells is purely
+coincidental; what matters is which cells point to which.
+As well as allocating new cells, the reduction process will also discard cells,
+or rather it will discard pointers to cells. We must re-use cells whenever
+possible, because if we never did so we would soon run out of heap space.
+Unfortunately, in a graph there may be many pointers to the same cell, and we
+can only re-use a cell when there are no further pointers to it. So long as there
+are further pointers to a cell from elsewhere in the graph, it cannot be re-used
+because it is still in use. Cells with no pointers to them are said to be garbage.
+It is quite tricky to identify garbage cells, and all implementations of
+functional languages include a garbage collector whose purpose is to identify
+and recycle garbage cells.
+The whole activity of cell allocation and garbage collection is called storage
+management, and is further discussed in Chapter 17. As we will see there,
+fixed-size cells allow for a rather more simple garbage collector than variable-
+sized cells.
+References
+Clarke, T.J. W., Gladstone, P.J.S., Maclean, C., and Norman, A.C. 1980. SKIM -
+The SKI reduction machine. Proceedings of the ACM Lisp Conference, Stanford,
+Calif. 95044.
+Richards, H. 1985. An Overview of Burroughs NORMA. Austin Research Center,
+Burroughs Corp., Austin, Texas. January.

@@ -1,0 +1,39 @@
+Section 22.5 Annotating the program
+393
+We evaluate
+$F# 0 1 - & (& 0 1)
+& 0
+giving a function. To find out whether this function is bottom, we apply it to 1,
+giving
+& 01 - 0
+so the function is indeed bottom (since it returns 0 no matter how well defined
+the argument is). Hence $F is strict in its first argument.
+The other complication occurs if an argument to $F is a function. Then,
+instead of 0 and 1, we must use the bottom and top of the appropriate function
+domain. All of this entails knowing the type of $F, which is perhaps another
+motivation for using a typed language.
+22.5.2 Annotating Application Nodes
+The reason for annotating application nodes is not as clear-cut as the reason
+for annotating supercombinator definitions. Consider the definition:
+$G x y = y 3 x
+expression
+and suppose that in the body of another supercombinator there occurred the
+.($G E +) ...
+where E is some complicated expression. Clearly $G is not strict in x, because
+the function argument y may not be strict in its second parameter. However,
+in this particular application of $G the second argument is +, so E will certainly
+be evaluated subsequently. Hence E could be evaluated before the call of $G,
+and we could annotate the call thus:
+.. .($G ! E ! +) ...
+Doing this is extremely worthwhile, because the optimizations of Section
+for it.
+20.5.2 will then apply, so that we can evaluate E rather than construct a graph
+Fortunately, it is also relatively simple to deduce this annotation. Given an
+expression ($G P Q), we can discover whether it is strict in P by evaluating
+$G# 0 Q#
+and in Q by evaluating
+$G# P# 0
+(To see that this is formally valid, consider the strictness of the functions
+$Dummy1 and $Dummy2, where
+$Dummy1 e = $G e Q
+$Dummy2 e = $G P e

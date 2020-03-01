@@ -1,0 +1,43 @@
+438
+Appendix
+use == for these definitions, to distinguish them from ordinary value definitions. For
+example:
+string =
+[char]
+matrix
+=[[num]]
+Type synonyms are entirely transparent to the type-checker - it is best to think of them
+as macros. It is also possible to introduce synonyms for families of types. This is done by
+using generic type symbols as formal parameters, as in
+array * == [[*]]
+so now, e.g., array num is the same type as matrix.
+(ii) Abstract data types
+In addition to concrete types, introduced by ::= or = equations, Miranda permits the
+definition of abstract types, whose implementation details are 'hidden' from the rest of
+the program. Abstract data types (and the related idea of free types) become important
+in constructing larger pieces of software, which may evolve over time. The way in
+which abstract data types are declared in Miranda is one of the innovatory features of
+the language - for a partial discussion of this see Turner [1985].
+(Note: further information about the Miranda system and its availability for various
+computers may be obtained from Research Software Limited, 23 St Augustines Road.
+Canterbury, Kent CT1 1XP, UK, or from the following electronic mail address:
+mira-request @uk.ac.ukc.)
+References
+Gordon, M.J., Milner, A.J., and Wadsworth, C.P. 1979. Edinburgh LCF. Springer
+Lecture Notes in Computer Science. Vol. 78.
+Landin, P.J. 1966. The next 700 programming languages. Communications of the
+ACM. Vol. 9, no. 3.
+Milner, A.J. 1978. A theory of type polymorphism in programming. Journal of
+Computer and System Sciences. Vol. 17.
+Richards, H. 1984. An overview of ARC SASL. SIGPLAN Notices. October.
+Thompson, S.J. 1986. Laws in Miranda. Proceedings of the 4th ACM International
+Conference on LISP and Functional Programming, Boston, Mass. August
+Turner, D.A. 1976. SASL language manual. St Andrews University Technical Report.
+December.
+Turner, D.A. 1982. Recursion equations as a programming language. In Functional
+Programming and its Applications, Darlington et al. (editors). Cambridge
+University Press.
+Turner, D.A. 1985. Miranda: a non-strict functional language with polymorphic types.
+In Proceedings of the IFIP International Conference on Functional Programming
+Languages and Computer Architecture, Nancy. Springer Lecture Notes in
+Computer Science. LNCS 201.

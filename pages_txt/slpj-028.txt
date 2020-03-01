@@ -1,0 +1,41 @@
+Section 2.4 Recursive functions
+27
+fixed point. For example, both 0 and 1 are fixed points of the function
+AX. * X X
+which squares its argument.
+To summarize our progress, we now seek a fixed point of H. It is clear that
+this can depend on H only, so let us invent (for now) a function Y which takes a
+behavior that
+function and delivers a fixed point of the function as its result. Thus Y has the
+Y H = H (Y H)
+and as a result Y is called a fixpoint combinator. Now, if we can produce such a
+Y, our problems are over. For we can now give a solution to (2.1), namely
+FAC = Y H
+which is a non-recursive definition of FAC. To convince ourselves that this
+definition of FAC does what is intended, let us compute (FAC 1). We recall the
+definitions for FAC and H:
+FAC = Y H
+H
+= Afac. An . IF (= n 0) 1 (* n (fac (- n 1)))
+So
+FAC 1
+Y H 1
+H (Y H) 1
+(xfac. An. IF (= n 0) 1 (* n (fac (- n 1)))) (Y H) 1
+(An . IF (= n 0) 1 (* n (Y H (- n 1)))) 1
+IF (= 1 0) 1 (* 1 (Y H (- 1 1)))
+* 1 (Y H 0)
+auntttantttt
+1 (H (Y H) 0)
+1 ((Afac. An . IF (= n 0) 1 (* n (fac (- n 1)))) (Y H) 0)
+* 1 ((An. IF (= n 0) 1 (* n (Y H (- n 1)))) 0)
+* 1 (IF (= 0 0) 1 (+ 0 (Y H (- 0 1))))
+1
+1
+2.4.2 Y Can Be Defined as a Lambda Abstraction
+We have shown how to transform a recursive definition of FAC into a non-
+recursive one, but we have made use of a mysterious new function Y. The
+property that Y must possess is
+Y H = H (Y H)
+and this seems to express recursion in its purest form, since we can use it to
+express all other recursive functions. Now here comes the magic: Y can be

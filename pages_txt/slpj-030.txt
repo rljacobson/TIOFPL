@@ -1,0 +1,43 @@
+Section 2.5 The denotational semantics of the lambda calculus
+29
+about abstract functions, and this has, in effect, provided us with an
+operational semantics for the lambda calculus. But what reason have we to
+suppose that the lambda calculus is an accurate expression of the idea of an
+abstract function?
+To answer this question requires us to give a denotational semantics for the
+lambda calculus. The framework of denotational semantics will be useful in
+section.
+the rest of the book, so we offer a brief sketch of it in the remainder of this
+2.5.1 The Eval Function
+The purpose of the denotational semantics of a language is to assign a value to
+every expression in that language. An expression is a syntactic object, formed
+according to the syntax rules of the language. A value, by contrast, is an
+abstract mathematical object, such as 'the number 5', or 'the function which
+squares its argument'.
+We can therefore express the semantics of a language as a (mathematical)
+function, Eval, from expressions to values:
+Expressions
+Eval
+Values
+We can now write equations such as
+Evall[ + 3 4 1 = 7
+This says 'the meaning (i.e. value) of the expression (+ 3 4) is the abstract
+numerical value 7'. We use bold double square brackets to enclose the
+argument to Eval, to emphasize that it is a syntactic object. This convention is
+widely used in denotational semantics. We may regard the expression (+ 3 4)
+semantics).
+as a representation or denotation of the value 7 (hence the term denotational
+We will now give a very informal development of the Eval function for the
+lambda calculus. The task is to give a value for Eval[[ E ]], for every lambda
+expression E, and we can proceed by direct reference to the syntax of lambda
+expressions (Figure 2.1), which gives the possible forms which E might take.
+For the moment we will omit the question of constants and built-in
+functions, returning to it in Section 2.5.3. Suppose, then, that E is a variable,
+x. What should be the value of
+Eval[[ x ]]
+where x is a variable? Unfortunately, the value of a variable is given by its
+surrounding context, so we cannot tell its value in isolation. We can solve this
+problem by giving Eval an extra parameter, p, which gives this contextual
+information. The argument p is called an environment, and it is a function
+which maps variable names on to their values. Thus
+Eval[[ x ]] p = p x

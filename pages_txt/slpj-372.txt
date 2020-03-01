@@ -1,0 +1,36 @@
+374
+Chapter 21 Optimizing Generalized Tail Calls
+Suppose W takes two arguments. Then we want to create a new current
+context in which Wwill execute, with its two arguments on top of the stack and
+a pointer to the root of the W-redex below them. We can achieve this by
+constructing only the top part of the spine of the body of $F. Here is what the
+stack looks like just before DISPATCH enters the code for W:
+Root of $F-redex
+T:@
+Root of W-redex
+-V2:HOLE n3: E3
+n2: E2
+n1:E1
+The context for the W-reduction consists of the top three elements on the
+stack. The HOLE must be allocated to receive the result of the W-reduction.
+Here is the formal rule:
+<f:n1:n2:. . .:nk:T:S, G[f=FUN a C], DISPATCH k:[], D>
+{ack) => <ni:. ..:na:Va:. . .:Vk-1:7:S, G Va=HOLE
+Vi=AP Vi-1 ni, (a<i<k)
+1. C, D>
+r =AP VK-1 nk
+21.2.5 W is a Function of More Than Three Arguments
+If W is a function of more than three arguments, the body of $F is in WHNF,
+and we must update the root of the $F-redex to reflect this fact, since it may be
+shared. This involves constructing the spine in the heap as we did for the case
+when W was an application node.
+However, the next thing that will happen is an attempt to reduce the
+application of W. Only if there are enough arguments in the stack will the
+reduction take place. This gives us the clue to what DISPATCH should do.
+Having constructed the spine and updated the root of the $F-redex,
+DISPATCH should test the depth of the stack. If there will not be enough
+arguments for W to reduce then evaluation is complete and DISPATCH can
+initiate a RETURN. If there are enough arguments then DISPATCH can
+rearrange the stack ready for W and enter W.
+Suppose that W takes four arguments, and that at the beginning of the
+DISPATCH the stack looks like this:

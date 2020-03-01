@@ -1,0 +1,35 @@
+Section 14.3 Lambda-lifting in the presence of letrecs
+235
+We now discuss how to transform recursive programs into supercombinators
+with graphical bodies.
+14.3 Lambda-lifting in the Presence of letrecs
+Our lambda-lifting algorithm will work as before, lifting the lambda
+abstractions to the top level. No special note need be taken of letrecs; they can
+be treated just like any other expression. In particular, lambda-lifting still
+applies only to lambda abstractions, not to letrecs as well. Some lambda
+abstractions will have letrecs in their bodies, which will give rise to super-
+combinators with graphical bodies.
+The question arises, however, of what lexical level-number to assign to
+variables bound in a letrec.
+The variables bound in a letrec will be instantiated when the immediately
+(textually) enclosing lambda abstraction is applied to an argument, since that
+is when we construct the instance of the letrec, substituting for all the free
+variables. Hence the variables bound in a letrec should be given the lexical
+level-number of the immediately enclosing lambda abstraction.
+What if there is no enclosing lambda abstraction? In this case the natural
+level-number for such variables should be 0. But this gives us a hint, since 0 is
+the level-number we assign to constants and supercombinators. If there is no
+enclosing lambda abstraction, then the definition bodies of the letrec can have
+no free variables (other than the variables defined in the letrec); in other words,
+they are combinators. All that is needed to turn them into supercombinators
+is to lambda-lift them to remove any inner lambdas. Notice that the variables
+bound in such level O letrecs will not be taken out as free variables because
+constants (level 0) are not taken out.
+list of 1s.
+Suppose we have to lambda-lift this program, which computes the infinite
+letrec x = CONS 1 x
+in x
+The letrec is at level 0, and there are no lambda abstractions, so x is a
+supercombinator already, and we get
+$x = CONS 1 $x
+$x

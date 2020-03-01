@@ -1,0 +1,44 @@
+412
+Chapter 24 Parallel Graph Reduction
+It is therefore still the programmer's responsibility to create an algorithm
+which will partition the task at hand into reasonably independent subtasks. It
+is unreasonable to expect the machine to do this automatically, since it may
+involve major algorithmic changes (such as changing insertion sort to
+quicksort).
+24.2.3 Writing Parallel Programs is Easier in a Functional Language
+Why not program in a conventional language which supports multiple tasks,
+such as Ada? There are a number of ways in which writing a parallel program
+in a functional language is superior to this:
+(i) In conventional languages the partition of the problem into separate
+tasks is static and fixed. A task is conceived as a relatively large unit, and
+tasks generally cannot be created and deleted dynamically. There will be
+in his design.
+relatively few tasks, and the programmer must clearly identify all of them
+In a functional language the parallelism can be dynamic, and there is
+no static division of the problem into tasks. Instead, the programmer
+designs an algorithm whose inherent parallelism will enable concurrent
+reduction to take place at different places in the graph. The 'grain' of
+parallelism is therefore smaller and more dynamically adaptable as the
+computation proceeds.
+(ii) In conventional languages the tasks communicate with each other by
+sending messages or making specially protected subroutine calls to each
+other. The programmer has to design synchronization and communi-
+cation protocols between tasks so that they cooperate correctly and
+achieve mutual exclusion where necessary. It is up to the programmer to
+ensure that these communication protocols are correct, and failure to do
+so can result in a transient malfunction of the program.
+In a functional program the synchronization between different
+reductions is mediated entirely by the shared graph. A reduction is made
+known to the graph by the indivisible operation of overwriting the root of
+the redex with the result of the reduction, and no other synchronization
+is necessary (though see the next section for efficiency considerations).
+(iii) The tasking structure of conventional languages adds a layer of
+considerable complexity to the programmer's model of what is going on.
+It is difficult to reason about a multitasking program, because the
+programmer has to bear in mind all the possible time orderings in which
+execution might take place. The behavior of the program should be
+independent of the scheduling of the tasks, but the programmer must
+ensure that this is the case.
+There are no extra language constructs required to write parallel
+functional programs. The result of the program is guaranteed to be
+independent of the way in which reductions are scheduled, though this

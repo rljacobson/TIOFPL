@@ -1,0 +1,41 @@
+60
+Chapter 4 Structured Types and the Semantics of Pattern-matching
+Here are some examples of patterns:
+X
+LEAF n
+BRANCH (LEAF n) t
+CONS x XS
+written (x:xs) in Miranda
+CONS x (CONS 3 NIL)
+written [x,3] in Miranda
+PAIR x 4
+written (x,4) in Miranda
+The term (PAIR z z) is not a pattern, because it contains a repeated variable.
+The term (CONS x) is not a pattern, because the CONS does not have enough
+arguments.
+Miranda allows patterns with repeated variables, like (PAIR z z) but the
+patterns defined here do not. This is discussed in Section 4.2.7.
+A constructor pattern is simple if it has the form (c vi ... vi), where
+V1,
+nested.
+..., Vr are distinct variables. If a constructor pattern is not simple it is
+4.2.3 Introducing Pattern-matching Lambda Abstractions
+Up to now we have translated function definitions into the lambda calculus
+using the following rule:
+TDI[ f v1 . . . Vn = E ] = f = Avi. . .AVn. TE[ E I
+where vi, ..., Vn are variables. Temporarily restricting our attention to
+functions of a single variable, we could derive the less general rule
+TDI[ fv = E ] = f = Av. TEQ[ E I
+By analogy, given the function definition
+fp = E
+(where p is a pattern), it seems plausible to translate it using the rule
+TDI[ fp = E] = f = Ap. TEI E
+This is not quite right yet, because we must remember to translate the
+pattern, so that Miranda's list notation is translated into uses of CONS and NIL
+(and likewise for tuples and booleans). Fortunately, the syntax of patterns is a
+subset of that of expressions, so we can use the TE scheme.
+TDI[ fp = E] = f = ATE[[ p ]]. TE[ E B
+For example, consider the Miranda function definition for fst:
+fst (x,y) = x
+Using the rule above gives:
+TDI[ fst (x,y) = x]] = fst = \(PAIR x y) .x

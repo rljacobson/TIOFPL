@@ -1,0 +1,34 @@
+Section 16.3 Director strings
+275
+16.3.1 The Basic Idea
+Suppose we are abstracting a variable x1 from an application (p q) where p and
+q are complicated expressions, and suppose it compiles to (S 'p 'q). (Recall
+that 'p denotes the result of abstracting x1 from p, and similarly 'q.) The
+syntax trees of (p q) and (S 'p 'q) are
+S
+We could, however, regard the S as an annotation of the expression ('p 'q),
+and draw it thus:
+@s
+(S 'p 'q)
+This annotated syntax tree is intended to be no more than an alternative
+representation for (S 'p 'q). The s annotates the application node, saying 'this
+branches'.
+node is a function expecting one argument, which should be sent into both
+Suppose that we now abstracted another variable x2 from (S 'p *q), and got
+(C' s ?p 'q); that is, x2 is used in p but not in q. Then we could draw the
+annotated syntax tree like this:
+@ CS
+(C' s 2p 'q)
+The cs annotation says 'this node is a function of two arguments, the first of
+which should be sent to the left branch, and the second of which should be sent
+to both branches'. These annotations are called director strings, and consist of
+a string of directors which direct the flow of successive arguments into the
+graph. In addition to the s and c directors we also need a b director which
+directs the argument to the right branch only.
+Director strings were developed by Kennaway and Sleep [ 1982a and 1982b],
+who used the more mnemonic symbols "', '\ ' and '/' for s, band c respectively
+The advantage of this representation is that it obviously preserves the original
+In particular,
+structure of the expression, and yet has a simple equivalent combinator form.
+@ ww...yz is equivalent to (V' (W' (...(Y' Z). . .)) p q)
+where v, w. . . are chosen from {Is, b, c}, and V', W ...Z are the corre-

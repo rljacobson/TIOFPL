@@ -1,0 +1,42 @@
+420
+Chapter 24 Parallel Graph Reduction
+case of quicksort the 'leaf tasks' might be those which sort a set with only one
+element. There is a serious danger that
+(i) these 'leaf tasks' will be uneconomically small;
+(ii) there will be very many of them (e.g. half, or more, of the total).
+If nothing is done about this problem the machine could well become
+swamped in a surfeit of tiny tasks. The solution must be to stop sparking
+subtasks when the 'size' of the problem is small enough. For example, when
+quicksort has to sort a set of 10 elements or less, it could avoid sparking
+subtasks and do the whole sort in a single task.
+This is clearly not an easy decision to make, and is an important issue in
+designing parallel machines. At present there seems to be no alternative but
+to dump the problem back in the programmer's lap, but automatic techniques
+subtasks.
+need to be developed to predict the approximate cost of execution of
+The issue of principle is one of granularity. The overheads of tasking begin
+to dominate when the 'grain' of parallelism has become too fine, which
+suggests that we should aim for coarse-grain parallelism even at the expense
+of some concurrency. On the other hand, if the grain becomes too coarse
+there will be too little concurrency and unemployed agents will be hanging
+around with nothing to do. This suggests that some sort of run-time adaptive
+system might be effective, in which a task is sparked only if there are
+fewer than a given number of tasks in the pool at that time. Ultimately, a
+combination of compile-time and run-time techniques will doubtless be used.
+Goldberg and Hudak [1985] describe serial combinators, which give the
+coarsest grain of parallelism that does not lose concurrency, though, as we
+have said, a coarser grain still may be desirable.
+24.4.6 Scheduling
+In the light of the above discussion, the question of which task an unemployed
+agent should execute is rendered rather straightforward. It should execute a
+vital task if there is one, or a speculative task otherwise.
+Any agent executing a speculative task should, however, keep an eye out
+for vital tasks joining the task pool. If this occurs the agent should return the
+speculative task to the task pool and begin executing the vital task instead.
+In a conservative parallelism regime all tasks are vital, so an unemployed
+agent can execute any task in the pool. Furthermore, it can execute the task
+until it is complete or blocked, and there is no need to keep an eye on the task
+pool. This is another benefit of conservative parallelism.
+The choice of exactly which task to execute next may, however, have a
+significant impact on the problems of controlling parallelism (Sections 24.4.3-
+24.4.5) and of locality (Section 24.7).

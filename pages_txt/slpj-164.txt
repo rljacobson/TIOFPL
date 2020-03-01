@@ -1,0 +1,29 @@
+Nine
+A TYPE-CHECKER
+Peter Hancock
+In this chapter we will construct a type-checker in Miranda, taking the rules
+developed in the previous chapter as the basis for the type discipline.
+Sections 9.1 and 9.2 show how the expressions of the intermediate language
+and its type expressions can be represented as Miranda data types. Sections
+9.3 to 9.6 are concerned with the basic mechanisms of the type-checker, which
+is itself defined in Section 9.7.
+9.1 Representation of Programs
+Since we propose to write a type-checker in Miranda, we will have to
+represent the program to be type-checked as a Miranda data structure, which
+is passed as an argument to the type-checking function.
+The program to be checked will be represented by an object of the
+structured type vexp, defined below. Each line of the type definition is derived
+directly from the corresponding construct in the concrete syntax.
+vname == [char]
+vexp
+::=
+VAR vname
+I LAMBDA vname vexp
+! AP vexp vexp
+I LET [vname] [vexp] vexp
+| LETREC [vname] [vexp] vexp
+In a sense, this type encompasses slightly too much. We shall suppose that the
+program is not 'trivially' malformed: in a LET or LETREC construct, the list of
+variables must have the same length as the list of right-hand sides; the
+variable list in a LET or LETREC construct must not be empty, and should
+163

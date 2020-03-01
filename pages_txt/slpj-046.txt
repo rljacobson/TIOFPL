@@ -1,0 +1,40 @@
+Section 3.4 The TE translation scheme
+45
+to emphasize that the argument to TE is a syntactic object. This convention
+was used in Chapter 2, but the difference on this occasion is that the result of
+the translation is a syntactic object also, and we use = rather than = to remind
+us of this fact. We call TE a translation scheme.
+We also need another translation scheme TD, which translates Miranda
+definitions into definitions suitable for a letrec. For example,
+TDI[ square n = n*n ] = square = An. * n n
+Here we see another reason for using = when writing translation schemes: it
+avoids confusion with = symbols in the program being translated. We can now
+generalize the translation scheme as follows. Given the Miranda program
+Definition 1
+Definitionn
+Expression
+we generate the following (enriched) lambda expression:
+letrec
+TDII Definition, I
+in
+TDI[ Definition, I
+TE[[ Expression I
+In the previous example we used a let instead of a letrec, but Miranda
+definitions are all potentially recursive, so we must use a letrec in general (later
+work will optimize this - Section 6.2.8).
+What we have now done is to reduce the translation problem to one of
+defining the two translation schemes TD and TE. We will define them for
+simple cases in the succeeding two sections, and then lay out the plan of the
+next few chapters, which will extend them to cover more complicated cases.
+For the moment, we completely avoid the question of declarations of new
+types and type-checking. The former will be introduced in Chapter 4 and the
+latter in Chapter 8.
+3.4 The TE Translation Scheme
+The translation scheme TE is a function, which takes a Miranda expression as
+its argument, and produces an equivalent lambda expression as its result,
+thus:
+Miranda
+TE
+expression
+Lambda
+expression

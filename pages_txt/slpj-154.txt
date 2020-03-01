@@ -1,0 +1,53 @@
+Section 8.5 How to find types
+153
+which make perfect sense, but in which the two occurrences of the
+composition function receive different types (to be sure, types sharing a
+common form, but nonetheless different).
+So it is not obvious that we should require all occurrences of a variable
+bound by a lambda abstraction to have the same type. However, let us take
+this requirement as an assumption, and explore its consequences using the
+following example
+F = Af. Aa. Ab . Ac. c (f a) (f b)
+and laid out as a tree, the expression is
+f :: TO a :: T1
+@
+c :: T2
+T3
+@
+f :: T4 b :: T5
+T6
+-@
+T7
+-@
+T8
+T9
+-Af . Aa. Ab . Ac.
+from which we derive the equations
+TO = T1 -> T3
+T2 = T3 -> T6
+T4 = T5 -> T7
+T6 = 17 -> T8
+If we now require that the different occurrences of f have the same type, we
+can add the equation TO = T4 to the list above. But then we must also have
+that T1 = T5 and T3 = T7, which gives the tree
+f :: T1 -> 13 a :: T1
+@
+C :: T3 -> 73 -> T8
+T3
+@
+f :: T1 -> T3 b :: T1
+T3 -> T8
+-@
+T3
+T8
+@
+(T1 -> T3) -> T1 -> T1 -> (13 -> T3 -> T8) -> T8
+Af.Aa.Ab.Ac.
+By demanding that both occurrences of f should have the same type, we
+have forced a and b to be of the same type. Renaming variables, the function F
+has type
+(A -> B) -> A -> A -> (B -> B -> C) -> C
+according to our assumption.
+It is not hard to think of contexts (F f a b) which would make sense when a
+and b are of different types. For example
+F 10 'a'

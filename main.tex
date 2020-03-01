@@ -1,0 +1,282 @@
+% To compile, you must use latex. In TeXstudio, you must use dvi->* chain.
+\documentclass[12pt, b5paper, oldfontcommands, draft]{memoir}
+% Margins
+\usepackage[b5paper,total={6in, 9in}]{geometry}
+\geometry{margin=0.5in, top=1in}
+
+% Required for LaTeXDraw
+ \usepackage[usenames,dvipsnames]{pstricks}
+ \usepackage{pstricks-add}
+ \usepackage{epsfig}
+ \usepackage{pst-grad} % For gradients
+ \usepackage{pst-plot} % For axes
+ \usepackage[space]{grffile} % For spaces in paths
+ \usepackage{etoolbox} % For spaces in paths
+ \makeatletter % For spaces in paths
+ \patchcmd\Gread@eps{\@inputcheck#1 }{\@inputcheck"#1"\relax}{}{}
+ \makeatother
+
+% Required for grammar trees
+\usepackage{pst-node,pst-tree}
+
+%\usepackage{createspace}
+%\usepackage{geometry}
+%\usepackage{graphicx}
+%\usepackage{tikz}
+
+%\usepackage[utf8]{inputenc}
+%\usepackage{fix-cm}
+
+\usepackage{tgheros} % "TEX Gyre Heros", Helvetica, code: qhv
+\usepackage{tgbonum} % "TEX Gyre Bonum", ITCBookman, code: qbk
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{anyfontsize}
+%\usepackage{microtype}
+\renewcommand{\rmdefault}{qbk}
+\renewcommand{\sfdefault}{qhv}
+\renewcommand{\familydefault}{\rmdefault}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathrsfs} % Math script
+%\usepackage{textgreek} % Greek characters in text mode.
+%\newcommand{\tl}{λ}
+\newcommand{\tlb}[1]{$\boldsymbol{\lambda}$\,#1.\,}
+\newcommand{\tl}{$\boldsymbol{\lambda}$\,{}}
+%\DeclareUnicodeCharacter{03BB}{\lt}
+%\usepackage{newunicodechar}
+%\newunicodechar{λ}{\lt}
+ 
+% For source code highlighting.
+%\usepackage[no-math]{fontspec}
+%\usepackage{minted}
+%\usemintedstyle{mathematica}
+
+%\usepackage{tabu} % Tables
+%\usepackage{subcaption} % Subfigures (side-by-side)
+%\usepackage{wrapfig}
+
+% enumerations
+\usepackage{paralist}
+%\setlist{noitemsep,topsep=5pt,parsep=0pt,partopsep=5pt}
+
+% Bibliography management
+%\usepackage[backref=true,style=numeric,sorting=none]{biblatex}
+%\bibliography{references}
+%\usepackage[sectionbib,authoryear]{natbib}
+%\usepackage{chapterbib}
+\usepackage[hidelinks]{hyperref} % links (after biblatex)
+
+%\usepackage{fullpage} %Comment this out before submission.
+%Only used for DRAFTS to include the time of compilation as a versioning system
+\usepackage{datetime} 
+
+% Whitespace adjustments
+\newcommand{\vs}{\vspace{.5\baselineskip}}
+\newcommand{\pg}{\clearpage}
+
+% We create a math mode for the Miranda code, because there is occassional need
+% for mathematical operators.
+%\usepackage{sansmath}
+%\usepackage{mathastext}
+%\DeclareMathVersion{sfmath}
+%\DeclareSymbolFont{sfletters}{OT1}{qhv}{m}{up}
+%\SetSymbolFont{letters}{sfmath}{OT1}{qhv}{m}{up}
+%\DeclareSymbolFont{sfoperators}{OT1}{qhv}{m}{up}
+%\SetSymbolFont{operators}{sfmath}{OT1}{qhv}{m}{up}
+%\SetMathAlphabet\mathit{sfmath}{OT1}{qhv}{m}{sl}
+%\SetMathAlphabet\mathrm{sfmath}{OT1}{qhv}{m}{n}
+
+% This is the mlcoded environment, a math environment in upright Helvetica.
+\newenvironment{mlcoded}{
+	\sffamily\spaceskip=2\fontdimen2\font
+	\list{}{\rightmargin20pt\leftmargin20pt}\item[] % This line is how the quote environment is defined.
+%	\noindent\par\vspace{0.5\baselineskip}
+%	\begin{quote}	
+}{
+	\endlist
+%	\end{quote}
+%	\vspace{0.5\baselineskip}\noindent\\
+}
+\newenvironment{mlalign}{
+	\begin{mlcoded}\setlength{\tabcolsep}{2pt}
+	\begin{tabular}{rl}
+}{
+	\end{tabular}
+	\end{mlcoded}
+}
+
+
+% Inline Miranda code: "this is \ml{f x} applied to...."
+%\newcommand{\ml}[1]{{\sansmath$#1$}}
+\newcommand{\ml}[1]{{\sffamily #1}}
+
+% For Roman Numerals
+%\makeatletter
+%\newcommand*{\rom}[1]{\expandafter\@slowromancap\romannumeral #1@}
+%\makeatother
+
+%%%%% Title page %%%%%
+\makeatletter
+\newcommand*{\maketitlepg}{{
+		\null
+		\let\cleardoublepage\clearpage
+		\thispagestyle{empty}
+		\leavevmode
+		\normalfont
+		\flushleft
+		%	\parindent=0pt
+		\vspace*{\drop}
+		{\noindent\HUGE\fontfamily{qhv}\selectfont\uppercase \@title}\par
+		\rule{\linewidth}{3pt}
+		
+		\vspace{2cm}
+		{\LARGE\fontfamily{qhv}\selectfont\@author}\par
+		%	\rule{\unitlength}{1.6pt}
+		{\noindent\fontfamily{qhv}\selectfont\members\par\null}
+		\vfill
+		{\small\date{\today}}
+		%	\vspace*{\drop}
+		\cleardoublepage
+}}
+\makeatother
+
+% This is how to do this in memoir:
+\setsecnumdepth{subsubsection}
+%\setcounter{secnumdepth}{4}
+%\setcounter{tocdepth}{4}
+
+\makeindex
+
+%%%%% Other headings %%%%%
+
+% Headings
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\sectionmark}[1]{\markright{#1}}
+%\renewcommand{\subsectionmark}[1]{\markright{#1}}
+\fancyhf{}
+\fancyhead[LE,RO]{\footnotesize \thepage}
+\fancyhead[LO]{\footnotesize \em Section \thesection\; \rightmark}
+%\fancyhead[LO]{\fancyplain{}\slshape{\rightmark}}
+\fancyhead[RE]{\footnotesize \em\chaptername \;\thechapter\; \leftmark}
+%\fancyfoot[CE,CO]{\leftmark}
+%\fancyfoot[LE,RO]{\thepage}
+
+% For spelling out numbers: \numberstringnum{4} or \Numberstringnum{4}
+\usepackage{fmtcount}
+% For underlining the chapter number
+\usepackage{calc}
+
+% Section Formatting
+\usepackage{titlesec}
+
+% Chapter title formatting
+\titleformat{\chapter}[display]{\normalfont\fontsize{30}{20}\selectfont\itshape \sffamily}{
+   \makebox[2pt][l]{\hspace{-1.7cm}
+	\rule[-6pt]{\widthof{ttttt\Numberstringnum{\thechapter}}}{3pt}
+	}\Numberstringnum{\thechapter}
+}{.7cm}
+{
+%	{\vspace{-1.1\baselineskip}\hrule height 3pt width 1.25in \relax}\vspace{\baselineskip}
+	\upshape\LARGE\sffamily\MakeUppercase
+}[]
+\titlespacing*{\chapter}{ 1.7cm}{ 1cm}{3cm}  %[ right sep ]
+\newcommand{\chapterbreak}{\clearpage\thispagestyle{empty}}
+% Part title formatting - identical to chapter formatting
+\titleformat{\part}[display]{\normalfont\fontsize{30}{20}\selectfont\itshape \sffamily}{
+	\makebox[2pt][l]{\hspace{-1.7cm}
+		\rule[-6pt]{\widthof{tttttPart \thepart}}{3pt}
+	}Part \thepart
+}{.7cm}
+{
+	%	{\vspace{-1.1\baselineskip}\hrule height 3pt width 1.25in \relax}\vspace{\baselineskip}
+	\upshape\LARGE\sffamily\MakeUppercase
+}[]
+\titlespacing*{\part}{ 1.7cm}{ 1cm}{3cm}  %[ right sep ]
+\titleclass{\part}{top}
+\newcommand{\partbreak}{\clearpage\thispagestyle{empty}}
+% Section heading spacing
+\titleformat{\section}{\large\bf}{\textsf{\thesection}}{8pt}{\textsf}[]
+\titleformat{\subsection}{\large}{\textsf{\thesubsection}}{8pt}{\textsf}
+
+% Removes page numbers on first part/chapter/title pages. Since it clobbers the plain page
+% style, we can't use that style anywhere.
+\makeatletter
+\let\ps@plain\ps@empty
+\makeatother
+
+\title{{The Implementation\\ of Functional\\ \vspace{10pt}Programming Languages}}
+
+%\subtitle{ }
+
+\author{Simon L. Peyton Jones}
+
+\newcommand{\members}{\leavevmode Department of Computer Science\\ University College London\par
+	\vspace*{\baselineskip}
+	\textit{with chapters by}\\
+	Philip Wadler, Programming Research Group, Oxford\\
+	Peter Hancock, Metier Management Systems Ltd\\
+	David Turner, University of Kent, Canterbury
+}
+
+
+\newcommand{\dedication}{To Dorothy}
+
+\newlength{\drop}
+\drop=0.1\textheight
+
+
+\newenvironment{numbered}{
+	\vs
+	\begin{compactenum}[(i)]
+}{
+	\end{compactenum}
+	\vs
+}
+
+\newenvironment{references}{\begin{description}\itemsep -5pt \footnotesize
+}{\end{description}}
+
+\begin{document}
+
+\frontmatter
+
+\maketitlepg
+
+% Dedication
+\begin{flushleft}
+	\thispagestyle{empty}
+	\vspace*{\drop}
+	\huge
+	\dedication
+\end{flushleft}
+\clearpage
+
+\tableofcontents
+%\listoffigures
+%\listoftables
+
+\setlength{\parindent}{10pt}
+\setlength{\parskip}{0mm plus 0mm minus 0mm}
+
+\include{chapters/preface}
+
+\mainmatter
+
+
+\input{chapters/chap1}
+
+\part[Compiling High-Level Functional Languages]{Compiling High-Level\\ Functional Languages}
+
+\include{chapters/chap2}
+
+\backmatter
+
+%\include{appendix}
+
+\end{document}

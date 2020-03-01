@@ -1,0 +1,37 @@
+52
+Chapter 4 Structured Types and the Semantics of Pattern-matching
+4.1 Introduction to Structured Types
+Suppose that we wish to define binary trees with leaves that are numbers. In
+the notation of Miranda, this could be done by declaring a structured type tree
+as follows:
+tree ::= LEAF num ! BRANCH tree tree
+(The symbol ::= identifies this as a type declaration.) This might be read as
+follows: 'a tree is either a LEAF, which contains a num, or a BRANCH, which
+contains a tree and a tree'. Here LEAF and BRANCH are called constructors of
+the type. Miranda requires that constructors (and only constructors) begin
+with an upper-case letter, but we will always write them entirely in upper case.
+LEAF has one field, of type num, and BRANCH has two, both of type tree. The
+number of fields associated with a constructor is called its arity; thus LEAF has
+arity 1 and BRANCH has arity 2.
+Constructors can be used as functions, to create values of type tree. For
+example, the equation
+tree1 = BRANCH (BRANCH (LEAF 1) (LEAF 2)) (LEAF 3)
+defines tree1 to be a tree. Informally, this tree might be drawn as:
+Constructors can also appear on the left-hand side of an equation, as in the
+following Miranda function definition:
+reflect (LEAF n)
+= LEAF n
+reflect (BRANCH t1 12) = BRANCH (reflect 12) (reflect t1)
+For example, (reflect tree1) returns
+BRANCH (LEAF 3) (BRANCH (LEAF 2) (LEAF 1))
+A definition with patterns on the left-hand side, such as that of reflect, is said
+to use pattern-matching to perform case analysis. For example, in evaluating
+(reflect t) there are two cases to choose from: t matches the pattern (LEAF n),
+or t matches the pattern (BRANCH t1 12). If, say, t is (LEAF 1) then the first
+case is chosen, with n bound to 1. Much more will be said about pattern-
+matching later.
+An important difference in the treatment of structured types in Miranda
+from that in ML or Hope, is that in Miranda constructor functions are lazy;
+that is, they do not evaluate their arguments. The components of a structured
+object are evaluated only when (and if) they are subsequently extracted and
+used, not when the object is built.

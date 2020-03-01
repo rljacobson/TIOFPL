@@ -1,0 +1,10 @@
+for PAGE in $(seq -f "%03g" $1 $2)
+do
+    gs -dSAFER -dBATCH -dNOPAUSE \
+        -sDEVICE=pnggray \
+        -sOutputFile=pages_png/slpj-$PAGE.png \
+        -dFirstPage=$PAGE \
+        -dLastPage=$PAGE \
+        -r300 \
+        textpages.pdf
+done

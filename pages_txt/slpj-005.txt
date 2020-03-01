@@ -1,0 +1,39 @@
+Section 1.2 Part I: compiling high-level functional languages
+W
+functional program is the notation of the lambda calculus (Figure 1.1). The
+lambda calculus is an extremely well-studied language, and we give an intro-
+duction to it in Chapter 2.
+High-level language program
+Part I
+Program expressed in lambda notation
+Parts II and III
+Concrete implementation
+Figure 1.1 Implementing a functional program
+The lambda calculus is not only simple, it is also sufficiently expressive to
+allow us to translate any high-level functional language into it. However,
+translating some high-level language constructs into the lambda notation is
+less straightforward than it at first appears, and the rest of Part I is concerned
+with this translation.
+Part I is organized as follows. First of all, in Chapter 3, we define a language
+which is a superset of the lambda calculus, which we call the enriched lambda
+calculus. The extra constructs provided by the enriched lambda calculus are
+specifically designed to allow a straightforward translation of a Miranda
+program into an expression in the enriched lambda calculus, and Chapter 3
+shows how to perform this translation for simple Miranda programs.
+After a brief introduction to pattern-matching, Chapter 4 then extends the
+translation algorithm to cover more complex Miranda programs, and gives a
+formal semantics for pattern-matching. Subsequently, Chapter 7 rounds out
+the picture, by showing how Miranda's ZF expressions can also be translated
+in the same way. (Various advanced features of Miranda are not covered,
+such as algebraic types with laws, abstract data types, and modules.)
+Much of the rest of Part I concerns the transformation of enriched lambda
+calculus expressions into the ordinary lambda calculus subset, a process which
+is quite independent of Miranda. This language-independence was one of the
+reasons for defining the enriched lambda calculus language in the first place.
+Chapter 5 shows how expressions involving pattern-matching constructs may
+be transformed to use case-expressions, with a considerable gain in efficiency.
+Then Chapter 6 shows how all the constructs of the enriched lambda calculus,
+including case-expressions, may be transformed into the ordinary lambda
+calculus.
+Part I concludes with Chapter 8 which discusses type-checking in general,
+and Chapter 9 in which a type-checker is constructed in Miranda.

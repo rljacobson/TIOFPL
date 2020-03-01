@@ -1,0 +1,29 @@
+Twenty-three
+THE PRAGMATICS OF GRAPH
+REDUCTION
+The goal of a programmer is to write programs that are
+(i) (absolutely) correct, i.e. they should meet their specification;
+(ii) (reasonably) efficient, i.e. they should consume as few machine resources
+as possible.
+In order to achieve these goals the programmer has to reason about
+(i) the meaning of his program, to assure himself that it has the same
+meaning as the specification;
+(ii) the resource consumption of his program, to assure himself that it will
+consume only reasonable resources.
+In conventional imperative languages it is relatively hard to reason about the
+meaning of a program, because the semantics of the programming language is
+generally rather complex. On the other hand, it is normally fairly straight-
+forward to reason about the memory space and CPU cycles consumed by a
+program, because the programmer has an accurate mental model of how
+execution takes place.
+A major strength of functional languages is their semantic simplicity, which
+makes it much easier to reason about the meaning of a program. This topic has
+been well discussed elsewhere (for example Backus [1978], Turner [1981])
+and is outside the scope of this book. On the other hand, a major weakness of
+functional languages is the difficulty of reasoning about their space and time
+behavior, especially the former. In particular, a functional program may have
+much worse space-time behavior than the programmer might expect.
+This chapter is mainly concerned with a discussion of the various forms in
+which this problem occurs, as a warning to the unwary implementor. No good
+solutions are yet known to most of these problems; they are very much
+396

@@ -1,0 +1,44 @@
+274
+Chapter 16 SK Combinators
+greatest common divisor (gcd) of two integers, a and b, where b=a. In
+Miranda, the function is
+gcd a b = a,
+b=0
+gcd a b = gcd b (a rem b)
+where 'rem' is the built-in remainder function. Compiling to lambda
+expressions, we get
+gcd = \a. Ab. IF (= 0 b) a (gcd b (REM a b))
+This is cheating slightly, because we should have dealt with the recursive call
+to god using Y, which would give
+god = Y (Agcd.la.Ab. IF (= 0 b) a (god b (REM a b)))
+However, the work is laborious enough without doing this, so we shall use
+the previous version. Abstracting first b and then a gives
+god
+=
+Aa. Ab. IF (= 0 b) a (god b (REM a b))
+Aa. S (C (B IF (= 0)) a) (S god (REM a))
+S' S (C (B IF (= 0)) (B (S gcd) REM)
+We can test this by evaluating (god 35 7):
+gcd 35 7
+S' S (C (B IF (= 0))) (B (S god) REM) 35 7
+S (C (B IF (= 0)) 35) (B (S god) REM 35) 7
+C (B IF (= 0)) 35 7 (B (S god) REM 35 7)
+B IF (= 0) 7 35 (B (S god) REM 35 7)
+IF (= 0 7) 35 (B (S gcd) REM 35 7)
+uttttttttu :
+IF FALSE 35 (B (S god) REM 35 7)
+B (S gcd) REM 35 7
+S god (REM 35) 7
+god 7 (REM 35 7)
+S' S (C (B IF (= 0))) (B (S god) REM) 7 (REM 35 7)
+IF (= 0 (REM 35 7)) 7 (B (S god) REM 7 (REM 35 7))
+IF (= 0 0) 7 (B (S god) REM 7 0)
+IF TRUE 7 (B (S gcd) REM 7 0)
+A
+Combinator compilation and reduction is very simple but very laborious - a
+task well suited to a computer!
+16.3 Director Strings
+It seems at first that combinator compilation totally destroys the structure of
+the original expression, leaving a tangle of Ss and Ks, but this is not the case.
+Gaining insight into the structure of a combinator expression will lead us to a
+more efficient implementation.

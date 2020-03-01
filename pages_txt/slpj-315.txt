@@ -1,0 +1,49 @@
+Section 18.8 The built-in functions
+317
+HEAD must be in WHNF (since it has been EVALuated). Consider, for
+example, the expression
+($HEAD E) 3
+where E is some expression. Here, $HEAD evaluates E, takes its head,
+evaluates it, updates the ($HEAD E) redex and then applies the result to 3.
+Evaluation of the whole expression is not complete merely because the result
+of the ($HEAD E) reduction is in WHNF.
+$TAIL and $SEL-SUM-r-i are precisely analogous to $HEAD, except that we
+need a new G-code instruction SELSUM r,i which selects the ith component of
+a structured data object of sum type and of size r. Similarly, $SEL-r-i (the
+selector functions for product types) requires the introduction of a new
+G-code instruction SELPRODUCT r,i. If sum and product types use the same
+representation, then only one new G-code instruction is required.
+18.8.4 $IF, and the JUMP Instruction
+In order to generate code for $IF we need to introduce two jump instructions
+( JUMP and JFALSE), and a label pseudo-instruction (LABEL).
+The code for $IF is:
+PUSH 0;
+Get first argument
+EVAL;
+Evaluate it
+JFALSE L1;
+Jump to L1 if false
+PUSH 1;
+JUMP L2;
+Get second argument
+LABEL L1;
+Pseudo-instruction; a label
+PUSH 2;
+Get third argument
+LABEL L2;
+EVAL;
+UPDATE 4;
+Evaluate before overwriting
+Overwrite root
+POP 3;
+Pop arguments
+UNWIND;
+Continue
+(L1 and L2 are unique labels.)
+The reason for the last EVAL instruction was mentioned in the previous
+section, as was the reason for using UNWIND rather than RETURN.
+In order to implement $CASE-n we need an n-way jump instruction,
+CASEJUMP L1,L2, . .., Ln
+which examines the structure tag of the object on top of the stack, and jumps
+to one of n labels depending on its value. Apart from this, its treatment is
+identical to $IF, so we will not mention it any further.

@@ -1,0 +1,116 @@
+\chapter[Preface]{}
+
+% The Preface "chapter" is typeset as if the word preface were the number instead of the title,
+% except it is in all caps as well.
+\vspace{-4.5cm}
+\makebox[2pt][l]{
+{\normalfont\fontsize{30}{20}\selectfont\sffamily
+\hspace{1.2cm}
+\makebox[2pt][l]{ \hspace{-2.2cm}
+	\rule[-6pt]{\widthof{mmPreface}}{3pt}
+}Preface}
+}
+
+\vspace{2.5cm}
+
+\noindent This book is about implementing functional programming languages using
+graph reduction.
+
+Functional languages have become the focus of much active research in
+recent years [Backus, 1978] [Peyton Jones, 1984], but their acceptance has
+been delayed by the inefficiency of their available implementations when
+compared with more conventional languages.
+
+This situation has changed recently, with the advent of rather fast implementations of functional languages such as Cardelli's ML [Cardelli, 1983],
+Fairbairn's Ponder [Fairbairn, 1982], and the Chalmers Lazy ML compiler
+[Johnsson, 1984]. These implementations rival the speed of compilers for
+more conventional languages.
+
+There appear to be two main approaches to the efficient implementation of
+functional languages. The first is an environment-based scheme, exemplified
+by Cardelli's ML implementation, which derives from the experience of the
+Lisp community. The other is graph reduction, a much newer technique first
+invented by Wadsworth [Wadsworth, 1971], and on which the Ponder and
+Lazy ML implementations are founded. Despite the radical differences in
+beginnings, the most sophisticated examples of each approach show remark-
+able similarities.
+
+The techniques of graph reduction are to be found scattered amongst the
+proceedings of various conferences and workshops, and it is one purpose of
+this book to collect some of this work together. The book is intended to have
+two main applications:
+\begin{compactenum}[(i)]
+\item As a course text for part of an undergraduate or postgraduate course on
+the implementation of functional languages.
+\item As a handbook for those attempting to write a functional language
+implementation based on graph reduction.
+\end{compactenum}
+The material is presented in a fairly informal tutorial fashion, the idea being to
+convey the framework and some of the intuitions that will render the original
+sources more accessible.
+
+Chapters 5 and 7 were written by Philip Wadler of the Programming
+Research Group, Oxford, and Chapter 4 was written in collaboration with
+him. Chapters 8 and 9 were written by Peter Hancock, of Metier Management
+Systems Ltd, and currently at the Programming Research Group, Oxford. I
+gratefully acknowledge their patience in writing and rewriting their drafts.
+
+I am extremely grateful to a number of other people who have made
+significant technical contributions to the book. David Turner's help was
+invaluable, in offering comments on the parts of the book that relate to
+Miranda. The Appendix which gives an introduction to Miranda, was written
+by him. (Miranda is a trademark of Research Software Limited.)
+
+Much of the information about Miranda in the first part of the book is based
+on a prerelease version of the Miranda system, and I am grateful to Research
+Software Limited for the permission to include this material.
+
+Simon Finn, of the University of Stirling, made a number of penetrating
+observations about the treatment of pattern-matching, which resulted in
+significant improvements in Chapters 4 and 6.
+
+Several long discussions with Thomas Johnsson of Chalmers University,
+Goteborg, radically changed the shape of the G-machine chapters, and
+Chapter 21 was written in collaboration with him. John Fairbairn and Stuart
+Wray of Cambridge also made important contributions in this area.
+
+Paul Hudak and Robert Keller helped me in writing the last section of
+Chapter 24.
+
+Many other people have given me welcome help and encouragement, and
+have helped enormously by reading the text and making constructive
+suggestions. These include Lennart Augustsson, Philip Boswell, Geoff Burn,
+Nigel Chapman, Chris Clack, Pierre-Louis Curien, Dan Friedman, Kevin
+Hammond, Peter Hancock, Chris Hankin, John Hughes, Thomas Johnsson,
+Dick Kieburtz, Phil Molyneux, Benedict Nixon, Martin Packer, Ellen Poon,
+Jon Salkild, William Stoye, David Turner, Phil Wadler, John Washbrook and
+Russel Winder. I am particularly grateful to John Washbrook for his unfailing
+support.
+
+\vspace{-\baselineskip}
+\begin{flushright}
+Simon L. Peyton Jones\\
+University College London\\
+London WC1E 6BT\\
+simonpj@uk.ac.ucl.cs
+\end{flushright}
+
+%\pg
+\vspace{-2\baselineskip}
+
+\section*{References}
+
+\begin{references}
+\item Backus, J. 1978. Can programming be liberated from the von Neumann style? A
+functional style and its algebra of programs. \textit{Communications of the ACM}. Vol.~21, no.~8, pp. 613-41.
+\item Cardelli, L. 1983. The functional abstract machine. \textit{Polymorphism}. Vol.~1,~no.~1.
+\item Fairbairn, J. 1982. Ponder and its type system. \textit{Technical Report 31}. Computer Lab.,
+Cambridge. November.
+\item Johnsson, T. 1984. Efficient compilation of lazy evaluation. In \textit{Proceedings of the ACM
+Conference on Compiler Construction, Montreal}, pp. 58-69. June.
+\item Peyton Jones, S.L. 1984. Directions in functional programming research. In SERC
+\textit{Distributed Computing Systems}, pp. 220-49. Duce (editor). Peter Peregrinus.
+\item Wadsworth, C.P. 1971. Semantics and pragmatics of the lambda calculus, Chapter 4.
+PhD thesis, Oxford.
+
+\end{references}

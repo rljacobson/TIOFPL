@@ -1,0 +1,37 @@
+Section 5.2 The pattern-matching compiler algorithm
+87
+and c2 is CONS, ps'2;1 is [x, xs], ps2,1 is [NIL], Ez,1 is (B u1 x xs), ps'22 is [x, XS],
+ps2,2 is [CONS y ys], and E22 is (C u1 x xs y ys). The corresponding qs' 2 is
+[ ( [x, XS, NIL
+], (B U1 x xs)
+( [x, xs, CONS y ys], (C u1 x xs y ys) ) ]
+The corresponding list of new variables, us2', is [u4,Us].
+This notation is, of necessity, rather clumsy. The reader will be pleased to
+discover, in Section 5.3, that this transformation can be written as a functional
+program which is more concise and (with experience) easier to read.
+Again, the correctness of this rule can be proved using the definition of
+match and the semantics of pattern-matching.
+5.2.4 The Empty Rule
+After repeated application of the rules above, one eventually arrives at a call
+of match where the variable list is empty, such as the following:
+match []
+[ ( [], (A u1 u3) ) ]
+ERROR
+This reduces to:
+(A U1 U3)
+The correctness of this follows immediately from the definition of match, since
+A cannot return FAIL.
+In general, the call of match may involve zero, one or more equations. Zero
+equations may result if the constructor rule is applied and some constructor of
+the type appears in no equations, as in last above. More than one equation can
+result if some of the original equations overlap.
+Thus, the general form of a call of match with an empty variable list is:
+match []
+[ ( [], E1 ),
+E
+( [], Em ) ]
+where m = 0. From the definition of match, this reduces to
+E1 0 . . . I Em I E
+Further, we can often guarantee that none of E1, ..., Em can be equal to FAIL.
+In this case, the above match expression reduces to E1 if m > 0 and to E if
+m = 0. Section 5.4.2 discusses this optimization further.

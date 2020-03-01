@@ -1,0 +1,39 @@
+176
+Chapter 9 A Type-checker
+For example, if we start with the name supply [O], then the names it will supply
+are [0], [2], [4], ..., while the names supplied by splitting the supply into [0,0]
+and [1,0] will be [0,0], [2,0], [4,0], ..., and [1,0], [3,0], [5,0], ..., respec-
+tively. (The +2 in the definition of deplete is only an artifice to ensure that the
+two halves of a split name supply are forever distinct.)
+The function name_sequence returns from a name supply an infinite
+sequence of distinct names derived from that supply:
+name_.sequence :: name_supply -> [tvname]
+name_sequence ns = next name ns : name_sequence (deplete ns)
+In practice, it is probably better to adopt an approach other than the supply
+of new variables, according to which variables are named by integers, and the
+name supply represented by the name of the next variable to be allocated. The
+type-checker would then take the name supply as an argument, and return the
+depleted supply as part of its value. We have adopted an approach which
+wastes large portions of the variable name space, in order not to encumber the
+type-checker code with a further avoidable detail.
+9.7 The Type-checker
+Finally, we are in a position to define the type-checker. This will take the form
+of a function (tc gamma ns e) where
+(i) gamma is a type environment, associating type schemes with each of the
+free variables of e. When the type-checker is invoked upon a complete
+program, this type environment should be initialized to contain
+declarations of the types of the built-in system-supplied identifiers.
+(ii) ns is a supply of type variable names.
+(iii) e is the expression to be checked.
+The value returned will be a reply, which in the case of success will return a
+pair of the form (phi, t) where
+(i), phi is a substitution defined on the unknown type variables in gamma.
+(ii) t is a type derived for the expression e, in the type environment
+(sub_te phi gamma). It will in fact be a fixed point of the substitution phi.
+In other words, if
+tc gamma ns e = OK (phi,t)
+then e::t can be derived from gamma, provided that each unknown tvn in
+gamma has the value given it by phi.
+We shall define the function to by induction on the structure of the
+expression, with a different clause for each form which an expression can
+take:

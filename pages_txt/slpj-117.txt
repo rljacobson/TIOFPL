@@ -1,0 +1,43 @@
+116
+Chapter 6 Transforming the Enriched Lambda Calculus
+problem of conformality checking. For example, the definition of head
+translates to:
+head = \xs . (letrec (CONS y ys) = xs in y)
+The pattern (CONS y ys) is refutable, and may fail to match. The problem
+applies equally to lets and letrecs.
+Having decided that conformality checking is essential, the next question
+is: when is the conformality check performed? There are two possible
+answers:
+(i)
+(if)
+When the evaluation of the entire let(rec)-expression begins.
+On the first occasion when either y or ys is used.
+To illustrate the consequences of this choice, consider the (rather
+contrived) expression
+let (CONS y ys) = NIL in 6
+The first answer specifies that the evaluation of this expression should cause
+an error, while the second specifies that it should return 6.
+In keeping with its lazy approach, the semantics of Miranda specifies the
+second of the two answers, and so this property should be inherited by
+let(rec)-expressions. How is this to be achieved? The simplest way seems to be
+to transform the expression
+let (CONS y ys) = B in E
+into
+let (PAIR y ys) = (((\(CONS y ys). PAIR y ys) B) [ ERROR) in E
+and rely on the transformation of Section 6.2.5 to cope with the simple product
+pattern (PAIR y ys). The expression on the right-hand side will evaluate B, check
+that it is an object constructed with CONS, take it apart, and construct a pair
+containing its two components. These components are then bound to y and ys using
+a simple product pattern on the left-hand side.
+If it is not an object constructed with CONS, then the application of the
+pattern-matching lambda abstraction to B will return FAIL, and I will return its
+second argument, namely ERROR.
+There are two points to notice about this transformation:
+(i) No conformality check will be made if neither y nor ys is used in E,
+because the lazy product-matching ensures that the right-hand side of the
+definition is not evaluated unless at least one of the components of the
+tuple is used.
+(ii) The conformality check is made at most once. The evaluation of y or ys
+will cause the evaluation of the right-hand side of the definition, at which
+point the conformality check will be made, and the tuple built. Now,
+further use of y or ys will simply access the components of this tuple.

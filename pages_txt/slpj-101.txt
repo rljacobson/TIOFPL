@@ -1,0 +1,39 @@
+100
+Chapter 5 Efficient Compilation of Pattern-matching
+DEFINITION
+A set of equations is uniform if one of the following three conditions holds:
+(i) either, all equations begin with a variable pattern, and applying the
+variable rule (of Section 5.2.2) yields a new set of equations that is
+also uniform
+(ii) or, all equations begin with a constructor pattern, and applying the
+constructor rule (of Section 5.2.3) yields new sets of equations that
+are all also uniform;
+(iii) or, all equations have an empty list of patterns, so the empty rule (of
+Section 5.2.4) applies, and there is at most one equation in the set.
+That is, a set of equations is uniform if it can be compiled without using the
+mixture rule (of Section 5.2.6), and if the empty rule is only applied to sets
+containing zero or one equations. (It is easy for the reader to check that when
+the empty rule is applied to more than one equation, the order is relevant.)
+Such equation sets are called 'uniform' because all equations must begin the
+same way, either with a variable pattern or a constructor pattern, whereas the
+mixture rule applies when some equations begin with variable patterns and
+some with constructor patterns.
+It is not difficult to prove the following:
+THEOREM
+If a definition is uniform, changing the order of the equations does not
+change the meaning of the definition.
+The proof is a straightforward induction, and is similar in structure to the
+proof of correctness of the pattern-matching compiler that was outlined
+(along with its definition) in Section 5.2.
+This shows that being uniform is a sufficient condition for the order of the
+equations not to matter. It is not a necessary condition, as is shown by the
+function dummy:
+dummy [] = 1
+dummy xs = 1, xs = []
+Clearly, dummy is not uniform, but the order of the equations does not matter.
+However, the following result shows that being uniform is indeed necessary if
+one considers only the left-hand sides:
+THEOREM
+If the left-hand sides of a definition are such that the order of the equations
+does not matter (regardless of the right-hand sides or condition parts of
+the equations), the definition is uniform.

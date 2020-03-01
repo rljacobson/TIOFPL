@@ -1,0 +1,38 @@
+382
+Chapter 22 Strictness Analysis
+Beginning with an arithmetic expression (at the top), we may evaluate in the
+ordinary way, using Eval (see Section 2.5); we call this the standard inter-
+pretation.
+Eval[[ 34*(-5)+(-3993) ]] = 678810
+like this:
+Then we may take the sign of the result, using a function sgn::Number -> Sign,
+sgn 678810 = PLUS
+The function sgn maps a number onto a two-point domain {PLUS,MINUS}.
+We call this operation abstraction, since it preserves certain information
+about its argument (in this case, its sign), while losing other information (for
+example, whether or not the argument is even).
+Alternatively, we may evaluate the original expression using the rule of
+signs; we call this the abstract interpretation, and write it like this:
+Eval% [[ 34+(-5)*(-3993) ] = PLUS *% MINUS *% MINUS
+= PLUS
+The crucial fact is that the short-cut gives the same answer as the long way
+round. Using the new notation, we can express this condition formally as
+follows:
+sgn Eval|[ E ] = Eval% [[ E ]]
+for any expression E. We call this the safety condition, since it expresses the
+fact that the abstract interpretation gives correct (safe) answers.
+Notice that the abstraction function is chosen to preserve exactly (and only)
+the information we need to answer the original question, which asked for the
+sign of the result. The abstract interpretation is then chosen to give a short-cut
+for that particular abstraction function. A different question, such as 'is the
+result even or odd?', would suggest a different abstraction function and a
+different abstract interpretation.
+Usually the abstract interpretation cannot give completely accurate
+answers. For example, consider the abstract interpretation of an expression
+involving addition:
+Eval% [[ 23 + (-45) ] = PLUS +% MINUS
+where +% is the abstract version of the addition operator. There is no
+convenient rule of signs for addition, and the best that the abstract inter-
+pretation can do is to give the result 'PLUS or MINUS'. The abstract interpre-
+tation is then 'safe' in the sense that it never gives 'wrong' answers, though it
+may give 'uninformative' answers.

@@ -1,0 +1,39 @@
+392
+Chapter 22 Strictness Analysis
+abstract functions to annotate the original (lambda-lifted) program:
+(i) We can annotate each supercombinator definition to indicate in which
+arguments it is strict. For example, the definition
+$F ! xy ! z = . . . body of $F. . .
+might indicate that $F is strict in x and z, but not in y. (The exclamation
+mark is, of course, just an arbitrary symbol chosen to allow us to write a
+concrete representation of an annotated definition.)
+This kind of annotation was used in the optimizations of Section 20.6.2.
+(ii) We can annotate individual application nodes in supercombinator bodies
+to indicate strict applications. For example, in the definition
+$G p q = . . .($F ! p 3 ! q). ..
+the application of $F to p is annotated with an infix exclamation mark to
+indicate a strict application. The application of ($F p 3) to q is similarly
+annotated.
+This kind of annotation was used in the optimizations of Section 20.5.2.
+At first it appears that the two sorts of annotation give duplicate information,
+and indeed they often do so. However, there are situations in which each is
+uniquely appropriate.
+22.5.1 Annotating Function Definitions
+Given a definition for the supercombinator $F, we want to annotate the
+definition to indicate the parameters in which it is strict. Using its abstract
+interpretation $F#, we can discover this information using the method
+described at the end of Section 22.2.3.
+Suppose $F takes two arguments. Then in order to find whether $F is strict
+in its first argument we simply evaluate
+$F# 0 1
+If the answer is 0, $F is certainly strict in its first argument. One slight
+complication is that the result of $F may be a function, so that the result of our
+abstract evaluation will also be a function. In this case we are interested in
+whether the result is the bottom element of the function domain, so we simply
+feed it 1s' until it returns either 0 (in which case $F is strict) or 1 (in which case
+it is not). (The bottom element of a function domain is that function which
+returns the bottom element of its result domain regardless of its argument.)
+For example, suppose $F was defined as
+$F x y = + (+ xy)
+Then $F# will be
+$F#* x y = & (& x y)

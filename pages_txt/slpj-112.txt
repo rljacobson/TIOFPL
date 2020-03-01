@@ -1,0 +1,45 @@
+Section 6.2 Transforming let and letrec
+111
+For a start, we establish the following terminology:
+i) The left-hand side of each definition of a simple let(rec)-expression must
+(ii)
+be a variable.
+The left-hand side of each definition of an irrefutable let(rec)-expression
+iii
+must be an irrefutable pattern.
+The left-hand side of each definition of a general let(rec)-expression may
+be any arbitrary pattern.
+With the aid of this terminology, Figure 6.3 depicts the transformations which
+will be described below, giving the appropriate section number in brackets.
+For the reasons discussed in Section 3.2.4, there are two possible forms into
+which we may wish to transform the program, which differ only in their
+treatment of let and letrec:
+(i) We may transform the program into the ordinary lambda calculus; this
+gives the simplest resulting program. In this case, general lets are trans-
+formed into the ordinary calculus via irrefutable lets and simple lets.
+General letrecs, on the other hand, are first transformed into irrefutable
+lets via irrefutable letrecs, and then use the let transformations.
+(ii) We may transform the program into the ordinary lambda calculus
+augmented with simple let(rec)-expressions; the resulting program is
+slightly more complicated, but can be implemented more efficiently
+(Section 3.2.4). In this case, general lets are transformed only into simple
+lets, and general letrecs are transformed into simple letrecs, via irrefutable
+letrecs.
+Dependency analysis (6.2.8)
+General let(rec) expressions
+Conformality transformation (6.2.7)
+Irrefutable
+lets
+Irrefutable
+(6.2.4)
+(6.2.6)
+letrecs
+J (6.2.5)
+Simple
+lets
+Simple
+letrecs
+(6.2.3)
+Ordinary
+lambda calculus
+Figure 6.3 Map of let(rec) transformations

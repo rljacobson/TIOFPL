@@ -1,0 +1,50 @@
+Section 5.1 Introduction and examples
+79
+[], which fails. Then the second equation is tried. Matching (+) against f and
+[1,2] against (x:xs) both succeed, but matching [3,4] against [] fails. Finally,
+matching in the third equation succeeds, binding f to (+), x to 1, xs to [2], y to 3,
+and ys to [4]. This corresponds exactly to the way pattern-matching was
+defined in Chapter 4.
+Performing pattern-matching in this way can require a lot of work. The
+example above had to examine the list [1,2] three times and the list [3,4] twice.
+It seems clear that it should be possible to evaluate this function application in
+a more efficient manner that examines each list only once, but still gives the
+result prescribed by the semantics. This can be done by transforming the
+above definition into an equivalent one using case-expressions:
+mappairs
+= Af. AXS' . Ays' .
+case xs' of
+NIL
+NIL
+CONS x XS
+case ys' of
+NIL
+NIL
+CONS y ys => CONS (f x y) (mappairs f xs ys)
+(Case-expressions were introduced in Section 4.4.) This chapter describes an
+algorithm that can automatically translate the first definition into the second.
+This algorithm is called the pattern-matching compiler.
+The second example shows pattern-matching on a nested pattern. The
+function call (nodups xs) removes adjacent duplicate elements from a list xs. It
+can be defined as follows:
+nodups []
+nodups [x]
+=
+= [x]
+nodups (y:x:xs) = nodups (x:xs),
+y = x
+= y : nodups (x:xs), otherwise
+(As you would expect, the guard 'otherwise' applies if no other guard does.
+See Appendix.) For example, (nodups [3,3,1,2,2,2,3]) returns [3,1,2,3]. Note
+that the naming need not be consistent: x stands for the first element of the list
+equation.
+in the second equation, and for the second element of the list in the third
+Again, one can apply this definition by matching each equation in turn. For
+example, evaluation of (nodups [1,2,3]) will first try to match [1,2,3] against [ ],
+which fails. Next, it will try to match [1,2,3] against [x], which also fails.
+Finally, it will succeed in matching [1,2,3] against (y:x:xs), binding y to 1, x to 2
+and xs to [3]. Again, this corresponds exactly to the semantics in Chapter 4.
+As before, this is not very efficient. The list [1,2,3] is examined three times,
+and the sublist [2,3] is examined twice (once in the second equation, where it
+fails to match [], and once in the third equation, where it succeeds in matching
+(x:xs)). The pattern-matching compiler can transform this into a form that

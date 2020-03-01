@@ -1,0 +1,53 @@
+156
+Chapter 8 Polymorphic Type-checking
+It seems intuitively reasonable that we allow K to take on different types at its
+different occurrences in the body of the let-expression. Indeed, it is hard to see
+what polymorphism would mean if we insisted that variables introduced by a
+let definition should have the same type, as with variables bound by x.
+To examine the type structure of this expression, we need to extend the tree
+notation to represent it:
+S :: T6 -> 17 -> T8 K :: T6
+@
+17 -> T8
+K :: 17
+Tree-S
+Tree-K
+@
+S :: TS
+K :: TK
+T8
+let S,K.
+T9
+Since we already know how to type-check the right-hand sides of the
+definitions of S and K, we have merely indicated their type trees, to save
+space. Moreover, we have skipped a few steps in representing the type
+structure of (S K K). The equations for the type structure of the right-hand
+sides of the definitions of S and K can be solved to yield:
+TS = (TO -> T1 -> T2) -> (TO -> T1) -> TO -> T2
+TK = T3 -> T4 -> T3
+The new constraints we have to consider are those relating T8 to T9, and the
+types TS and TK to the types of their occurrences in the body of the let-
+expression.
+For the first constraint, plainly we should require that T8=T9. As for the
+second, the constraint is that the type of the occurrence of S should be an
+instance of the type TS, and the types of the two occurrences of K should each
+be an instance of the type TK. But how should we represent such a require-
+ment by means of an equation?
+When working out the equations by hand, it is quite natural to proceed as
+follows: refrain from making any such representation at the outset. Instead,
+obtain first a fully evaluated expression for the type of TS and TK (as we have
+done). Then introduce new type labels for the instantiated variables at
+each occurrence of S and K in the body of the let-expression. (In this case,
+there are three such variables in the type for S, namely TO, T1 and T2; and two
+in the type of K, namely T3 and T4.) If we use a fresh set of variables for each
+occurrence, then we can still work with equations, and leave the values of
+those fresh variables to be worked out while we are exploring the type
+structure of the body. So in this case we should add new variables T10, T11,
+T12 to instantiate TS at its first occurrence, T13 and T14 to instantiate TK at the
+first occurrence of K, and T15 and T16 to instantiate TK at the second
+occurrence of K. We then add the equations
+T6 -> 17 -> T8 =
+(T10 -> T11 -> T12)
+-> (T10 -> T11) -> T10 -> T12
+T6 = T13 -> T14 -> T13
+17 = T15 -> T16 -> T15

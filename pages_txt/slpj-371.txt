@@ -1,0 +1,35 @@
+Section 21.2 Generalizing tail calls
+373
+Now DISPATCH behaves just like UNWIND. We can formalize this transition
+with the rule
+<f:n1:n2:. . .:nk:r:S, G[f=AP mi m2], DISPATCH k:[], D>
+=> <f:v1:V2:. . .:VK-1:1:S, GV1=AP f n1
+VI=AP Vi-1 ni, (1<i<k)
+1, UNWIND:[], D>
+r =AP VK-1 nk
+Node r is the root of the current redex in this rule and the other DISPATCH
+rules, and nodes vi are vertebrae nodes. This seems like quite a lot for one
+instruction to do, but the actual operations involved are quite simple.
+Notice particularly that this would be a safe implementation of DISPATCH
+regardless of what W is, because it makes no assumptions about W. An
+implementation could therefore use this rule at first for all Ws and later be
+refined for efficiency. We have expressed the ule as specific to application
+nodes because we want to give other more efficient implementations of
+DISPATCH for special cases.
+21.2.2 W is a Supercombinator of Zero Arguments
+If W is a supercombinator of zero arguments we cannot improve on the
+previous case, so DISPATCH should behave in exactly the same way as if W was
+an application node.
+21.2.3 W is a Function of Three Arguments
+If W is a function of three arguments then we have the tail call case, and
+following rule:
+DISPATCH can simply enter the code for W. We can express this with the
+<f:S, G[f=FUN k C], DISPATCH k:[], D>
+=><S, G, C, D>
+The justification for this was given in the section on tail calls. The code for the
+function should be entered after the arity check, since we know that it has
+19.4.3).
+enough arguments. This is the EXEC entry of the function (see Section
+21.2.4 W is a Function of Less Than Three Arguments
+If W is a function of less than three arguments then part of the body of $F will
+be the next redex to be reduced.

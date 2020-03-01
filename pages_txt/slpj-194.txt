@@ -1,0 +1,38 @@
+194
+Chapter II Selecting the Next Redex
+program. However, it can be quite tricky to work out exactly when the
+argument will first be needed (and hence evaluated).
+(ii) Call by need is hard to implement in a stack-based implementation.
+In the context of functional languages, call by need is often called lazy
+evaluation, since it postpones work until it becomes unavoidable. Conversely,
+call by value is often called eager evaluation.
+11.1.1 The Case for Lazy Evaluation
+In the context of functional programming, there are strong reasons for
+providing lazy evaluation in the language.
+It adds a new dimension of expressive power to the language, allowing, in
+particular, the construction and manipulation of infinite data structures and
+streams. A full justification of this point of view is outside the scope of this
+book, since it lies in the area of software engineering rather than implement
+tations, and the reader is referred to Chapter 8 of Henderson's book [1980],
+Jones, 1986].
+Section 3.4 of Abelson and Sussman [1985] and the author's paper [Peyton
+Not all functional languages have lazy semantics. For instance, ML and
+Hope are strict, while SASL, KRC, LML, Miranda, Orwell and Ponder are
+lazy.
+11.1.2 The Case Against Lazy Evaluation
+There is only one argument against lazy evaluation, but it is a very persuasive
+one: the price of lazy evaluation is execution speed. There seems to be no
+avoiding this in practice. Faster implementations are possible when the
+arguments to functions can be evaluated before the function is applied.
+Languages like ML and Hope have strict (call by value) semantics, but
+support lazy evaluation where it is explicitly requested by the programmer
+(particularly in data constructors). The argument is that the price for lazy
+evaluation should only be paid where it is actually required.
+11.1.3 Normal Order Reduction
+Any implementation of lazy evaluation has two ingredients:
+(i) Arguments to functions should be evaluated only when their value is
+needed, not when the function is applied.
+(ii) Arguments should only be evaluated once; further uses of the argument
+within the function should use the value computed the first time. Since the
+language is functional we can be sure that this scheme gives the same
+result as re-evaluating the argument.

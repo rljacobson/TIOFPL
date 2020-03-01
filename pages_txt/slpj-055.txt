@@ -1,0 +1,57 @@
+54
+Chapter 4 Structured Types and the Semantics of Pattern-matching
+TE[ : 1
+CONS
+TEI [ ] I
+NIL
+TE [E1, E2, ..., En] ]
+CONS TE[ E1 1 TEI [E2, . .., En] ]
+TEI (E1, E2) ]
+TE[ (E1, E2, E3)
+PAIR TE[ E1 ] TE E2 ]
+TRIPLE TE[ E: ] TE[ E2 ] TEI E3 ]
+and so on
+TE[ True ]
+=
+TRUE
+TE[ False ]
+FALSE
+Figure 4.1 Modifications to the TE scheme for lists, tuples and booleans
+(Note: the last example is different from the others, because it describes a
+type-expression rather than a value-expression.)
+We can conveniently perform this translation when translating from
+Miranda into the enriched lambda calculus; Figure 4.1 gives the required
+equations.
+Notice that the elements of a list of type (list *) must all be of type *, but the
+number of elements in a list is not determined by its type. Thus (CONS 2 NIL)
+and (CONS 3 (CONS 6 NIL)) are both of type (list num), though they are of
+different lengths.
+4.1.2.2 Tuples
+Miranda also provides special syntax to denote tuples, and these also can be
+defined using a structured type. Tuples could be defined as follows:
+pair
+* *
+::=
+PAIR
+* *
+triple
+*
+** ***
+::=
+TRIPLE
+*
+** ***
+quadruple * ** *** **** ::= QUADRUPLE * * * *#* **#*
+Notice the difference between 'pair' and 'PAIR': the former is a type-forming
+operator, used only in type-expressions, while the latter is the constructor
+function of the type, used only in value-expressions.
+As with lists, Miranda's special syntax can be translated as follows:
+(x,y) is translated to (PAIR x y)
+(x,y,z) is translated to (TRIPLE x y z)
+and so on.
+(*, **) is translated to (pair * * *)
+(*,**,***) is translated to (triple * * * ***)
+Figure 4.1 gives the required equations.
+Notice that a tuple may contain elements of mixed type; for example
+(3, TRUE) :: PAIR num bool
+('a', (3, 2)) :: PAIR char (PAIR num num)

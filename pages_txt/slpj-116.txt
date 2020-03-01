@@ -1,0 +1,41 @@
+Section 6.2 Transforming let and letrec
+115
+It defines the infinite list [1,2,1,2, ...,J. Applying the first transformation, we
+package up the definitions into one:
+letrec (PAIR x y) = PAIR (CONS 1 y) (CONS 2 x) in x
+Now, applying the second transformation gives:
+let (PAIR x y) = Y (X(PAIR x y). PAIR (CONS 1 y) (CONS 2 x)) in x
+It is vital that the pattern-matching lambda abstraction should use lazy
+product-matching. If it were to use strict product-matching instead, the
+expression would yield 1 rather than [1,2,1,2, ...,]. In fact, mutual recursion
+cannot be implemented using Y without some form of lazy product-matching.
+Using the transformations for let-expressions and pattern-matching lambda
+abstractions, we could complete the transformation of the current example as
+follows:
+(Av. (Ax.Ay.x) (SEL-PAIR-1 v) (SEL-PAIR-2 v))
+(Y (UNPACK-PRODUCT-PAIR (AX.Ay. PAIR (CONS 1 y) (CONS 2 x))))
+This expression is not a pretty sight, but it gives the correct answer (that is, the
+infinite list [1,2, 1,2, 1,2, . . .,]).
+It should be clear from this example that implementing letrec using tuples
+carries a run-time cost, both to build the tuple and to take it apart. This is one
+of the reasons why more sophisticated implementations implement simple
+let(rec)s directly (see Section 3.2.4 and Chapter 14).
+6.2.7 Transforming General let(rec)s into Irrefutable let(rec)s
+In Miranda, arbitrary patterns may appear on the left-hand side of a
+definition. For example, consider the following Miranda definition of the
+function head, which extracts the first element of a list:
+head xs = y
+where (y:ys) = xs
+The pattern (y:ys) appears on the left-hand side of the definition in the
+where-clause. But this raises an awkward question: what would happen if the
+pattern (y:ys) did not match the result of evaluating xs? In particular, what
+would happen if we evaluated (head [])?
+It is clearly unacceptable for the system to proceed in ignorance that
+anything is wrong, so it is necessary to check that xs matches the pattern,
+rather than assume that it always will. This is called the conformality check,
+since it checks that xs conforms to the pattern.
+Notice that the possibility of a mismatch only arises in the case of refutable
+patterns, involving sum-constructor patterns or constants. The irrefutable
+patterns, involving variables and product-constructor patterns only, cannot
+fail to match (in a type-checked implementation).
+The translation into the enriched lambda calculus does not affect the

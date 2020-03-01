@@ -1,0 +1,39 @@
+Section 15.5 Implementing fully lazy lambda-lifting
+253
+merged, otherwise they are given new unique names (since they will be
+maximal free expressions of distinct lambda abstractions). The merging
+is the mechanism whereby free expressions are combined to form
+maximal free expressions.
+(iii) When a lambda is encountered on the way up, it is transformed into a
+supercombinator, and the lambda abstraction is replaced by the super-
+combinator applied to the maximal free expressions. The maximal free
+expressions are those subexpressions with level-number less than that of
+the lambda abstraction, after the merging has taken place.
+15.5.2 Lifting CAFs
+The maximal constant expressions (level 0) need slightly different treatment.
+It would be correct to take them out as extra parameters, but there is an easier
+way. We can simply define a new supercombinator of zero arguments to be
+the constant expression, and use the name of the supercombinator instead of
+the expression. No benefit is obtained, however, by doing this with constant
+as they are.
+expressions consisting of a single constant (such as 3 or $F), so they can be left
+For example, in the expression
+Ax. + 1 x
+the (+ 1) is a maximal free expression at level 0, and can be made into a
+supercombinator $Inc:
+$inc = + 1
+Now the expression becomes
+Ax . $Inc x
+In this case all that we achieve is the sharing of the (+ 1) graph for each
+application of the lambda abstraction, but if the constant expression is itself a
+redex (like (+ 1 3), for example) then we also save repeated evaluation of the
+redex. There was an example of the utility of this in the $fac1000 super-
+combinator of Section 15.3.2. (Note: there is actually a strong case to be made
+for not lifting out a constant expression unless it is in fact a redex - see Section
+15.6.1.)
+15.5.3 Ordering the Parameters
+In Section 13.3.2 we put the parameters of a supercombinator in order of
+increasing level-number, to maximize the opportunities for n-reduction. The
+reasons.
+same ordering is useful for maximal free expression parameters, for two
+The first is the same as before. A maximal free expression will often be just

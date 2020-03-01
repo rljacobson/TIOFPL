@@ -1,0 +1,43 @@
+294
+Chapter 18 The G-machine
+18.1 Using an Intermediate Code
+Once we have decided to compile supercombinator bodies to a sequence of
+instructions we have to decide on the language in which the instructions
+should be written. It would be possible to produce, say, VAX machine code
+directly, but this approach suffers from two disadvantages. Firstly, we would
+have to start all over again if we want to generate code for some other
+machine, and, secondly, we would be in danger of mixing up the issues of how
+to compile supercombinators to a sequential code with issues of how best to
+exploit particular features of the VAX.
+This is not a new problem, and a common solution is to define an
+intermediate code, which can be regarded as the machine code for an abstract
+sequential machine. Then the compilation process can be split into two parts:
+first generate the intermediate code, and then generate target code for a
+particular machine from the intermediate code. Changing the code generator
+to generate code for a different target machine is then relatively easy, and
+improvements made in the compilation to intermediate code benefit all such
+code generators. Examples of this approach include Pascal's P-code [Clark,
+1981], BCPL's O-code [Richards, 1971] and Portable Standard Lisp's
+C-macros [Griss and Hearn, 1981].
+18.1.1 G-code and the G-machine Compiler
+For these reasons, the designers of the G-machine defined an intermediate
+code called G-code, into which supercombinator bodies are compiled. The
+compiler for the G-machine follows a sequence similar to that described in the
+first two parts of this book. In particular:
+(i) The source language is a variant of ML with lazy evaluation semantics,
+called Lazy ML (or LML).
+(ii) Early phases of the compiler perform type-checking, compile pattern-
+matching and do dependency analysis. At this stage the program has
+been translated to the lambda calculus (augmented with let and letrec).
+(iii) A lambda-lifter transforms the program to supercombinator form. The
+full laziness optimization is not performed, but his feature could easily be
+added.
+(iv) Now the supercombinators are compiled to G-code.
+(v) Finally, machine code for the target machine is generated from the
+G-code.
+Figure 18.1 shows the structure of the G-machine compiler.
+Our description of the G-machine compiler falls into three parts:
+(i) a description of the compilation algorithm which translates the source
+language into the intermediate code;
+(ii) a description of the intermediate code itself, giving a precise description
+of what each instruction does;

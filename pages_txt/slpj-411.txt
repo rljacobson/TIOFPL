@@ -1,0 +1,40 @@
+Section 24.3 Parallel graph reduction
+413
+scheduling may have a strong impact on efficiency. Thus it is no harder to
+reason about a parallel functional program than a sequential one.
+To summarize, when using a functional language, the programmer does not
+have to design a static task partition, guarantee mutual exclusion and
+synchronization, or establish communication protocols between tasks. This
+allows the programmer to concentrate on the creative activity of designing a
+parallel algorithm.
+24.3 Parallel Graph Reduction
+We have seen that functional languages can form a basis for parallel
+programming. The benefits outlined above would in fact accrue to any
+parallel implementation of a functional language, but graph reduction is a
+particularly attractive execution model for a parallel implementation, for the
+following reasons:
+(i) Graph reduction is an inherently parallel activity. At any moment the
+graph may contain a number of redexes and it is very natural to reduce
+them simultaneously.
+(ii) Graph reduction is an inherently distributed activity. A reduction is a
+(topologically) local transformation of the graph, and no shared bottle-
+neck (such as an environment) need be consulted to perform a reduction.
+(iii) All communication is mediated through the graph. This gives a very
+simple model of the way in which concurrent activities cooperate, and it
+is a model in which we have considerable confidence (because it is the
+same as our sequential implementations!)
+(iv) The entire state of the computation at any moment is well defined - it is
+the current state of the graph.
+Graph reduction gives us a rock-solid model of parallel computation which can
+underpin the complexities of a parallel machine. As with the G-machine, we
+can think of ways to optimize the actual execution of graph reduction to get
+good performance, but as long as these are just short-cuts to achieve the same
+effect we can have confidence in the correctness of our implementation.
+We now begin to consider how to perform parallel graph reduction.
+24.3.1 A Model for Parallel Reduction
+In a sequential implementation evaluation is performed by calling an
+evaluator, passing it (a pointer to) the root of the graph to be evaluated. The
+evaluator performs a sequence of reductions until the graph is in WHNF and
+then terminates.
+Our model for parallel reduction is a simple generalization of this. We
+imagine a number of evaluator tasks simultaneously at work on the graph.

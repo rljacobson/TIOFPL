@@ -1,0 +1,28 @@
+Twenty-one
+OPTIMIZING GENERALIZED
+TAIL CALLS
+Simon L. Peyton Jones and Thomas Johnsson
+Suppose we are compiling the body of a supercombinator such as
+$F x y = W E1 E2 E3
+where W is either a supercombinator, or a built-in function, or a variable (only
+x or y would be possible in this case). We will produce G-code to build an
+instance of the body of $F. However, at the end of this code is an UNWIND
+instruction which will unwind the spine of the instance onto the stack. When
+we then perform the W-reduction, all the newly allocated vertebrae below the
+root of the W-redex will immediately become garbage (note: this is actually a
+slight overgeneralization).
+This chapter is devoted to techniques designed to avoid allocating
+vertebrae that are going to become garbage straight away. During the chapter
+we will use the $F supercombinator above as a running example.
+Suppose that W was a supercombinator or built-in function. Then the code
+for $F would begin as follows:
+CI E3 I p d;
+CI E2 I p (d+1);
+CI E1 1 p (d+2);
+PUSHGLOBAL W;
+(If W was a variable, the only difference is that the last instruction would be a
+PUSH instead of a PUSHGLOBAL.) This puts all the ribs on the stack, but does
+not construct any vertebrae (which is done subsequently with an 'MKAP 3'
+instruction). After this sequence has executed, the current context looks like
+Figure 21.1 (remember that in all our pictures the stack grows downwards). In
+367

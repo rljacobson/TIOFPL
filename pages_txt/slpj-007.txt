@@ -1,0 +1,42 @@
+Section 1.4 Part III: advanced graph reduction
+(v) Evaluation is complete when there are no further reducible expressions.
+Graph reduction gives an appealingly simple and elegant model for the
+execution of a functional program, and one that is radically different from the
+execution model of a conventional imperative language.
+We begin in Chapter 10 by discussing the representation of a functional
+program as a graph. The next two chapters form a pair which discusses first the
+question of deciding which reduction to perform next (Chapter 11), and then
+the act of performing the reduction (Chapter 12).
+Chapters 13 and 14 introduce the powerful technique of supercombinators,
+which is the key to the remainder of the book. This is followed in Chapter 15
+with a discussion of full laziness, an aspect of lazy evaluation; this chapter can
+be omitted on first reading since later material does not depend on it.
+Chapter 16 then presents SK combinators, an alternative implementation
+technique to supercombinators. Hence, this chapter can be understood
+independently of Chapters 13-15. Thereafter, however, we concentrate on
+supercombinator-based implementations.
+Part II concludes with a chapter on garbage collection.
+1.4 Part Ill: Advanced Graph Reduction
+It may seem at first that graph reduction is inherently less efficient than more
+conventional execution models, at least for conventional von Neumann
+machines. The bulk of Part III is devoted to an extended discussion of the
+G-machine, which shows how graph reduction can be compiled to a form that
+is suitable for direct execution by ordinary sequential computers.
+In view of the radical difference between graph reduction on the one hand,
+and the linear sequence of instructions executed by conventional machines on
+the other, this may seem a somewhat surprising achievement. This (fairly
+recent) development is responsible for a dramatic improvement in the speed
+of functional language implementations.
+Chapters 18 and 19 introduce the main concepts of the G-machine, while
+Chapters 20 and 21 are devoted entirely to optimizations of the approach.
+The book concludes with three chapters that fill in some gaps, and offer
+some pointers to the future.
+Chapter 22 introduces strictness analysis, a compile-time program analysis
+method which has been the subject of much recent work, and which is crucial
+to many of the optimizations of the G-machine.
+Perhaps the major shortcoming of functional programming languages,
+from the point of view of the programmer, is the difficulty of estimating the
+space and time complexity of the program. This question is intimately bound
+up with the implementation, and we discuss the matter in Chapter 23.
+graph reduction.
+Finally, the book concludes with a chapter on parallel implementations of

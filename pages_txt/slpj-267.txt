@@ -1,0 +1,42 @@
+Section 16.2 Optimizations to the SK scheme
+267
+16.2 Optimizations to the SK Scheme
+The examples given above show that the basic compilation algorithm tends to
+produce rather large combinator expressions from quite innocuous-looking
+lambda abstractions. In fact, in the form given above it is virtually unusable,
+because the combinator expressions become so large, and require so many
+reductions to reduce to normal form.
+Fortunately there are some optimizations which render the technique quite
+practicable, which we will develop in this section. To perform these
+and C').
+optimizations we shall need to introduce five new combinators (B, C, S', B'
+16.2.1 K Optimization
+Consider the expression
+Ax. + 1
+When we compile it, we get
+S (K +) (K 1)
+This is very stupid, because x is not used at all in the body of the lambda
+abstraction. A far better result would be
+K (+ 1)
+This optimization is easily achieved, by the optimization rule
+S (K p) (K q) => K (p q)
+It is a simple matter to prove the extensional equality of these expressions:
+S (K p) (K q) x
+K p x (K q x)
+K (p q) x
+p (K q x)
+-pq
+p q
+Hence S (K p) (K q) = K (p q)
+When applied to an argument (K (p q)) requires only one reduction, instead
+of three for (S (K p) (K p)), so the optimized version is indeed more efficient.
+The effect of applying this rule consistently is that
+A x [[ e ]] = Ke if and only if x is not used in e
+This property shows that the K optimization is just what is needed to
+preserve full laziness. To illustrate this, suppose that f = (Ax.p q), where p
+and q do not use x. We can now produce two combinator translations for f,
+with and without the K optimization:
+f = \x.pq => S (K p) (K q)
+=> K (p q)
+(unoptimized version)
+(optimized version)

@@ -1,0 +1,41 @@
+Section 2.2 The operational semantics of the lambda calculus
+21
+our implementations will come across this problem, so this section can safely
+be omitted on first reading.
+Suppose we define a lambda abstraction TWICE thus:
+TWICE = (\f. Ax.f (f x))
+Now consider reducing the expression (TWICE TWICE) using B-reductions:
+TWICE TWICE
+(Af. Ax. f (f x)) TWICE
+(AX. TWICE (TWICE x))
+Now there are two B-redexes, (TWICE x) and (TWICE (TWICE x)), so let us
+(arbitrarily) choose the inner one for reduction, first expanding the TWICE to
+its lambda abstraction:
+=
+(AX. TWICE ((Af. Ax.f (f x)) x))
+Now we see the problem. To apply TWICE to x, we must make a new instance
+of the body of TWICE (underlined) replacing occurrences of the formal
+parameter, f, with the argument, x. But x is already used as a formal parameter
+inside the body. It is clearly wrong to reduce to
+(AX. TWICE ((Af. Ax . f (f x)) x))
+(AX. TWICE (AX.X (x x)))
+wrong!
+because then the x substituted for f would be 'captured' by the inner Ax
+abstraction. This is called the name-capture problem. One solution is to use
+a-conversion to change the name of one of the Ax's; for instance:
+(AX. TWICE ((Af.Ax.f (f x)) x))
+(AX. TWICE ((Af. Ay.f (f y)) x))
+(AX. TWICE (Ay .x (x y)))
+right!
+We conclude:
+(i) B-reduction is only valid provided the free variables of the argument do
+not clash with any formal parameters in the body of the lambda
+abstraction.
+(ii) a-conversion is sometimes necessary to avoid (i).
+2.2.7 Summary of Conversion Rules
+We have now developed three conversion rules which allow us to interconvert
+expressions involving lambda abstractions. They are
+(i) Name changing. a-conversion allows us to change the name of the formal
+parameter of a lambda abstraction, so long as we do so consistently
+(ii) Function application. B-reduction allows us to apply a lambda abstract
+tion to an argument, by making a new instance of the body of the

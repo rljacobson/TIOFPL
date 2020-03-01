@@ -1,0 +1,41 @@
+Section 8.3 Type inference
+149
+well typed, with type bool, provided that the argument ch has type char. Since
+the left-hand side of an equation must have the same type as the right-hand
+side, we deduce that:
+isdigit :: char -> bool
+Consider now the definition of length, repeated here:
+length []
+= 0
+length (x:xs) = (length xs) + 1
+From the first equation, it is clear that the type of length is of the form
+[A] -> num
+We must also look at the second equation to see whether it constrains the
+type A any further. For example, if the second equation were something like
+length (x:xs) = (length xs) + 1,
+X ='a'
+= length xs
+(using a conditional expression), we would have to conclude that the type A is
+not in fact completely general, but completely specific: it is the type char. But
+in the case of the function length, the second clause imposes no further
+constraint, so we can say that
+length :: [A] -> num, for all types A
+Consider now the function foldr, with definition
+foldr f x = g where g []
+X
+g (a:as) = f a (g as)
+The local function g is evidently a function on lists, since it is defined by cases
+on the two constructors of list form. So suppose g has type ([A] -> B).
+Both x and (f a (g as)) must be of type B. Since (g as) has type B, f must
+have type (A -> B -> B). So, all in all,
+foldr :: (A -> B -> B) -> B -> [A] -> B
+In general, by examining the context of an expression, we may be able to
+deduce an expression for the form of the type of an object which can fit into
+that context. By examining the expression itself, we may be able to deduce the
+form of the types which that expression can take on. So we have two type
+expressions that will usually contain variables, the first giving the form of the
+type required by the context (deduced from the 'outside'), and the second
+giving the form of type which the object can take (deduced from the 'inside').
+For the whole expression to be well typed, these two type expressions must
+match, in the sense that by substituting for the schematic variables of the type
+expressions, they can be brought to the same form.

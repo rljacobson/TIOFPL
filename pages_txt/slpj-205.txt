@@ -1,0 +1,62 @@
+Section 11.6 The spine stack
+205
+TOP
+TOP
+TOP
+4-
+@-
+Q
+@->Q
+@->Q
+@-
+P
+@-
+-P
+B-
+B
+-@-0
+B*@#
+F-@-0
+F.
+IF
+@-
+@#-
+@-> 0
+@-> x
+IF
+F -@-x
+=
+After unwinding
+the IF spine
+After turning the
+corner
+After first unwind
+on the arg spine
+Figure 11.4 Pointer-reversal for argument evaluation
+In the diagram we have marked the vertebra with #. Now when rewinding
+the argument spine, we know we have reached the top when we encounter a
+node marked with #, at which point we know that we have completed
+evaluation of the argument, and can resume evaluation of the parent spine.
+This technique was discovered by a number of researchers independently,
+and is described by Stoye et al. [1984].
+11.6.3 Stacks versus Pointer-reversal
+Given the alternative, then, is pointer-reversal better than a stack?
+(i) A stack is significantly faster than the pointer-reversing scheme. The
+stack gives instant access to arguments and vertebrae, without having to
+follow chains of pointers. This is particularly important in a parallel
+machine, where there are much higher overheads associated with
+accessing the (global) heap than the (local) stack. Furthermore, all
+reversed pointers have to be un-reversed later, resulting in heap accesses
+which a stacking implementation may not have to make.
+(ii) Pointer-reversal uses very little extra storage. All that is required is a bit
+in each cell to control the evaluation of arguments to strict built-in
+functions. There is no (reasonable) bound to the possible length of a
+spine, so not only does a separate stack require some extra storage, but
+also (more seriously) we cannot know in advance how much extra
+storage to allocate. This is a significant complication for machines which
+implement the stack in hardware (e.g. NORMA [Scheevel, 1986]).
+(iii) It turns out that the stack offers a large number of further opportunities
+for performance improvement, and we address this topic more fully in
+Chapters 20 and 21.
+(iv) For a pointer-reversing implementation, the complete state of the
+evaluation is described by the two pointers F and B (together with the

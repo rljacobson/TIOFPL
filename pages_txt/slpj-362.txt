@@ -1,0 +1,64 @@
+RIE Ipd
+generates code to apply a supercombinator to its d arguments.
+Riled
+Alf ] pd
+= B[[ i ] p d; UPDINT (d+1); POP d; RETURN
+R[ x ] pd
+= El[ f ] pd; UPDATE (d+1); POP d; UNWIND
+= E[ x ] p d; UPDATE (d+1); POP d; UNWIND
+RI NEG E ] pd
+RI + E: E2 ] pd
+= BI[ NEG E ] p d; UPDINT (d+1); POP d; RETURN
+= B[ + E1 E2 ] pd;
+UPDINT (d+1); POP d; RETURN
+RI CONS E1 E2 1 p d
+= E[ CONS E1 E2 1 p d;
+R[ HEAD E ] p d
+UPDATE (d+1); POP d; RETURN
+= E[ HEAD E ]] p d;
+UPDATE (d+1); POP d; RETURN
+RI IF Ec E: E: ] pd
+= BI Ec ] p d; JFALSE L;
+RI Et Ipd;
+LABEL L;
+RI E: I pd
+RI E1 E2 ] p d
+= RS[ E1 E2 1 p d 0;
+R[ let x=Ex in E ] p d
+Ri[ let x!=Ex in E ]] pd
+= C[[ Ex ] p d; RI E ]] p[x=d+1] (d+1)
+R[ letrec D in E ] p d
+= E[[ Ex ] p d; R[ E ] p[x=d+1] (d+1)
+= CLetrec [[ D ]] p' d'; RI[ E I p' d'
+where
+(p', d') = Xr[ D ] pd
+Figure 20.14 The final R scheme
+RS[ E I pd n
+completes a supercombinator reduction, in which the top n ribs of the
+body have already been put on the stack.
+RS constructs instances of the ribs of E, putting them on the stack, and
+then completes the reduction in the same way as R.
+RS[ f ] pdn
+= PUSHGLOBAL f; MKAP n;
+UPDATE (d-n+1); POP (d-n); UNWIND
+RS[ x Ipd n
+= PUSH (d - p x); MKAP n;
+UPDATE (d-n+1); POP (d-n); UNWIND
+RSI HEAD E ] p d n
+= EI E ] pd; HEAD; MKAP n;
+UPDATE (d-n+1); POP (d-n); UNWIND
+RS[ IF Ec Et Er ] pd n = BI[ Ec ] p d; JFALSE L;
+RS[ Et ] pd n;
+LABEL L;
+RSI Er ] pd n
+RS[ IF E ] pan
+= B[ E ] p d; JFALSE L;
+RSI[ $K-2-1 ] pd n;
+LABEL L;
+RS[[ $K-2-2 ]] pd n
+RSI[ Et E2 ] pd n
+= C[ E2 1 p d; RS[ E1 1 p (d+1) (n+1)
+RS[ E1 ! E2 ] pd n
+= E[[ E2 ] p d; RS[[ E1 1 p (d+1) (n+1)
+Note: RS cannot encounter a let or letrec.
+Figure 20.15 The final RS scheme

@@ -1,0 +1,39 @@
+Section 2.5 The denotational semantics of the lambda calculus
+33
+distinguish the two kinds of '6' typographically, but common practice is to
+write them in the same way and distinguish them only by context. This applies
+to all constants and built-in functions. Thus we write
+Eval[[ TRUE ] = TRUE
+Evall[ IF I
+Eval[[ + 1
++
+and so on.
+This is sloppy, but it saves clutter. For example, using this more relaxed
+function IF:
+notation, we could write the following semantic equations for the built-in
+IF TRUE a b = a
+IF FALSE a b = b
+IF 1
+a b = 1
+The use of = and the occurrence of I continue to remind us that we are looking
+at semantic equations rather than reduction rules.
+2.5.4 Strictness and Laziness
+We say that a function is strict if it is sure to need the value of its argument.
+This is a concept that will arise repeatedly in the book. Can we give a
+denotational definition of strictness?
+If a function, f, is sure to need the value of its argument, and the evaluation
+of the argument will not terminate, then the application off to the argument
+will certainly fail to terminate. This verbose, operational argument suggests
+the following concise, denotational, definition of strictness:
+DEFINITION
+A function f is strict if and only if
+fl = L
+The definition generalizes easily to functions of several arguments. For
+example, if g is a function of three arguments, then g is strict in its second
+argument if and only if
+gal c= 1
+for all values of a and c.
+If a function is non-strict, we say that it is lazy. Technically, this is an abuse
+of terminology, since lazy evaluation is an implementation technique which
+implements non-strict semantics. However, 'lazy' is such an evocative term
+that it is often used where 'non-strict' would be more correct.

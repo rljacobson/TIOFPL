@@ -1,0 +1,44 @@
+134
+Chapter 7 List Comprehensions
+This translation scheme is quite efficient, but there is room for further
+expression
+improvement. For instance, the example shown in Figure 7.3 contains the
+APPEND (IF (odd x) (CONS (square x) NIL) NIL) (h us')
+and it would have been more efficient to generate the equivalent expression
+IF (odd x) (CONS (square x) (h us')) (h us')
+instead.
+In general, it would be desirable to eliminate all calls of APPEND. The
+reason for this is simple: rather than generating two lists and then appending
+them, it is better to generate the desired list directly. This will be significantly
+more efficient, since evaluating APPEND requires time and space proportional
+to the length of its first argument.
+Surprisingly, it is indeed always possible to translate list comprehensions in
+such a way that APPEND does not appear in the final result. The second, and
+final, improvement in the translation scheme will be derived by applying
+program transformation methods to the first scheme to eliminate all appear-
+ances of APPEND.
+Observe that the only place that APPEND appears in the current translation
+scheme is in the following phrase in the improved rule:
+APPEND TE[[ [E ( Q] ]] (h us')
+This suggests that we might define a new translation scheme that will translate
+the above expression directly. That is, we wish to define a new translation
+scheme TQ, such that
+TQ[ [E | Q] ++ L ] = APPEND TE[[ [E ( Q] I TEI L I
+(7.1)
+for any expression E, list of qualifiers Q and list-valued expression L. Then we
+can replace the previous expression by:
+TQI [E : Q] ++ (h us') I
+It is easy to prove this is equivalent to the previous expression using rule (7.1).
+The rules defining TQ are given in Figure 7.4. Readers familiar with
+program transformation will see that it is easy to derive the new rules (A), (B)
+and (C) from the modified rule (a), and rules (b) and (c). For example, here is
+the derivation of rule (C):
+TQ[ [E I ] ++ LI
+APPEND TE[[ [E ! ] ] TE[ L I
+APPEND (CONS TEI[ E ]| NIL) TE[[ L I
+(by (7.1))
+CONS TE[[ E ]] TEI[ L I
+(by rule (c))
+(by definition of APPEND)
+The derivation of the other rules is not much harder, and is left as an exercise
+for the interested reader.

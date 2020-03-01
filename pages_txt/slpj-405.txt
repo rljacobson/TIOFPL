@@ -1,0 +1,39 @@
+Section 23.5 Conclusions
+407
+efficiently. His proposed solution is to introduce two new built-in functions,
+par and synch. The expression
+par f x
+is semantically equivalent to
+f x
+but evaluates x in parallel with applying f to x (note: this is slightly different
+from Hughes's definition, for uniformity with the rest of the book). The value
+of the expression
+synch e
+is
+e:e
+except that e will not be evaluated until both the head and the tail of (synch e)
+are required. If, for example, the head is required before the tail, then the
+(parallel) process trying to evaluate the head will be suspended until another
+process tries to evaluate the tail, at which point both processes continue in
+parallel again. In the example given above, two parallel processes to compute
+(sum xs) and (length xs) may be resynchronized whenever they consume a
+new element of xs.
+The way in which these constructs can be used to alleviate the space usage
+problem is too complex to describe here, but suffice it to say that the
+technique does not alter the program's structure. Even so, putting in the par
+and synch constructs in the right place is a subtle business, and if done
+terminate.
+incorrectly can cause the program to work less efficiently or even to fail to
+23.4.4 Summary
+In this section, as in the preceding sections, we have seen examples of
+programs which are semantically identical, but which have very different
+pragmatic behavior.
+These differences are not at all obvious to the programmer, and require him
+to make subtle changes to the way he writes his program to achieve a good
+performance. In addition, a proposed solution to the last problem involves
+major alterations to the implementation (synch and par).
+23.5 Conclusions
+features:
+The problems we have discussed in this chapter have a number of common
+(i) Seemingly innocuous (and meaning-preserving) changes to a functional
+program may have dramatic effects on its run-time behavior.

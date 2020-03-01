@@ -1,0 +1,41 @@
+Section 8.2 Polymorphism
+147
+(iii) foldr cons [] [5,4,1,4,1]
+Here cons x y = x:y. In this expression, foldr is used with the type:
+(num -> [num] -> [num])
+-> [num] -> [num] -> [num]
+In general, foldr may be used in any context which requires a type of the form:
+(A -> B -> B)
+-> [A]
+B
+where A and B are the schematic variables.
+8.2.5 What Polymorphism Means
+Polymorphism is a style of type discipline which seems to have been first
+identified by Christopher Strachey [1967]. A programming language has a
+polymorphic type discipline if it permits us to define functions which work
+uniformly for arguments of different types. For example, in a polymorphic
+language, we can define a single function length of type:
+[A] -> num
+In contrast, a language with a monomorphic type discipline forces the
+programmer to define different functions to return the length of a list of
+integers, a list of floating point numbers, a list of binary numerical functions,
+and so on. Languages such as Pascal and Algol 68 are monomorphic.
+Strachey distinguished between ad hoc polymorphism, and parametric
+polymorphism. A type discipline exhibits ad hoc polymorphism if it permits
+the use of the same expression to denote distinct operations at distinct types,
+such as the use of the addition symbol to denote addition of integers,
+rationals, real numbers, ordinals, complex numbers, and so on. This char-
+acteristic of a language is often now described as the ability to overload
+expressions. On the other hand, parametric polymorphism is just poly-
+morphism as explained above.
+The words polymorphic and monomorphic are also sometimes used to
+distinguish between objects whose types are described by expressions with
+schematic type variables, and those whose type expressions have none. For
+example, the empty list is polymorphic, the functions id, compose, length and
+foldr are polymorphic, while the function decode which returns from an
+integer the character with that ASCII code is monomorphic.
+A polymorphic object may take on different types at different occurrences,
+where these different types are substitution instances of the schematic type of
+the function. For example, we do not need to have different versions of foldr
+for each pair of types that instantiate A and B in the type expression
+(A -> B -> B) -> B -> [A] -> B

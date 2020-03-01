@@ -1,0 +1,42 @@
+Section 19.1 What the G-code instructions do
+321
+This says that when PUSHINT i is the first instruction, the G-machine makes a
+transition (denoted by =>) to a new state in which
+(i) a new node n is pushed onto the stack,
+ii) the graph is updated with the information that node n is INT i,
+iii) the code to be executed is everything after the PUSHINT i,
+(iv) and the dump is unchanged.
+Notice that the name n, which is introduced on the right-hand side, is intended
+to be a new and unique node name.
+More complicated instructions can be described using pattern-matching.
+EVAL is an example of this:
+<n:S, G[n=AP n1 n2], EVAL:C, D>
+<n:[], G[n=AP n1 n2], UNWIND:[], (S,C):D>
+<n:S, G[n=FUN 0 C'], EVAL:C, D>
+=><n:[], G[n=FUN 0 C'], C':[], (S,C):D>
+<n:S, G[n=INT i], EVAL:C, D>
+=><n:S, G[n=INT i], C, D>
+and similarly for CONS and non-CAF FUN nodes.
+The appropriate state transition for EVAL is selected depending on what
+kind of node is found on top of the stack (the node n):
+(i) The first equation describes what EVAL does if the node on top of the
+stack is an application. The current stack and code are pushed onto the
+dump, a new stack is formed with the top of the old stack as its only
+element, and UNWIND is executed.
+(ii) The second equation describes what EVAL does if the node on top of the
+stack is a compiled supercombinator of arity zero (that is, a CAF; see
+Section 18.6). In this case the machine saves its state on the dump, forms
+a new stack with the CAF as its only element, and executes the code
+associated with the CAF (which will subsequently update the FUN node
+with its reduced value).
+(iii) The third equation describes what EVAL does if the node on top of the
+stack is an integer: it does nothing! The same applies if the node on top of
+the stack is a CONS or non-CAF function node.
+An omitted transition indicates a run-time machine error (e.g. n is a HOLE).
+Notice that in the first rule for EVAL we have (strictly speaking) to repeat
+the 'G[n=AP n1 n2]' on the right-hand side of the rule, since G alone would
+imply that node n was no longer in the graph. This is clumsy and hard to read,
+since the reader has to check that node n is the same on both sides of the rule.
+Accordingly we abbreviate the rule to
+<n:S, G[n=AP ni n2], EVAL:C, D>
+=><n:[], G, UNWIND:[], (S,C):D>

@@ -1,0 +1,54 @@
+88
+Chapter 5 Efficient Compilation of Pattern-matching
+5.2.5 An Example
+The rules given so far are sufficient to translate the definitions of mappairs and
+nodups to the corresponding case-expressions given in the introduction.
+Notice that the variable names used in the introduction were chosen for
+readability. In practice, the translation algorithm will usually pick new names.
+The reader may wish to verify that the rules given above are indeed
+sufficient to translate the definition
+mappairs f [] ys
+mappairs f (x:xs) []
+[]
+=
+mappairs f (x:xs) (y:ys) = f x y : mappairs f xs ys
+to the equivalent:
+mappairs
+= AU1 . AU2 . AU3-
+case U2 of
+NIL
+NIL
+CONS U4 U5
+case U3 of
+NIL
+NIL
+CONS UG U7
+CONS (U1 U4 U6)
+(mappairs Ut Us Uz)
+The reader may also wish to check that the function nodups transforms to the
+case-expression given in the introduction.
+5.2.6 The Mixture Rule
+The above rules are sufficient for compiling most function definitions into
+case-expressions. However, there is still one case which has not been covered.
+This arises when not all equations begin with a variable, and not all equations
+begin with a constructor; that is, when there is a mixture of both kinds of
+equation. For example, here is an alternative definition of demo (similar in
+structure to the alternative definition of mappairs):
+demo' f [] ys
+= A f ys
+demo' f xs []
+= Bf xs
+demo' f (x:xs) (y:ys) = C f x xs y ys
+Converting this to a match expression and applying the variable rule to
+eliminate f results in the following:
+match [U2,u3]
+[ ( [NIL,
+ys
+], (A u1 ys)
+( [xs,
+NIL
+], (B U1 xs)
+ERROR
+( [CONS x xs, CONS y ys], (C u, x xs y ys) ) ]
+Neither the variable rule nor the constructor rule applies to this expression,
+because some equations begin with constructors and others with variables.

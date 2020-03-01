@@ -1,0 +1,32 @@
+Section 13.2 Solving the problem of free variables
+225
+and we will normally begin them with a $ to make them distinctive. Thus we
+could write
+$XY = AX.Ay. - y x
+this:
+but to emphasize their special status further we will write the definition like
+$XY x y = - y x
+Our strategy is therefore to transform the lambda expression we wish to
+compile into:
+EE
+a set of supercombinator definitions, plus
+an expression to be evaluated.
+To emphasize the inseparablety of these two components we use a box, just as
+we did in the case of Miranda programs (Section 3.3), thus:
+Supercombinator definitions
+Expression to be evaluated
+For example, we could represent the expression
+(Ax. Ay . - y x) 3 4
+as
+$XY xy = - y x
+$XY 3 4
+A crucial point in the definition of a supercombinator given above is that a
+supercombinator reduction only takes place when all the arguments are
+present. For example,
+($XY 3)
+is not a supercombinator redex, and will not be reduced. We can therefore
+regard the supercombinator definitions as a set of rewrite rules. A reduction
+consists of rewriting an expression which matches the left-hand side of a rule
+with an instance of the corresponding right-hand side. Such systems are called
+term rewrite systems and have been much studied in their own right
+[O'Donnell, 1977; Klop, 1980; Hoffman and O'Donnell, 1982].

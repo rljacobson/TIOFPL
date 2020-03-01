@@ -1,0 +1,44 @@
+56
+Chapter 4 Structured Types and the Semantics of Pattern-matching
+where each Ti, for i from 1 to n, can be written as a product:
+Ti = Ti,1 X Ti2 X . . . X Tin
+In other words, a structured type is a sum-of-products.
+When n=1 we say that the type is a product type; the types (pair * * *),
+(triple * ** * **). . . are all product types. When n>1 we say that the type is a
+sum type, since it is the sum of more than one domain; the types (tree *),
+(list *), color and bool are all sum types. Thus a product type has exactly one
+constructor, and a sum type has two or more constructors.
+We will often wish to distinguish between the constructors of product
+types and sum types. Just as we use the names c to stand for constructors of all
+types, we will use the name t to stand for the constructor of a product type, and
+the names s and s; to stand for the constructors of a sum type (t suggests 'tuple'
+and s suggests 'sum').
+(Note: we use lower-case letters to stand for constructors, to avoid
+confusion with the constructors themselves, which are written in upper case.
+Similarly, we use upper-case letters to stand for types, which are themselves
+written in lower case - see Section 4.1.)
+( Important: at the time when this chapter was first written the semantics of
+Miranda provisionally specified that a structured type with only one
+constructor was a product type, as above. However, an alternative view is that
+a structured type with only one constructor should behave as a sum type with
+one component in the sum, and that product types (tuples) be treated as an
+independent construct. It now seems likely that Research Software Limited
+will follow this latter course in their definition of Miranda. As a consequence
+some of the statements made in this chapter about the semantics of structured
+types in Miranda may be incorrect. We draw the reader's attention to the
+caveat on page 37.)
+4.1.4 History
+As mentioned, structured types are a combination of sum types and product
+types, which have a long history in mathematics.
+Landin's Iswim, one of the earliest functional languages, was described
+using a stylized form of English for defining structured types [Landin, 1966].
+Burstall introduced a more formal notation for defining such types in NPL
+[Burstall, 1977]. Hope and ML have type systems based on separate sum and
+product types, whereas Miranda and Orwell have type systems based on
+sum-of-product types.
+Iswim also contained a simple form of pattern-matching, where one could
+write definitions such as
+addPair (x,y) = x + y
+However, the important idea of using pattern-matching for case analysis
+appears to have been developed independently by Burstall and Turner.
+Pattern-matching appeared in NPL and SASL, and was used to good effect in

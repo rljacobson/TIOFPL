@@ -1,0 +1,33 @@
+296
+Chapter 18 The G-machine
+A fast VAX implementation of Hope [Burstall et al., 1980] based on an
+intermediate code called FP/M has recently been developed at Imperial
+College [Field, 1985] (remember, however, that Hope is a strict language).
+18.2 An Example of G-machine Execution
+We begin with an example, to give the flavor of the G-machine. Consider the
+Miranda program
+from n = n : from (succ n)
+succ n = n+1
+from (succ 0)
+It generates the infinite list [1,2,3,...,]. The functions from and succ are
+supercombinators already, so the lambda-lifting is trivial, yielding
+$from n = CONS n ($from ($succ n))
+$succ n = + n 1
+$Prog = $from ($succ 0)
+$Prog
+The G-machine uses a stack, and execution begins with a pointer to the initial
+graph on top of the stack (Figure 18.2(a)). The spine is then unwound, exactly
+as previously discussed in Section 11.6, without using pointer-reversal. The
+difference comes when the spine has been completely unwound, so that there
+is a pointer to $from on the stack (see Figure 18.2(b)). By following this
+pointer the machine extracts
+(i) the number of arguments expected by $from (one in this case);
+(ii) the starting address for the code for $from.
+First it checks that there are enough arguments on the stack for $from to
+execute, and finds that there are. It then rearranges the top of the stack
+slightly (see the transition from (b) to (c) in Figure 18.2) and then jumps to the
+code for $from. The rearrangement of the top of the stack puts a pointer to the
+argument to $from on top of the stack. We will discuss the stack rearrange-
+ment in more detail later. Notice also that the machine jumps to $from rather
+than calling it. An instruction at the end of $from will complete evaluation of
+the graph after the $from reduction is done.

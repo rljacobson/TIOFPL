@@ -1,0 +1,35 @@
+Section 4.3 The semantics of pattern-matching lambda abstractions
+67
+The scope of the definition of diff includes all the alternatives and guards.
+Figure 4.2 gives the final TR translation scheme, which translates right-hand
+sides, using a letrec to translate a where-clause.
+4.2.9 Patterns on the Left-hand Side of Definitions
+So far we have only described how to translate function definitions, but
+Miranda also allows a pattern to appear on the left-hand side of a definition.
+For example, consider the following Miranda definition:
+addPair w = x + y
+where (x,y) = w
+The product pattern (x,y) appears on the left-hand side of the definition in the
+where-clause. It implies that w evaluates to a pair, and it binds the names x and
+y to the components of w.
+As mentioned in Section 3.2.3, we also allow general patterns to appear on
+the left-hand side of definitions in a let(rec). This extension allows us to make a
+simple translation of addPair to
+addPair = Aw . (letrec (PAIR x y) = w in (+ x y))
+The hard work of dealing with patterns on the left-hand side of definitions is
+now carried out by transforming this letrec into the ordinary lambda calculus,
+simple:
+which is described in Section 6.2. The modification required to TD is very
+TD[[ p = R ] = TER p ] = TRI[ R I
+where p is a pattern and R is a right-hand side.
+4.2.10 Summary
+We have now completed the development of the translation of a significant
+subset of Miranda into the enriched lambda calculus. The final translation
+schemes, summarized in Figures 4.2, 4.3 and 4.4, look rather forbidding, but
+this is because of their generality rather than their complexity.
+4.3 The Semantics of Pattern-matching Lambda Abstractions
+Having described how to translate from Miranda into a language involving
+pattern-matching lambda abstractions, we now give the semantics of pattern-
+matching lambda abstractions of the form ( Ap.E).
+We will do so by devoting a subsection to each form of the pattern, p:
+variable, constant, sum-constructor and product-constructor.

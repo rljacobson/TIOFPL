@@ -1,0 +1,48 @@
+xvill
+Preface
+him. Chapters 8 and 9 were written by Peter Hancock, of Metier Management
+Systems Ltd, and currently at the Programming Research Group, Oxford. I
+gratefully acknowledge their patience in writing and rewriting their drafts.
+I am extremely grateful to a number of other people who have made
+significant technical contributions to the book. David Turner's help was
+invaluable, in offering comments on the parts of the book that relate to
+Miranda. The Appendix which gives an introduction to Miranda, was written
+by him. (Miranda is a trademark of Research Software Limited.)
+Much of the information about Miranda in the first part of the book is based
+on a prerelease version of the Miranda system, and I am grateful to Research
+Software Limited for the permission to include this material.
+Simon Finn, of the University of Stirling, made a number of penetrating
+observations about the treatment of pattern-matching, which resulted in
+significant improvements in Chapters 4 and 6.
+Several long discussions with Thomas Johnsson, of Chalmers University,
+Goteborg, radically changed the shape of the G-machine chapters, and
+Chapter 21 was written in collaboration with him. John Fairbairn and Stuart
+Wray, of Cambridge, also made important contributions in this area.
+Paul Hudak and Robert Keller helped me in writing the last section of
+Chapter 24.
+Many other people have given me welcome help and encouragement, and
+have helped enormously by reading the text and making constructive
+suggestions. These include Lennart Augustsson, Philip Boswell, Geoff Burn,
+Nigel Chapman, Chris Clack, Pierre-Louis Curien, Dan Friedman, Kevin
+Hammond, Peter Hancock, Chris Hankin, John Hughes, Thomas Johnsson,
+Dick Kieburtz, Phil Molyneux, Benedict Nixon, Martin Packer, Ellen Poon,
+Jon Salkild, William Stoye, David Turner, Phil Wadler, John Washbrook and
+Russel Winder. I am particularly grateful to John Washbrook for his unfailing
+support.
+Simon L. Peyton Jones
+University College London
+London WC1E 6BT
+simonpj @uk.ac.ucl.cs
+References
+Backus, J. 1978. Can programming be liberated from the von Neumann style? A
+functional style and its algebra of programs. Communications of the ACM. Vol.
+21, no. 8, pp. 613-41.
+Cardelli, L. 1983. The functional abstract machine. Polymorphism. Vol. 1, no. 1.
+Fairbairn, J. 1982. Ponder and its type system. Technical Report 31. Computer Lab.,
+Cambridge. November.
+Johnsson, T. 1984. Efficient compilation of lazy evaluation. In Proceedings of the ACM
+Conference on Compiler Construction, Montreal, pp. 58-69. June.
+Peyton Jones, S.L. 1984. Directions in functional programming research. In SERC
+Distributed Computing Systems, pp. 220-49. Duce (editor). Peter Peregrinus.
+Wadsworth, C.P. 1971. Semantics and pragmatics of the lambda calculus, Chapter 4.
+PhD thesis, Oxford.

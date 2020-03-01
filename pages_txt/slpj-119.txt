@@ -1,0 +1,45 @@
+118
+Chapter 6 Transforming the Enriched Lambda Calculus
+lambda abstractions are applied to variables only, which we achieve by
+binding B to a new variable v using a let-expression. Now the expression
+((Ap . (t vi .. . Vn)) v) I ERROR
+can be transformed by the pattern-matching compiler.
+There are some unexpected consequences of the rule that the complete
+conformality check is performed whenever any variable from the pattern is
+used. For example, consider the following Miranda function definitions:
+#1 x = y where y
+X :
+(h:t) = []
+12 x = y where (y,(h:t)) = (x,[])
+13 x = y where (y,z) = (x,[])
+(h:t) = z
+Given the rules of this section, fi will behave as the identity function,
+ignoring the mismatch between (h:t) and []. The function 13 will behave in the
+same way; it binds z to [], but ignores the mismatch between (h:t) and z.
+However, 12 will always return ERROR, because when extracting y from the
+pair it will perform a conformality check on the whole pattern, and discover
+that (h:t) does not match []. Nevertheless, the programmer might be forgiven
+for thinking that f1, 12 and 13 should all behave in the same way.
+In this section we have given a complete and consistent semantics for
+refutable patterns in let(rec)s, which we believe accurately describes the
+(current) semantics of this part of Miranda. As we have seen, however, the
+semantics gives results which may occasionally be unexpected, which is only
+to say that it is not the only possible choice. The examples of unexpected
+behavior were suggested by Simon Finn, of the University of Stirling.
+6.2.8 Dependency Analysis
+The transformation of where-clauses given in Section 4.2.8 does not introduce
+any let-expressions. The reason for this is that all definitions in a where-clause
+may potentially be mutually recursive, so we assume the worst and generate a
+single letrec-expression. Similar remarks apply to the overall scheme
+described in Section 3.3.
+This is often unnecessarily pessimistic, and in this section we show how to
+replace letrecs with lets wherever possible, and how to sort mutually recursive
+definitions into minimal groups. For example, consider the following letrec-
+expression:
+letrec x
+= fac z
+fac = An . IF (= n 0) 1 (* n (fac (- n 1)))
+z
+= 4
+in sum x z
+sum = Ax. Ay . IF (= x 0) y (sum (- x 1) (+ y 1))

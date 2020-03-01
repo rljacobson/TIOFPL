@@ -1,0 +1,45 @@
+158
+Chapter 8 Polymorphic Type-checking
+any one of the defined names x; can occur many times in many right-hand
+sides, as well as in the body. Should we insist that all these occurrences have
+the same type, in the sense of requiring equality to hold between the type
+labels for the variable occurrences in the definitions? Or should we treat them
+as we treat them in the body, and require only that at each such occurrence,
+the type be an instance of the type of the corresponding right-hand side?
+Unfortunately, in the nature of things, there is no obvious answer. Never-
+theless, to see what the question means, consider the example
+letrec Y = (Af. f (Y ()) in . . .
+Written out as a tree, the first definition is
+Y :: TO f :: T1
+f :: T2
+T3
+@
+T4
+Af.
+Y:: T5
+The constraints we can write down straight away are these:
+T1 = T2
+TO = T1 -> T3
+T2 = T3-
+-> T4
+T5 = T1 -> T4
+from which it follows that
+TO = (T3 -> T4) -> T3
+and
+T5 = (13 -> T4) -> T4
+The question is, should we ask that TO = T5, or only that TO be an instance
+of T5? In the former case, the only solution is T5 = ((T4 -> T4) -> T4),
+as we would expect of a fixed-point function. On the other hand,
+the alternative requires only that T3 be an instance of T4, so again
+T5 = ((T4 -> T4) -> T4) is a solution.
+We shall adopt the (usual) approach according to which 'during' such
+definitions all occurrences of the defined variables must share the same type as
+the right-hand side of their definitions. On the other hand, 'after' the
+definitions, the defined variables are polymorphic, and the type of such a
+variable can be instantiated differently to satisfy the local constraints on
+different occurrences of the variables in the body of the definition. If nothing
+else, this approach has at least the merit of simplicity.
+Some different approaches to the type-checking of recursive definitions
+have been explored by Mycroft [1984]. In some (but not all) of these
+approaches the problem of whether an expression is well typed becomes only
+semi-decidable.

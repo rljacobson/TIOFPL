@@ -1,0 +1,43 @@
+Section 21.5 References
+379
+(ii) The SECD machine environment is often implemented as a linked list,
+and closures as a pair of pointers to the code and to the environment. The
+FAM constructs closures as an (N+1)-tuple, in which the first element
+points to the code of the function, and the other N elements are the
+values of only those variables that occur free in the function definition.
+(iii) The SECD machine stack and dump are often implemented as a linked
+list. The FAM uses the target machine stacks, called AS (argument
+stack) and RS (return stack) respectively in Cardelli [1984].
+Having said this, there is a close correspondence between the FAM and the
+G-machine:
+(i) The G-machine equivalent to a FAM closure is a piece of graph
+consisting of a supercombinator applied to too few arguments. The
+arguments give the values of the variables used in the supercombinator
+body. It is an easy consequence of the lambda-lifting algorithm that all
+the extra arguments to a function produced by lambda-lifting are used
+somewhere in the supercombinator body. This corresponds to the fact
+that FAM closures only contain variables which may be required in the
+function.
+(ii) Execution is stack-based for much of the time. Arguments to the current
+function are found on the stack. The difference here is that the FAM may
+also access free variables in the environment, whereas supercombinators
+have no free variables.
+(iji) Arguments to be passed to a function are placed in the stack before
+calling the function. This is always the case in the FAM and the optimiza
+tions of this chapter mean that it will often be the case in the G-machine.
+There are two major differences between the FAM and the G-machine:
+(i) The FAM is not lazy. It is to preserve laziness that the G-machine often
+has to write the spine out into the heap, rather than always keeping it in
+the stack as the FAM does.
+(ii) The G-machine is simply an efficient implementation of graph reduction.
+As we will see, graph reduction is a much more natural model to support
+parallel execution, so a parallel G-machine is probably much easier to
+build than a parallel FAM.
+References
+Cardelli, L. 1983. The functional abstract machine. Polymorphism. Vol. 1, no. 1.
+Cardelli, L. 1984. Compiling a functional language. In Proceedings of the ACM
+Symposium on Lisp and Functional Programming, Austin, pp. 208-17. August.
+Steele, G.L. 1977. Lambda - the ultimate goto. Al Memo 443. MIT Artificial
+Intelligence Lab. October.
+Turner, D.A. 1979. A new implementation technique for applicative languages.
+Software - Practice and Experience. Vol. 9, pp. 31-49.

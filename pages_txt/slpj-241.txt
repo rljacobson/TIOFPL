@@ -1,0 +1,36 @@
+Section 14.7 Compile-time simplifications
+241
+where we can safely evaluate the (* 3 4) once and for all at compile-time.
+This is called constant folding in conventional compiler technology.
+The question of exactly which redexes to reduce is not completely straight-
+forward, especially in the case of recursive functions, because indiscriminate
+use of the technique may cause the code size to increase significantly. The
+decision is not clear-cut, because it depends on the relative priorities of speed
+and code size. Hudak and Kranz [1984] give an interesting discussion of a
+particularly thorough-going use of compile-time reduction.
+14.7.2 Common Subexpression Elimination
+Sometimes (for clarity) the programmer may write an expression such as
+* ($F x) ($F x)
+Rather than compute ($F x) twice, we can replace the expression with
+let fx = $F x in * fx fx
+Identifying common subexpressions may be done by a hashing algorithm
+which checks to see if an expression already exists before building a new one.
+This simplification seems always to be beneficial, but see Chapter 23 for a
+warning about some possible drawbacks.
+14.7.3 Eliminating Redundant lets
+Sometimes lets of the form
+let x = y in E
+arise, in which the right-hand side of the definition is a single variable. These
+can safely be eliminated by replacing occurrences of x by y in E.
+It is also quite common to encounter code in which a variable defined in a let
+is used only once in its scope. For example, consider the supercombinator
+$sumSq x y = let xsq = * x x
+in
+ysq = * y y
++ xsq ysq
+In this case we may as well substitute the right-hand side of the definition for
+the (single) occurrence of the variable, giving
+$sumSq x y = + (* x x) (* y y)
+This is simpler and, it turns out, slightly more efficient. It may be achieved
+simply by accumulating information on the number of textually distinct
+occurrences of each variable in the body of a let.

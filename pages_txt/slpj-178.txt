@@ -1,0 +1,52 @@
+Section 9.7 The type-checker
+177
+tc :: type_env -> name_supply -> vexp -> reply (subst, type_exp)
+tc gamma ns (VAR x)
+tc gamma ns (AP e1 e2)
+=
+tcvar
+gamma ns x
+tc gamma ns (LAMBDA x e)
+tcap
+gamma ns e1 e2
+tc gamma ns (LET xs es e)
+= tclambda gamma ns x e
+= 1
+tc gamma ns (LETREC xs es e) = tcletrec
+tclet
+gamma ns xs es e
+gamma ns xs es e
+We will describe each of these cases in a separate section, beginning at Section
+9.7.2. First, however, we define a useful auxiliary function tcl.
+9.7.1 Type-checking Lists of Expressions
+It is convenient to define a function (tcl es gamma n) which applies to a list of
+expressions es, and will return in the case of success a similar result OK (phi,ts),
+where ts is a list of types derived for corresponding components of the list es in
+the type environment (sub_te phi gamma). phi embodies all the constraints
+on gamma necessary to derive those types simultaneously. The function is
+defined from tc by the equations:
+tcl :: type_env -> name_supply -> [vexp] -> reply (subst, [type_exp])
+tcl gamma ns []
+= OK (id subst,[])
+tcl gamma ns (e:es) = tcli gamma ns0 es (tc gamma ns1 e)
+where (ns0,ns1) = split ns
+tcl1 gamma ns es FAILURE = FAILURE
+tcl1 gamma ns es (OK (phi,t)) = tcl2 phi t (tci gamma' ns es)
+where gamma' = sub_te phi gamma
+tcl2 phi t FAILURE
+= FAILURE
+tcl2 phi t (OK (psi,ts)) = OK (psi $scomp phi, (sub_type psi t) : ts)
+The substitution can be thought of as built up in two stages. In the first stage,
+we type-check each entry in the list, in the type environment 'seen' through
+the substitutions derived for previous entries. Then in the second stage, we
+form the substitution by cumulative composition, and ensure that each type
+returned for an expression is a fixed point of the composite substitution.
+9.7.2 Type-checking Variables
+When type-checking a variable x in a given type environment gamma, with
+name supply ns, we look up the type scheme associated with that variable by
+gamma. Recall that in a type scheme, a type variable is either schematic, in
+which case we substitute a fresh type variable for it, or unknown, in which case
+we leave it as it is.
+So we return a new instance of the schematic type associated with the
+variable, in which the schematic variables have been replaced by fresh type
+variables. In this way, the type constraints on different occurrences of a

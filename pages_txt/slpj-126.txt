@@ -1,0 +1,43 @@
+Section 6.4 The I operator and FAIL
+125
+6.3.4 Reducing the Number of Built-in Functions
+The ideas of Section 6.1.4 can be applied to case functions also, to reduce the
+number of built-in functions required.
+Specifically, CASE-T can be replaced by CASE-n, where n is the number of
+constructors for the type T. The integer structure tag of the first argument can
+be used directly to select the appropriate one of the other arguments.
+Similarly, SEL-SUM-s-i can be replaced with SEL-SUM-r-i, where r is the arity
+of s. As before, these replacements should only take place after type-
+checking.
+As a bonus, the use of let-expressions instead of lambda abstractions has
+also avoided the introduction of UNPACK-SUM and UNPACK-PRODUCT. If all
+pattern-matching is compiled to case-expressions, then UNPACK-SUM and
+UNPACK-PRODUCT do not need to be implemented at all!
+The CASE-T function has deliberately been defined to select one of its
+arguments (based on the constructor of its first argument), rather than apply
+one of its arguments to the components of its first argument. This latter
+taking it:
+approach might at first seem more efficient, but there are two reasons for not
+(i) When performing the replacements described in this section, CASE-T
+would have to be replaced by CASE-n-r1-12. . .-In, where n is the arity of
+the ith constructor of type T. This seems rather excessive!
+(ii) More importantly, it allows us to use let-expressions rather than lambda
+abstractions, when transforming case-expressions to the ordinary lambda
+calculus.
+6.4 The | Operator and FAIL
+Finally, we must transform the [] construct into the ordinary lambda calculus.
+This is not difficult, because the I construct was only syntactic sugar which
+allowed us to write | as an infix operator. We therefore use the trans-
+formation:
+E1 1 E2 = FATBAR E1 E2
+where FATBAR is a built-in function, with the same semantic equations as [:
+FATBAR a
+b = a
+FATBAR FAIL b = b
+if a # FAIL and a + 1
+FATBAR 1
+b = L
+It would be better still to eliminate I and FAIL from the program altogether,
+and optimizations which often succeed in doing this are described in Section
+5.4.2. Any remaining occurrences of | and FAIL can still be compiled sur-
+prisingly efficiently by a sophisticated implementation (Section 20.4).

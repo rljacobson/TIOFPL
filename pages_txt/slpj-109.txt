@@ -1,0 +1,41 @@
+Chapter 6 Transforming the Enriched Lambda Calculus
+801
+UNPACK-PRODUCT-ri, where r is the arity of t (there is no need for a structure
+tag here, since UNPACK-PRODUCT does not examine it). Similarly, the
+product-constructor functions can be replaced with PACK-PRODUCT-rt, and
+the selector functions SEL-t-i can be replaced with SEL-rri. It is sensible to
+keep PACK-SUM and PACK-PRODUCT distinct because, having no structure
+tag, objects of product type may have a different representation from objects
+of sum type.
+To summarize:
+s (a sum-constructor function) is replaced by PACK-SUM-d-rs
+UNPACK-SUM-s is replaced by UNPACK-SUM-d-rs
+t (a product-constructor function) is replaced by PACK-PRODUCT-rt
+UNPACK-PRODUCT-t is replaced by UNPACK-PRODUCT-rt
+SEL-t-i is replaced by SEL-rri
+where Is = arity of s,
+d = structure tag of s,
+It = arity of t.
+For example, assuming that we implement lists with structure tag 1 for NIL
+and 2 for CONS, then the following replacements would take place:
+NIL is replaced by PACK-SUM-1-0
+CONS is replaced by PACK-SUM-2-2
+UNPACK-SUM-NIL is replaced by UNPACK-SUM-1-0
+UNPACK-SUM-CONS is replaced by UNPACK-SUM-2-2
+Likewise, if the type tree is declared as before:
+tree ::= LEAF num | BRANCH tree tree
+and LEAF and BRANCH are assigned structure tags 1 and 2 respectively, the
+following replacements would take place:
+LEAF is replaced by PACK-SUM-1-1
+BRANCH is replaced by PACK-SUM-2-2
+UNPACK-SUM-LEAF is replaced by UNPACK-SUM-1-1
+UNPACK-SUM-BRANCH is replaced by UNPACK-SUM-2-2
+Finally, if the type pair is declared as before:
+pair * * * ::= PAIR * * *
+the following replacements would take place:
+PAIR is replaced by PACK-PRODUCT-2
+UNPACK-PRODUCT-PAIR is replaced by UNPACK-PRODUCT-2
+SEL-PAIR-1 is replaced by SEL-2-1
+SEL-PAIR-2 is replaced by SEL-2-2
+Since functions with different types may be replaced by the same function
+(for example, CONS and BRANCH are both replaced by PACK-SUM-2-2), these

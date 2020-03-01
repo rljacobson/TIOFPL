@@ -1,0 +1,55 @@
+262
+Chapter 16 SK Combinators
+The I-transformation replaces (Ax.x) with I, thus:
+AX . X => 1
+There was an instance of this in the previous example, and applying the
+I-transformation, we would get
+S (S (\X.OR) (Ax.x)) (Ax. TRUE)
+S (S (AX. OR) 1) (\x. TRUE)
+(ii) The expression is (Ax.c), where c is a constant or a variable other than x.
+This is a function which takes one argument, discards it, and returns c, so
+we can replace it with (K c), where
+Kcx - c
+The K-transformation rule is therefore:
+AX .C => KC
+where c is any constant, or a variable other than x. As in the case of S, the
+equivalence of (Ax. c) and (K c) can be shown by extensional equality.
+There are two instances of this in our example, (Ax. OR) and (Ax. TRUE).
+Replacing these with (K OR) and (K TRUE) we get
+K
+S (S (\X. OR) 1) (\x. TRUE)
+=>
+S (S (K OR) 1) (K TRUE)
+To summarize, we have developed the transformation rules and the reduction
+rules for the combinators S, K and I shown in Figure 16.1.
+S-reduction:
+K-reduction:
+Sfgx -> fx (g x)
+KcX -
+C
+-reduction:
+I x -
+X
+I-transformation:
+Ax . X
+K-transformation:
+Ax . C
+K c
+S-transformation:
+(c + x)
+Ax . e1 82
+S (1x.e1) (\x. e2)
+Figure 16.1 The SKI rules
+We can use the reduction rules to evaluate the transformed program:
+h x
+S (S (K OR) 1) (K TRUE) x
+S (K OR) I x (K TRUE x)
+K
+K OR x (1 x) (K TRUE x)
+OR (1 x) (K TRUE x)
+K
+1 1
+OR x (K TRUE x)
+OR x TRUE
+(We use an S, K or I in the left margin as a reminder of which reduction rule is
+being applied. )

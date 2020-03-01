@@ -1,0 +1,49 @@
+Section 20.10 Peephole optimizations to G-code
+361
+20.10.2 Avoiding Redundant EVALS
+sequence
+As remarked in Section 20.2, we frequently generate redundant EVALs, in the
+PUSHGLOBAL f; EVAL
+The EVAL is redundant if f is a built-in function, or a supercombinator of one
+or more arguments, but it is necessary if f is a CAF. The peephole optimizer
+can easily eliminate the EVAL if it is redundant:
+PUSHGLOBAL f; EVAL => PUSHGLOBAL f (iff is not a CAF)
+20.10.3 Avoiding Allocating the Root of the Result
+Consider the supercombinator
+$F x f = f x
+At present we will generate the following G-code for it:
+PUSH 0;
+PUSH 2;
+Push x
+MKAP;
+Push f
+UPDATE 3;
+Make an application node
+POP 2;
+Update the root of the redex
+UNWIND;
+Pop parameters
+Continue
+In an implementation which uses copying for UPDATE this code is rather
+wasteful, since it allocates an application cell with MKAP and then
+immediately copies it over the root of the redex, thus discarding the
+application cell just allocated. It would be better to construct the root of the
+result directly on top of the root of the redex, thus:
+PUSH 0;
+PUSH 2;
+Push x
+UPDAP 4;
+Push f
+POP 2;
+Build application over root
+UNWIND;
+Pop parameters
+Continue
+The 'UPDAP 4' instruction takes the top two items on the stack and, using
+them, builds an application node on top of the root of the redex, whose
+position in the stack is four from the top. We could modify the RS scheme to
+incorporate this optimization by using the following rule:
+RS[[ f II p d n = PUSHGLOBAL f; MKAP (n-1);
+UPDAP (d-n+2); POP (d-n); UNWIND
+and a similar one for RS[[ x ]. Just the same optimization can be made when
+the result of the function is a CONS cell (using yet another instruction

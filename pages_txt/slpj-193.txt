@@ -1,0 +1,25 @@
+Eleven
+SELECTING THE NEXT REDEX
+When the graph of a functional program has been loaded into a computer, an
+evaluator is called to reduce the graph to normal form. It does this by
+performing successive reductions on the graph, which involves two distinct
+tasks:
+(i) selecting the next redex to be reduced;
+(ii) reducing it.
+In this chapter we shall address the first issue, before turning our attention to
+the second issue in the next chapter.
+As Section 2.3 has shown, the order in which reductions take place has a
+profound effect on the behavior of the program. We begin by discussing the
+nature of this effect.
+11.1 Lazy Evaluation
+In an ordinary imperative language (such as Pascal), arguments to a function
+are evaluated before the function is called (call by value). However, it is
+possible that the argument thus passed is never used in the body of the
+function, so that the work done in evaluating it is wasted. This suggests that a
+better scheme might be to postpone the evaluation of the argument until its
+value is actually required (call by need). Call by need is in fact rarely
+implemented in imperative languages for two main reasons:
+(i) The evaluation of an argument may cause some side-effects to take place,
+and may produce a result which depends on the side-effects (such as
+assignments) of other parts of the program. Hence, the exact time at
+which the argument is evaluated is crucial to the correct behavior of the

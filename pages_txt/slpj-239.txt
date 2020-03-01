@@ -1,0 +1,38 @@
+Section 14.6 Alternative approaches
+239
+To illustrate the method we will recompile the sumints example given
+earlier. Recall that we begin with the program
+letrec
+sumints
+= Am . letrec
+count = An . IF (> n m)
+NIL
+in
+(CONS n (count (+ n 1)))
+sum (count 1)
+in
+sum = Ans . IF (= ns NIL) 0 (+ (HEAD ns) (sum (TAIL ns)))
+sumints 100
+First we lambda-lift the An abstraction, abstracting out the free variable m,
+but not count. Instead, we replace all calls to count with ($count m), which gives
+$count m n = IF (> n m) NIL (CONS n ($count m (+ n 1)))
+letrec
+sumInts
+= \m . sum ($count m 1)
+in
+sum = Ans . IF (= ns NIL) 0 (+ (HEAD ns) (sum (TAIL ns)))
+sumints 100
+There were two calls to count, one in the body of the An abstraction and one in
+the definition of sumints, both of which were replaced with ($count m). Notice
+that this substitution could equally well be carried out using a let-definition to
+bind count to ($count m).
+Now sumints and sum are supercombinators, so we lift them out to give
+$count m n = IF (> n m) NIL (CONS n ($count m (+ n 1)))
+$sum ns = IF (= ns NIL) 0 (+ (HEAD ns) ($sum (TAIL ns)))
+$sumInts m = sum ($count m 1)
+$Prog = $sumints 100
+$Prog
+Notice that (unlike our previous method) no supercombinator has a graphical
+body; all the recursion is handled by direct recursion of supercombinators.
+However, it turns out that cyclic data structures have to be treated in a
+different way, and do require supercombinators with graphical bodies.

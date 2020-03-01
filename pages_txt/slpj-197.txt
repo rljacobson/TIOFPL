@@ -1,0 +1,38 @@
+Section 11.3 Normal forms
+197
+When Evaluate(E) yields a CONS cell it is vital that its head and tail are not
+yet evaluated. If they were evaluated immediately then the entire data
+structure would be evaluated before any of it could be printed. This is
+achieved by using lazy constructors; that is, constructors that do not evaluate
+their arguments.
+It has become quite common for printing mechanisms to print the
+components of a data constructor one after the other, with no separating
+characters. This hides the underlying shape of the data structure, but gives the
+functional programmer complete control over the character stream actually
+output to the printer. SASL, for example, behaves in this way [Turner, 1983],
+though Miranda does not.
+So far we have assumed that the result of a program will be printed, but
+there is no reason why it should not be put in a file, or fed into some other
+program instead. This routing of output would be controlled by the 'printing
+mechanism', possibly directed by routing information contained in the output
+data structure itself.
+11.2.2 The Input Mechanism
+In order to extract characters from the input list, the program will need to
+evaluate the list, element by element. Just as in the case of the printer, it is
+vital that the first evaluation does not force evaluation of the entire list,
+otherwise the entire input list would have to be evaluated (that is, read in)
+before any of it could be used. This would effectively rule out interactive
+programs, in which later input data depend on earlier output data.
+11.3 Normal Forms
+Our consideration of both input and output have led us to the same
+conclusion, namely that
+evaluating an expression whose result is a CONS cell should not entail
+evaluating its head and tail.
+This means that we should stop reduction when there may still be some
+redexes left in the graph (in the head and the tail). None of these redexes will
+be reduced by a normal order reduction scheme until the whole expression
+has been evaluated to a CONS cell, because until then there will always be a
+top-level redex which normal order will select.
+Hence, what we need to do is to pursue normal order reduction, but stop
+in the graph).
+when there is no top-level redex (even though there may be inner redexes left

@@ -1,0 +1,39 @@
+256
+Chapter 15 Fully Lazy Lambda-lifting
+letrec is zero. The reason for this is that the level-number of a recursive
+definition depends only on its free variables, and not on the (as yet
+unknown) level-number of the recursive definition itself.
+(2) For a letrec, compute the maximum of the level-numbers of the
+definitions' bodies. This is the correct level-number for the variables
+bound in the letrec. For lets, the correct level-number is that computed
+in Step 1. This level-number should be used for the variables bound in
+the let(rec) when processing its body.
+(3) Float out the definitions until the next enclosing lambda abstraction has
+the same level-number as that of the variables defined in the let(rec),
+which was computed in Step 2.
+(4) Finally, if the let(rec) now appears in the function position of an
+application, continue to float it out until it does not.
+Note: if a letrec re-binds a variable that is already in scope, then it cannot be
+floated outwards without risk of capturing occurrences of the outer variable.
+The solution is to systematically rename one of the variables.
+15.6 Eliminating Redundant Full Laziness
+The transformations required to achieve full laziness have a price. There are
+at least three ways in which we pay:
+(i) Supercombinators with many arguments (for all the MFEs) are
+generated. This increases the size of the redex and slows down reduction.
+(ii) More seriously, more supercombinators may be generated because of
+the loss of opportunities for n-optimization. To see this, refer back to the
+example in Section 15.4, where three combinators were generated for
+foldl where one would have sufficed for a non-fully lazy implementation.
+More supercombinators mean more reductions.
+(iii) Most serious of all, the program is broken up into small fragments,
+fragments of the bodies of functions being exported piecemeal. For a
+straightforward template-instantiation implementation this is not a
+problem, but if the bodies of supercombinators are compiled then many
+opportunities for optimization may be lost. This will become clearer in
+Chapter 20, but consider for example the lambda abstraction
+AV. AX. IF (= v 0) (+ x 1) (+ x 2)
+The non-fully lazy lambda-lifter will generate a single supercombinator:
+$R v x = IF (= v 0) (+ x 1) (+ x 2)
+An optimizing compiler will produce code for $R which first tests the
+value of v, and then evaluates either the (+ x 1) or (+ x 2), to compute a

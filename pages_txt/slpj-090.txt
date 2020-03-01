@@ -1,0 +1,51 @@
+Section 5.2 The pattern-matching compiler algorithm
+89
+This is where the third argument to the match function is useful. The above
+expression is equivalent to:
+match [U2, U3]
+([NIL, ys], (A u: ys))]
+( match [U2, U3]
+[([xs, NIL], (B u: xs))]
+( match [U2, U3]
+[([CONS x xs, CONS y ys], (C uf x xs y ys))]
+ERROR ))
+That is, the equations are broken into groups; first an equation beginning with
+a constructor, then one beginning with a variable, and then one beginning
+with a constructor again. If the equation in the first call of match fails to match
+the arguments then the value of the second call of match is returned. Similarly,
+if the equation in the second call does not match then the third call is returned,
+and if the equation in the third call does not match then ERROR is returned.
+The reader may verify that reducing the three calls of match using the
+demo':
+variable, constructor and base case rules results in the following definition of
+demo'
+= AU1 . AU2 . AU3.
+case U2 of
+NIL
+CONS U4 Us
+(A uj U3)
+case U3 of
+NIL
+CONS UG U7
+(B U1 U2)
+case U2 of
+NIL
+ERROR
+CONS U4 U5
+case U3 of
+NIL
+ERROR
+CONS Us U7
+(C U1 U4 U5 Us U7)
+This involves. four case-expressions. When the second and third arguments
+are both non-empty lists then each list is examined twice, as compared with
+once for the definition of demo. This confirms the claim made in the
+introduction that 'optimizing' the definition of mappairs by transforming it
+into mappairs' can actually result in worse code.
+It may be possible to devise a compilation algorithm that would produce
+better code for this case. This could be done by simplifying a case-expression
+that appears inside another case-expression for the same variable. This sort of
+optimization is straightforward, although it requires considerably more book-
+keeping. In this case, mappairs' would compile to the same case-expression as
+complicated.
+mappairs, although the compilation process would be rather more

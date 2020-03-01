@@ -1,0 +1,41 @@
+122
+Chapter 6 Transforming the Enriched Lambda Calculus
+We recall that a case-expression is of the form
+case v of
+C1 V1,1 . . . V1, E1
+Cn Vn.1 . . . Vn,m = En
+where c1, . .., cn are a complete family of constructors of a structured type, v
+is a variable and the E; are expressions.
+As usual, there are two possibilities to consider, depending on whether the
+constructors in the case-expression are those of a sum type or a product type.
+6.3.1 Case-expressions Involving a Product Type
+The general case-expression for product types is of the form:
+case v of
+t vi .. . Vr => E1
+where t is the constructor of a product type. This case-expression is
+degenerate, since there is no need to test v to determine which case to pick, so
+we should perform lazy product-matching. We can therefore use the follow-
+ing transformation:
+case v of
+= UNPACK-PRODUCT-t (Avi. . . Avr. E1) v
+t vi-
+Vr
+E1
+remembering that UNPACK-PRODUCT works lazily. For example, consider
+the following Miranda definition of addPair:
+addPair (x,y) = x + y
+Translated into the enriched lambda calculus, and transformed into case-
+expressions, this becomes
+addPair = Aw. (case w of (PAIR x y) => (+ x y))
+Now transforming the case-expression gives
+addPair = Aw .(UNPACK-PRODUCT-PAIR ( \x. Ay . + x y) w)
+and a final n-reduction is now available, giving finally
+addPair = UNPACK-PRODUCT-PAIR (\x. Ay . + x y)
+6.3.2 Case-expressions Involving a Sum Type
+Now suppose that the constructors are those of a sum type. Then the case-
+expression is of the form:
+case v of
+S1 V1,1 . . . V1,
+. . .
+Sn Vn,1 . . . Vn,In
+=> En

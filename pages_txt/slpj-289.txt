@@ -1,0 +1,64 @@
+References
+References
+Aerts, J.P.H. 1981. Implementing SASL without Garbage Collection. EUT-R
+81-WSK-05. Eindhoven Univ. of Technology. November.
+Baker, H. 1978. List processing in real time on a serial computer. Communication
+the ACM. Vol. 21, no. 4, pp. 280-94.
+Ben-Ari, M. 1984. Algorithms for on-the-fly garbage collection. ACM TOPLAS.
+6, no. 3, pp. 333-44.
+Bobrow, D.G. 1980. Managing reentrant structures using reference-counts.
+TOPLAS. Vol. 2, no. 3, pp. 269-73.
+Brownbridge, D. 1985. Cyclic reference-counting for combinator machines
+Proceedings of the IFIP Conference on Functional Programming and Comp
+Architecture, Nancy. September.
+Cohen, J. 1981. Garbage collection of linked data structures. ACM Computing Surv
+Vol. 13, no. 3, pp. 341-67.
+Dijkstra, E.W., Lamport, L., Martin, A.J., Scholten, C.S., and Steffens, E.F
+1978. On-the-fly garbage collection - an exercise in cooperation. Communicate
+of the ACM. Vol. 21, no. 11, pp. 966-75.
+Hudak, P. 1983a. Distributed Graph Marking. Research report 268, Computer Scie
+IS
+Dept, Yale. January.
+Hudak, P. 1983b. Distributed task and memory management. In Proceedings of
+ACM Symposium on Principles of Distributed Computing, pp. 277-89. Augus
+Hughes, R.J.M. 1982. Reference-counting with Circular Structures in Virtual Mem
+Applicative Systems. Programming Research Group, Oxford.
+Hughes, R.J.M. 1985. A distributed garbage collection algorithm. In Proceedings of
+IFIP Conf. on Functional Programming and Computer Architecture, Nancy,
+to
+256-72. Jouannaud (editor). LNCS 201, Springer Verlag. September.
+Knuth, D. 1976. The Art of Computer Programming. Vol. I, Section 2.5. Addi
+it
+Wesley.
+Kung, H.T., and Wong, S.W. 1977. An Efficient Parallel Garbage Collection Systo
+in
+and its Correctness Proof. Dept of Comp. Sci., Carnegie-Mellon U
+September.
+Lieberman, H., and Hewitt, C. 1983. A real time garbage collector based on
+lifetimes of objects. Communications of the ACM. Vol. 26, no. 6, pp. 419-29.
+Mohamed-Ali, K.A. 1984. Object oriented storage management and garb
+collection in distributed processing systems. PhD Thesis, report TRITA-CS-84
+Royal Institute of Technology, Stockholm. December.
+Schorr, H., and Waite, W. 1967. An efficient machine independent procedure
+ful
+garbage collection. Communications of the ACM. Vol. 10, no. 8, pp. 501-6.
+hi-
+Steele, G.L. 1975. Multiprocessing compactifying garbage collection. Communi
+ge
+tions of the ACM. Vol. 18, no. 9, pp. 495-508.
+Stoye, W.R., Clarke, T.J.W., and Norman, A.C. 1984. Some practical methods
+rapid combinator reduction. In Proceedings of the ACM Symposium on Lisp a
+SS
+Functional Programming, Austin, pp. 159-66. August.
+nd
+Wadler, P. 1984. Listlessness is better than laziness: lazy evaluation and garba
+collection at compile-time. In Proceedings of the ACM Symposium on Lisp u
+ich
+Functional Programming, Austin, pp. 45-52. August.
+nd
+Wise, D. 1985. Design for a multiprocessing heap with on-board reference-countin
+In Functional Programming and Computer Architecture, Nancy, pp. 289-30
+Jouannaud (editor). LNCS 201. Springer Verlag.
+and
+Wise, D.S., and Friedman, D.P. 1977. The one-bit reference-count. BIT. Vol. 17, n
+3, pp. 351-9.

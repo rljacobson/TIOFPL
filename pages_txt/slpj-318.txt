@@ -1,0 +1,43 @@
+320
+Chapter 19 G-code - Definition and Implementation
+(iii)
+G, the graph
+C, the G-code sequence remaining to be executed.
+D, the dump. This consists of a stack of pairs (S, C), where S is a stack and
+C is a code sequence.
+Thus the entire state of the G-machine is a 4-tuple <S, G, C, D>. We will
+describe the operation of the G-machine by means of state transitions. First,
+however, we need some notation for each component of the state.
+19.1.1 Notation
+written []-
+A stack whose top item is n is written n:S, where S is a stack. An empty stack is
+A code sequence whose first instruction is I is written I:C, where C is a code
+sequence. An empty code sequence is written [].
+A dump whose top pair is (S,C) is written (S,C):D, where D is a dump. An
+empty dump is written [ ].
+The possible types of nodes in the graph are written like this:
+INT i
+an integer.
+CONS n1 n2 a CONS node.
+AP n1 n2
+an application node.
+FUN K C
+a function (supercombinator or built-in) of k arguments, with
+code sequence C.
+HOLE
+a node which is to be filled in later. This is used for constructing
+cyclic graphs.
+The notation G[n=AP n1 n2] stands for a graph in which node n is an
+application of n1 to n2 (n is just a name for this node). The notation G[n=G n']
+stands for a graph in which node n has the same contents as node n' (we will
+need this only to describe the UPDATE instruction).
+The graph is a logical concept, implemented by the heap. A node in the
+logical graph need not necessarily occupy a cell in the physical heap. In the
+case of CONS, AP, FUN and HOLE a logical node will indeed occupy a physical
+cell, but an INT node (i.e. an integer) will occupy a cell in a boxed implemen
+tation but will not in an unboxed implementation (see Section 10.6).
+19.1.2 State Transitions for the G-machine
+To illustrate the way in which we can use state transitions to describe the effect
+of instructions, consider the instruction PUSHINT i. We can write the
+following transition:
+<S, G, PUSHINT i:C, D> => <n:S, G[n=INT i], C, D>

@@ -1,0 +1,42 @@
+258
+Chapter 15 Fully Lazy Lambda-lifting
+15.6.2 Unshared Lambda Abstractions
+Continuing with the same example, suppose the lambda abstraction under
+consideration appeared in a context like this:
+let
+in
+f = AV.AX. IF (= v 0) (+ x 1) (+ x 2)
+.(f 4 5) . ..
+and suppose that the (f 4 5) is the only use of f. In this case, the partial
+application (f 4) cannot be shared, since it is used immediately. Using the $S
+combinator for f, the reduction (f 4 5) would go like this:
+f 45 =
+$S 4 5
+$S1 (= 4 0) 5
+IF (= 4 0) (+ 5 1) (+ 5 2)
++ 52
+7
+Since the partial application cannot be shared, neither can the painstakingly
+abstracted expression (= 4 0). No sharing would be lost by using the original
+$R combinator instead. From this example we can derive a general rule:
+given a lambda abstraction Ax. E in a context in which it cannot be shared,
+we should not abstract free expressions from E because they will not be
+shared. Instead we should abstract only the free variables.
+We can justify this rule by observing that free expressions abstracted from E
+cannot be shared because:
+(i) they are not shared inside E, since they are abstracted from a single place
+in E;
+(ii) they are not shared outside E, because the whole lambda abstraction Ax. E
+is not shared.
+The sharing of partial applications is just a specific instance of this general
+rule. Notice that for the first time our lambda-lifting strategy becomes context-
+dependent. The trick is to work out when a lambda abstraction might be
+shared. This is not at all obvious. For a start, it might be passed as an argument
+to another function, in which case a complete analysis would involve looking
+at the body of that function. More subtly, consider an extension of our
+example:
+let
+f = AV . AX. IF (= v 0) (+ x 1) (+ x 2)
+in
+g = Ax.Ay . + 1 (f xy)
+. . . expression not mentioning f . . .

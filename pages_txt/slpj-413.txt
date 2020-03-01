@@ -1,0 +1,38 @@
+Section 24.4 Sparking tasks
+415
+(ii) Representational issues, concerning how tasks can be represented inside
+the machine.
+(iii) Locality issues, concerning how to deploy the resources of the machine
+to execute the concurrent tasks, while simultaneously minimizing
+communication.
+(iv) Architectural issues, concerning the physical architecture of a machine
+for performing parallel graph reduction.
+We will address these issues in decreasing levels of detail.
+24.4 Sparking Tasks
+When should a new task be sparked? There are two broad approaches:
+(i) Spark a new task to evaluate a subgraph when it is certain that the
+subgraph will eventually be evaluated (conservative parallelism). This
+ensures that all tasks are doing useful work.
+(ii) Spark a new task to evaluate a subgraph when it is possible that the
+subgraph will eventually be evaluated (speculative parallelism). This
+offers maximum opportunities for parallelism.
+We will discuss these alternatives in turn.
+24.4.1 Conservative Parallelism
+If we insist that we will only spark a task when it is certain that its result will be
+needed, then we can initially start only one task, at the root of the whole
+graph. This is not very parallel! When can we spark new tasks?
+The most obvious place to spark new tasks is to evaluate the arguments of a
+strict built-in function. For example, when evaluating
+(+ E1 E2)
+we could spark tasks to evaluate E1 and Ez. It is certain that the values of E1
+and Ez will be needed, so we can safely spark tasks to evaluate them. (Note:
+we might choose to spark only one new task, to evaluate E; say, and allow the
+task which is evaluating the whole (+ E1 Ez) expression to evaluate Ez, since
+it has nothing better to do. This is a relatively minor technical consideration,
+however.)
+Unfortunately, except for numerical analysis programs, this approach is so
+conservative that we will obtain little parallelism. Some programs contain no
+arithmetic! The idea is, however, easily generalized. Given the application of
+a function f to an argument, thus
+f E
+we are safe to begin parallel evaluation of E if we know that f will need the

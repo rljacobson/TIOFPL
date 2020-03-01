@@ -1,0 +1,44 @@
+86
+Chapter 5 Efficient Compilation of Pattern-matching
+This can be reduced to the equivalent expression:
+case u1 of
+NIL
+match [] [] ERROR
+CONS U2 U3
+=>
+match [U2, U3]
+[( [x, NIL],
+X
+( [y, CONS x xs], (last (CONS x xs)) ) ]
+ERROR
+The case-expression must still contain a clause for the missing constructor,
+and the call of match in this clause will have an empty list of equations. (From
+the definition of match, we know that (match [] [] ERROR) is equivalent to
+ERROR. )
+We now discuss the general rule for reducing a call of match where every
+equation begins with a constructor pattern. Say that the constructors are from
+a type which has constructors C1, ..., Ck. Then the equations can be
+rearranged into groups of equations qs1, ..., qSk, such that every equation in
+group qs, begins with constructor c. (If there is some constructor c that begins
+no equation, like NIL in the last example above, then the corresponding group
+qsi will be empty.) The call of match will then have the form:
+match (u:us) (qs: ++ ... ++ qsk) E
+where each qs, has the form:
+[ ( ((ci ps't,1) :psi,1), E1,1 )
+( ((ci ps' i,m):psi,m), Eim ) ]
+(++ is list append.) In this expression we have abbreviated the constructor
+pattern (c pi . . . pr) to the form (c ps), where ps stands for the list of patterns
+[p1, P2, ..., Pr]. This call to match is reduced to the case-expression:
+case u of
+C1 us'1 => match (us', ++ us) qs', E
+. . .
+Ck us'k =match (us'k ++ us) qs'k E
+where each qs'i has the form:
+[ ( (ps' s,1 ++ psi,1), Et,1 ),
+( (ps'i,m ++ psi,mi), Ex.m ) ]
+Here each us'i is a list of new variables, containing one variable for each field
+in cl.
+For instance, in the example at the beginning of this section, qs2 is
+[ ( [CONS x XS, NIL
+], (B U1 x xs)
+( [CONS x xs, CONS y ys], (C u1 x xs y ys) ) ]

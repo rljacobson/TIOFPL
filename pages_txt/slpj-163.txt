@@ -1,0 +1,41 @@
+162
+Chapter 8 Polymorphic Type-checking
+founded. The purpose of the mathematical notion of type is to elucidate the
+foundations of mathematics. The purpose of the notion in functional pro-
+gramming is to assure us at compile-time that a program will not 'go wrong',
+where we do not count a program to have gone wrong if it does not terminate,
+or a function is applied to arguments for which it has not been defined.
+Second, in functional programming 'recursion' is interpreted in a very
+liberal sense, going far beyond recursion on well-founded structures, or
+positive inductive definitions. As a direct result of this, the notion of a type in
+functional programming cannot be the same notion that we use in
+mathematics. For example, in a functional program we can define an integer
+omega, where
+omega = omega + 1
+and this cannot belong to the (mathematical) type of integers. Another
+symptom of this liberal attitude to recursion is exhibited by the definition of
+the algebraic type
+D := LAMBDA (D -> D)
+in which the defined type occurs negatively (to the left of the arrow) on the
+right-hand side of the definition. This is not to say that there is no mathe-
+matical sense in the functional programming notions. On the contrary, there
+is a rich and sophisticated theory (domain theory) which aims to give a
+mathematical interpretation to just such constructs. But while constructing
+that theory, and reasoning about the mathematical structures it involves, we
+are using on the metalevel the ordinary mathematical notion of type.
+We hope that this chapter has shown that a naive understanding of the
+notion of type certainly gives us plenty to go on. We also hope to have
+achieved another goal: that of showing that there are limits to the questions
+we can settle on a naive basis alone.
+References
+Gaeck, P., and Black, M. (editors) 1970. Function and concept. In Translations
+from the Philosophical Writings of Gottlob Frege. Basil Blackwell,
+Milner, R. 1978. A theory of type polymorphism in programming. Journal of
+Computer and System Science. Vol. 17, pp. 348-75.
+Mycroft, A. 1984. Polymorphic type schemes and recursive definitions. In Proceedings
+of the International Symposium on Programming, Toulouse, pp. 217-39. LNCS
+167. Springer Verlag.
+Strachey, C. 1967. Fundamental concepts in programming languages. In Notes for the
+International Summer School in Computer Programming, Copenhagen.
+Whitehead, A.N., and Russell, B.A.W. 1910-1913. Principia Mathematica, 3
+volumes. Cambridge University Press.

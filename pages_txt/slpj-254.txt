@@ -1,0 +1,41 @@
+254
+Chapter 15 Fully Lazy Lambda-lifting
+a single free variable, and in this case, we should still like to have a chance of
+n-reduction.
+The second reason concerns the size of the MFE. To maximize sharing
+as possible.
+(which is the object of the exercise) we should like to make our MFEs as large
+Suppose we have the lambda abstraction
+Ax. (. . .G. . .F. . . E. . .)
+where E, F and G are MFEs of the Ax abstraction, and
+level of F < level of G < level of E
+It would be best to define the supercombinator
+$S fgex = (...g. ..f. ..e. . .)
+and replace the abstraction with
+$S F GE
+because then ($S F G) will have a smaller level-number than E, and hence will
+be taken out of E's native lambda abstraction as a single MFE. If we had
+arranged the parameters in the reverse order, G and F would have had to be
+taken out separately.
+This will not affect the amount of computation involved (since ($S F G)
+cannot be reducible), but it will mean that there is only one instance of the
+($S F G) tree rather than one for each application of E's native lambda
+abstraction. Thus, correctly ordering the parameters should make the
+maximal free expressions larger and fewer.
+The example in the Section 15.4 showed an example of this optimization in
+action. We abstracted (foldl op), (op base) and base from the body of the Axs
+abstraction, calling them p, q and base respectively. Though we did not
+mention this at the time, we put p first, since (foldl op) is freer than (op base)
+and base. This subsequently enabled us to abstract ($R1 (foldil op)) from the
+Abase abstraction.
+We conclude that ordering the parameters by increasing level-number is
+better in both these respects.
+15.5.4 Floating Out the lets and letrecs
+We recall that to maintain full laziness we must 'float' definitions given in lets
+and letrecs outwards. In this section we discuss the algorithm in more detail.
+Since we will float out all the definitions in a letrec together, we assume that
+the dependency analysis described in Chapter 6 has already been performed.
+If it were not performed, then a definition might not be floated out as far as
+possible, merely because it happened to be defined in the same letrec as a
+definition which could not be floated out so far. For the same reason we
+assume that lets contain only a single definition.

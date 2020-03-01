@@ -1,0 +1,56 @@
+Section 16.2 Optimizations to the SK scheme
+273
+little tale serves to show that the choice of a set of combinators is by no means
+an entirely systematic process.
+Figure 16.5 gives the final compilation algorithm, including all the
+optimizations we have discussed. The only point to notice is that the
+optimization rules for B* and C' are expressed in terms of S, rather than going
+via the intermediate B and C forms. Figure 16.6 gives a summary of the
+reduction rules for each combinator.
+C[[ e ] Compiles e to SK combinators
+C[ e1 02 ] = CI e1 I CI e2 I
+C[[ Ax .e ] = A x [ C[ e ] ]
+CI cv ]
+-= CV
+A x [[ f ] Abstracts x from t
+A x {[ ff f2 ]
+Ax I[x ]
+= Opt[[ S (A x I[ f1 D (A x [ f2 D) I
+A x [cv ]
+= K cv
+Opt[[ e I Optimizes e
+Opt[ S (K p) (K q) I
+Opti[ S (K p) 1 ]
+= K (p q)
+Opt[[ S (K p) (B q r) I
+= P
+Opt[[ S (K p) q ]
+= B* p q r
+Opt[[ S (B p q) (K r) ]
+= Bpq
+Opt[ S p (K q) ]
+=C' pqr
+Opt[ S (B p q) r ]
+Cpq
+S' pqr
+Figure 16.5 Final SK compilation algorithm
+1 x
+X
+Kc x
+C
+Sfgx
+f x (g x)
+Bfgx
+f (g x)
+Cf gx
+fx g
+S' cfgx
+c (f x) (g x)
+B+ cfgx
+c (f (g x))
+C'cfgx
+,c (f x) g
+Figure 16.6 Summary of combinator reduction rules
+16.2.6 An Example
+We conclude with an example of the compilation algorithm in action. The
+example is a function that implements Euclid's algorithm for finding the

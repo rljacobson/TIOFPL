@@ -1,0 +1,40 @@
+62
+Chapter 4 Structured Types and the Semantics of Pattern-matching
+yields something other than FAIL, then I returns that value (first rule); if it
+evaluates to FAIL, I returns its right argument (second rule); if the evaluation
+of the left argument fails to terminate, then so does the application of I (third
+rule).
+It is easy to verify that [ is an associative operator, and has identity FAIL. Its
+associativety means that we may write expressions such as (E1 [ E2 0 E3)
+without ambiguity. It is extremely convenient to write I between its operands
+(that is, infix) but, since all functions are written prefix in the lambda calculus,
+we are forced to dignify I by making it one of the new constructs of the
+enriched lambda calculus. The sole reason for doing so is notational.
+As an example of the suggested translation in action, recall the definition of
+the reflect function:
+reflect (LEAF n)
+= LEAF n
+reflect (BRANCH t1 12) = BRANCH (reflect 12) (reflect t1)
+This would be translated to:
+reflect = At. ( ((\(LEAF n) . LEAF n) t)
+[ ERROR)
+I ((\(BRANCH t1 12) . BRANCH (reflect t2) (reflect t1)) t)
+In this case, of course, ERROR can never be returned, since one of the
+previous pattern-matches will succeed. This is not always the case, as the
+following example shows. Consider the Miranda definition of hd, which
+extracts the first element of a list:
+hd (x:xs) = x
+It would be translated to
+hd = Axs'. (((\(CONS x xs) .x) xs') | ERROR)
+If hd is applied to NIL, then ERROR will be the result. (We have used xs' as the
+formal parameter of the lambda abstraction, to avoid confusion with the xs in
+the pattern. Technically, however, there would be no problem with using xs,
+or any other variable, since hd has no free variables.)
+4.2.5 Multiple Arguments
+Functions with multiple arguments are easily handled. As we recalled earlier,
+the basic approach is to translate a function of several arguments using the
+rule
+TD[[ f vi . .. Vn = E ]] = f = AV1. ..AVn. TEI[ E D
+Combining this with the approach of the previous section suggests that we
+should translate the definition
+f Pi P2 . .. Pm = E

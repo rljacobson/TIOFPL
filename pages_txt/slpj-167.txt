@@ -1,0 +1,40 @@
+166
+Chapter 9 A Type-checker
+9.4 Solving Equations
+Consider type-checking an application (AP e1 e2), where we have worked out
+equation'
+the type t1 for e1 and the type 12 for e2. To do this, we try to 'solve the
+t1 = 12 -> (TVAR n)
+where n is a type variable name that has not been used before. As we have
+seen, the structure of an expression gives rise to a system of such equations.
+How should we represent solutions of systems of type equations? In
+mathematics, the solution of simultaneous equations
+a1,1 X x1 + a1,2 X X2 = b1
+@z,1 X X1 + az,2 X x2 = b2
+is expressed by giving values for each of the unknowns x1 and x2 which satisfy
+the equations. Analogously, an alleged solution of a system of type equations
+can be expressed as a function from type variables (the unknowns) to type
+expressions (their values). The allegation is that the equations are satisfied
+when we replace (i.e. substitute) the unknowns by their values under the
+function. We therefore take
+subst == tvname -> type_exp
+to be the type of substitutions. We shall see how to determine whether a set of
+equations between type expressions has a solution, and if so how to construct
+a substitution that satisfies them. We shall use identifiers such as phi, phi', psi,
+as variables over substitutions.
+9.4.1 Substitutions
+Given a substitution function phi and a type expression te, we define
+(sub_type phi te) to be the type expression obtained by performing the phi
+substitution on all the type variables in te:
+sub_type :: subst -> type_exp -> type_exp
+sub_type phi (TVAR tvn)
+= phi tvn
+sub_type phi (TCONS ton ts) = TCONS ton (map (sub_type phi) ts)
+Here map is the function that applies a function to each entry in a list:
+map :: (* -> **) -> [*] -> [**]
+map f []
+= []
+map f (x:xs) = f x : map f xs
+Two substitutions can be composed to give a further substitution:
+scomp :: subst -> subst -> subst
+scomp sub2 sub1 tvn = sub_type sub2 (sub1 tvn)

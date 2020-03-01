@@ -1,0 +1,246 @@
+\chapter{The Lambda Calculus}
+
+This chapter introduces the lambda calculus, a simple language which will be
+used throughout the rest of the book as a bridge between high-level functional
+languages and their low-level implementations. The reasons for introducing
+the lambda calculus as an intermediate language are:
+\begin{numbered}
+\item It is a simple language, with only a few, syntactic constructs, and simple
+semantics. These properties make it a good basis for a discussion of
+implementations, because an implementation of the lambda calculus only
+has to support a few constructs, and the simple semantics allows us to
+reason about the correctness of the implementation.
+\item It is an expressive language, which is sufficiently powerful to express all
+functional programs (and indeed, all computable functions). This means
+that if we have an implementation of the lambda calculus, we can
+implement any other functional language by translating it into the lambda
+calculus.
+\end{numbered}
+In this chapter we focus on the syntax and semantics of the lambda calculus
+itself, before turning our attention to high-level functional languages in the
+next chapter.
+
+\section{The Syntax of the Lambda Calculus}
+
+Here is a simple expression in the lambda calculus:
+\begin{mlcoded}
+(+ 4 5)
+\end{mlcoded}
+All function applications in the lambda calculus are written in \textit{prefix} form, so,
+for example, the function + precedes its arguments 4 and 5. A slightly more
+complex example, showing the (quite conventional) use of brackets, is
+\begin{mlcoded}
+(+ ($*$ 5 6) (+ 8 3))
+\end{mlcoded}
+In both examples, the outermost brackets are redundant, but have been
+added for clarity (see Section 2.1.2).
+
+From the implementation viewpoint, a functional program should be
+thought of as an \textit{expression}, which is `executed' by \textit{evaluating} it. Evaluation
+proceeds by repeatedly selecting a \textit{reducible expression} (or \textit{redex}) and
+reducing it. In our last example there are two redexes: ($*$ 5 6) and (+ 8 3).
+The whole expression \ml{(+ ($*$ 5 6) ($*$ 8 3))} is not a redex, since a \ml{+} needs to be
+applied to two \textit{numbers} before it is reducible. Arbitrarily choosing the first
+redex for reduction, we write
+\begin{mlcoded}
+(+ ($*$ 5 6) ($*$ 8 3)) $\to$ (+ 30 ($*$ 8 3))
+\end{mlcoded}
+where the \ml{$\to$} is pronounced 'reduces to'. Now there is only one redex, \ml{(* 8 3)},
+which gives
+\begin{mlcoded}
+(+ 30 ($*$ 8 3)) $\to$ (+ 30 24)
+\end{mlcoded}
+This reduction creates a new redex, which we now reduce
+\begin{mlcoded}
+(+ 30 24) $\to$ 54
+\end{mlcoded}
+\indent When there are several redexes we have a choice of which one to reduce
+first. This issue will be addressed later in this chapter.
+
+\subsection{Function Application and Currying}
+In the lambda calculus, function application is so important that it is denoted
+by simple juxtaposition; thus we write
+\begin{mlcoded}
+f x
+\end{mlcoded}
+to denote `the function \ml{f} applied to the argument \ml{x}'. How should we express
+the application of a function to several arguments? We could use a new
+notation, like \ml{(f (x,y))}, but instead we use a simple and rather ingenious
+alternative. To express `the sum of 3 and 4' we write
+\begin{mlcoded}
+	((+ 3) 4)
+\end{mlcoded}
+The expression \ml{(+ 3)} denotes the function that adds \ml{3} to its argument. Thus
+the whole expression means `the function \ml{+} applied to the argument \ml{3}, the
+result of which is a function applied to \ml{4}'. (In common with all functional
+programming languages, the lambda calculus allows a function to return a
+function as its result.)
+
+This device allows us to think of all functions as having a \textit{single argument
+only}. It was introduced by Schonfinkel [1924] and extensively used by Curry
+[Curry and Feys, 1958]; as a result it is known as \textit{currying}.
+
+\subsection{Use of Brackets}
+
+In mathematics it is conventional to omit redundant brackets to avoid
+cluttering up expressions. For example, we might omit brackets from the
+expression
+\begin{mlcoded}
+	(ab) + ((2c)/d)
+\end{mlcoded}
+to give
+\begin{mlcoded}
+	ab + 2c/d
+\end{mlcoded}
+The second expression is easier to read than the first, but there is a danger that
+it may be ambiguous. It is rendered unambiguous by establishing conventions
+about the precedence of the various functions (for example, multiplication
+binds more tightly than addition)..
+
+Sometimes brackets cannot be omitted, as in the expression:
+\begin{mlcoded}
+	(b + c)/a
+\end{mlcoded}
+Similar conventions are useful when writing down expressions in the
+lambda calculus. Consider the expression:
+\begin{mlcoded}
+	((+ 3) 2)
+\end{mlcoded}
+By establishing the convention that function application associates to the left,
+we can write the expression more simply as:
+\begin{mlcoded}
+	(+ 3 2)
+\end{mlcoded}
+or even
+\begin{mlcoded}
+	+ 3 2
+\end{mlcoded}
+
+We performed some such abbreviations in the examples given earlier. As a
+more complicated example, the expression:
+\begin{mlcoded}
+	((f ((+ 4) 3)) (g x))
+\end{mlcoded}
+is fully bracketed and unambiguous. Following our convention, we may omit
+redundant brackets to make the expression easier to read, giving:
+\begin{mlcoded}
+	f (+ 4 3) (g x)
+\end{mlcoded}
+No further brackets can be omitted. Extra brackets may, of course, be
+inserted freely without changing the meaning of the expression; for example
+\begin{mlcoded}
+	(f (+ 4 3) (g x))
+\end{mlcoded}
+is the same expression again.
+
+\subsection{Built-in Functions and Constants}
+In its purest form the lambda calculus does not have built-in functions such as
+\ml{+}, but our intentions are practical and so we extend the pure lambda calculus
+with a suitable collection of such built-in functions.
+
+These include arithmetic functions (such as \ml{+}, \ml{--}, $*$, \ml{/}\,) and constants (\ml{0}, \ml{1},
+\ldots), logical functions (such as \ml{AND}, \ml{OR}, \ml{NOT}) and constants (\ml{TRUE},
+\ml{FALSE}), and character constants (\ml{'a'}, \ml{'b'}, \ldots). For example
+\begin{mlalign}
+	-- 5 4 &$\to$ 1\\
+AND TRUE FALSE &$\to$ FALSE
+\end{mlalign}
+We also include a conditional function, \ml{IF}, whose behavior is described by the
+reduction rules:
+\begin{mlcoded}
+IF TRUE E\textsubscript{t} E\textsubscript{f} $\to$ E\textsubscript{t}\\
+IF FALSE E\textsubscript{t} E\textsubscript{f} $\to$ E\textsubscript{f}
+\end{mlcoded}
+
+We will initially introduce data constructors into the lambda calculus by
+using the built-in functions \ml{CONS} (short for \ml{CONSTRUCT}\,), \ml{HEAD} and \ml{TAIL}
+(which behave exactly like the Lisp functions \ml{CONS}, \ml{CAR} and \ml{CDR}\,). The
+constructor \ml{CONS} builds a compound object which can be taken apart with
+\ml{HEAD} and \ml{TAIL}. We may describe their operation by the following rules:
+\begin{mlalign}
+HEAD (CONS a b) &$\to$ a\\
+TAIL (CONS a b) &$\to$ b
+\end{mlalign}
+We also include \ml{NIL}, the empty list, as a constant. The data constructors will
+be discussed at greater length in Chapter 4.
+
+The exact choice of built-in functions is, of course, somewhat arbitrary, and
+further ones will be added as the need arises.
+
+\subsection{Lambda Abstractions}
+
+The only functions introduced so far have been the built-in functions (such as
+\ml{+} and \ml{CONS}\,). However, the lambda calculus provides a construct, called a
+lambda abstraction, to denote new (non-built-in) functions. A lambda
+abstraction is a particular sort of expression which denotes a function. Here is
+an example of a lambda abstraction:
+\begin{mlcoded}
+	(\tlb{x}+ x 1)
+\end{mlcoded}
+The \tl says `here comes a function', and is immediately followed by a variable,
+\ml{x} in this case; then comes a . followed by the \textit{body} of the function, \ml{(+ x 1)} in
+this case. The variable is called the \textit{formal parameter}, and we say that the \tl
+binds it. You can think of it like this:
+\begin{quote}\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llllll}
+	\ml{(\tl}	&\ml{x}  &\ml{.}  &\ml{+}  &\ml{x} &\ml{1}\,)  \\
+	\;\;$\uparrow$	&$\uparrow$  &$\uparrow$  &$\uparrow$  &$\uparrow$ &$\uparrow$ \\
+	That function of &\ml{x}  & which  &adds  &\ml{x} to &\ml{1} 
+\end{tabular}
+\end{quote}
+A lambda abstraction \textit{always} consists of all the four parts mentioned: the \tl,
+the formal parameter, the \ml{.} and the body.
+
+A lambda abstraction is rather similar to a function definition in a
+conventional language, such as C:
+\begin{mlcoded}
+	Inc( x )\\
+	int x;\\
+	\{ return( x + 1 ); \}
+\end{mlcoded}
+The formal parameter of the lambda abstraction corresponds to the formal
+parameter of the function, and the body of the abstraction is an expression
+rather than a sequence of commands. However, functions in conventional
+languages must have a name (such as \ml{Inc}), whereas lambda abstractions are
+`anonymous' functions.
+
+The body of a lambda abstraction extends \textit{as far to the right as possible}, so
+that in the expression
+\begin{mlcoded}
+	(\tlb{x}+ x 1) 4
+\end{mlcoded}
+the body of the \ml{\tl{}x} abstraction is \ml{(+ x 1)}, not just \ml{+}. As usual, we may add
+extra brackets to clarify, thus
+\begin{mlcoded}
+	(\tlb{x}(+ x 1)) 4
+\end{mlcoded}
+When a lambda abstraction appears in isolation we may write it without any
+brackets:
+\begin{mlcoded}
+	\tlb{x}+ x 1
+\end{mlcoded}
+
+\subsection{Summary}
+We define a \textit{lambda expression} to be an expression in the lambda calculus, and
+Figure 2. 1 summarizes the forms which a lambda expression may take. Notice
+that a lambda \textit{abstraction} is not the same as a lambda \textit{expression}; in fact the
+former is a particular instance of the latter.
+
+<exp> :: = <constant>
+Built-in constants
+<variable>
+Variable names
+<exp> <exp>
+A <variable>.<exp>
+Applications
+Lambda abstractions
+This is the abstract syntax of lambda expressions. In order to write down
+such an expression in concrete form we use brackets to disambiguate its
+structure (see Section 2.1.2).
+We will use lower-case letters for variables (e.g. x, f), and upper-case
+letters to stand for whole lambda expressions (e.g. M, E).
+The choice of constants is rather arbitrary; we assume integers and
+booleans (e.g. 4, TRUE), together with built-in functions to manipulate
+them (e.g. AND, IF, +). We also assume built-in list-processing functions
+(e.g. CONS, HEAD).
+Figure 2.1 Syntax of a lambda expression (in BNF)

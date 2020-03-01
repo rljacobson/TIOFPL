@@ -1,0 +1,27 @@
+Twenty-four
+PARALLEL GRAPH REDUCTION
+The possibility of parallel execution is often stated as an advantage of
+functional languages. In this chapter we will explore this exciting possibility in
+greater detail, and attempt to justify it.
+Warning: this chapter describes current research work rather than a settled
+consensus of opinion. It therefore represents the author's personal view of the
+present state of affairs, and is not a definitive statement.
+24.1 The Challenge of Parallelism
+Cooperation is expensive, yet it is the only way to get large tasks done quickly.
+This lesson is well illustrated by human organizations. Undoubtedly the
+most efficient way to get a task done is to assign a single individual to the task.
+There comes a time, however, when the sheer volume of work is more than a
+single individual can carry out in the required period of time, so he employs
+assistants to help him. Inevitably the assistants must be told what to do and
+how to do it, and a proportion of the time of all concerned is spent in
+communication rather than in doing profitable work.
+As the company grows, the overheads of communication can become very
+burdensome. The amount of internally generated information grows with the
+company, but each individual's capacity to digest this information remains
+fixed. The solution is to partition the work of the company in such a way as to
+reduce the amount of interaction required between workers, so that they can
+spend more of their time on profitable work and less on communication. This
+may be easy if the company is engaged in a number of essentially independent
+interrelated.
+activities, but it can be very difficult if the company's activities are highly
+A primary challenge facing computer architects is the effective exploitation

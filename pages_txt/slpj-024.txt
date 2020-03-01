@@ -1,0 +1,41 @@
+Section 2.3 Reduction order
+23
+It turns out that this small formal base is sufficient to build a large and complex
+theory of interconvertibility; the standard work is Barendregt [1984]. While
+this book is very well written, it is not intended for the casual reader, and Stoy
+[1981] gives a less comprehensive but more readable treatment. Curry and
+Feys also give a clear account of the historical origins and basic properties of
+the lambda calculus {Curry and Feys, 1958]. The lambda calculus was
+originally invented by Church [1941].
+We will not take the lambda calculus any further as an end in itself; rather
+we will simply appropriate the fruits of the theory as and when we need them.
+a-conversion:
+if y is not free in E then
+(AX. E) + (Ay . Ely/x])
+a
+B-conversion:
+(\X. E) M + E[M/x]
+m-conversion:
+if x is not free in E
+and E denotes a function then
+(XX. E x) - E
+When used left to right, the B and n rules are called reductions, and may be
+written with a '- ' arrow.
+Figure 2.4 Definitions of a-, B- and n-conversions
+2.3 Reduction Order
+If an expression contains no redexes then evaluation is complete, and the
+expression is said to be in normal form. So the evaluation of an expression
+consists of successively reducing redexes until the expression is in normal
+form.
+However, an expression may contain more than one redex, so reduction
+can proceed by alternative routes. For example, the expression
+(+ (* 3 4) (* 7 8)) can be reduced to normal form with the sequence
+(+ (* 3 4) (* 7 8))
+(+ 12 (* 7 8))
+(+ 12 56)
+68
+or the sequence
+(+ (* 3 4) (* 7 8))
+(+ (* 3 4) 56)
+(+ 12 56)
+68

@@ -1,0 +1,53 @@
+Section 12.1 Reducing a lambda application
+209
+hibitively expensive (though Mago's parallel reduction machine uses it
+[Mago, 1980], relying on massive parallelism to overcome the inefficiency).
+12.1.2 Overwriting the Root of the Redex
+If we are to exploit sharing successfully we must ensure that when an
+expression is reduced we modify the graph to reflect the result. This will
+ensure that shared expressions will only be reduced once. For instance, in
+Figure 12.2 the (NOT TRUE) expression will be reduced next (since AND
+requires its arguments to be evaluated), and we would like to arrange that this
+reduction is only done once.
+We can achieve this by the simple expedient of physically overwriting the
+root of the redex with the (root of) the result. Here is an example in which the
+node marked '$' is the root of the redex, and is physically overwritten with the
+result of the reduction:
+reduces to
+P-e
+AND
+@$
+AND
+FALSE $
+NOT
+TRUE
+NOT
+TRUE
+Notice that fragments of the redex (in this case just the NOT and TRUE nodes)
+are not affected by the overwriting, and become completely detached from
+the part of the graph we are considering. They cannot be recovered and
+re-used immediately because they may be shared with other nodes not in the
+collector.
+picture. If not, then they will eventually be recovered by the garbage
+There is an important complication associated with overwriting the root of
+the redex, which we discuss later, in Section 12.4.
+12.1.3 Constructing a New Instance of the Lambda Body
+As the word 'instance' implies, when applying a lambda abstraction we must
+make substitutions within a new copy of the body of the lambda abstraction
+rather than updating the original body directly with the substitutions. This is
+necessary because the abstraction may be applied many times, and its body
+serves as a 'master template' from which an instance is constructed each time
+it is applied; the master template should not be altered by the copying process.
+Thus the example in Figure 12.1 should really look like this:
+@$
+reduces to
+@$
+AX
+TRUE
+AX
+NOT
+TRUE
+NOT
+NOT
+X
+The original lambda abstraction remains intact in case it is shared.

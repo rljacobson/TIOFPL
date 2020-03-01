@@ -1,0 +1,37 @@
+248
+Chapter 15 Fully Lazy Lambda-lifting
+Completing the compilation in the normal way gives
+$g1 sqrtx y = + y sqrtx
+$g x = $g1 (sqrt x)
+$f = $g 4
+$Prog = + ($f 1) ($f 2)
+$Prog
+We get an extra supercombinator because we lose an opportunity for
+7-reduction when we take out (sqrt x) as an extra parameter rather than x.
+However, in compensation, the execution will be fully lazy, because the uses
+of (sqrt x) will be shared. Now we can follow the reduction sequence again:
+$Prog
++ (- 1) (. 2)
+($g 4)
++ (. 1) (- 2)
+($g1 (sqrt 4))
++ (. 1) (+ 2 5)
+($g1 (sqrt 4))
++ (- 1) (+ 2 6)
+($g1 2)
++
+(. 1) 4
+($g1 2)
++
+1) 4
+2
++ 3 4
+The (sqrt 4) is shared, and hence only evaluated once.
+So to preserve full laziness we should, during lambda-lifting,
+abstract out the maximal free expressions (rather than only the free
+variables) of a lambda abstraction as extra parameters.
+lambda-lifting.
+This modification is sufficient to preserve full laziness. We call it fully lazy
+One slight optimization is that if a maximal free expression turns out to
+have no free variables at all (so it is a CAF), then instead of abstracting it out
+as an extra parameter, it can simply be given a name and made into a

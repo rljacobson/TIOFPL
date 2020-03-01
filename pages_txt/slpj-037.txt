@@ -1,0 +1,11 @@
+36
+Chapter 2 The Lambda Calculus
+Staples, J. 1980a. Computation on graph-like expressions. Theoretical Computer
+Science. Vol. 10, pp. 171-85.
+Staples, J. 1980b. Optimal evaluations of graph-like expressions. Theoretical
+Computer Science. Vol. 10, pp. 297-316.
+Staples, J. 1980c. Speeding up subtree replacement systems. Theoretical Computer
+Science. Vol. 11, pp. 39-47.
+Stoy, J.E. 1981. Denotational Semantics. MIT Press.
+Welch, P. 1975. Some Notes on the Martin-Lof Proof of the Church Rosser Theorem as
+Rediscovered by Park. Computer Lab., University of Kent. October.

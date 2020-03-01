@@ -1,0 +1,38 @@
+146
+Chapter 8 Polymorphic Type-checking
+(ii) code . id, and id . code
+where id is the identity function discussed above. In these expressions, the
+composition function is used with the types:
+(char -> num) -> (char -> char) -> char -> num
+(num -> num) -> (char -> num) -> char -> num
+respectively.
+(iii) isdigit . decode
+which is the predicate of an integer which is itself the ASCII code of a
+decimal digit. Here the composition function is used with type:
+(char -> bool) -> (num -> char) -> num -> bool
+We can express the constraint on the types of the arguments of compose by
+saying:
+compose :: (B -> C) -> (A -> B) -> A -> C
+where A, B and C are the schematic variables.
+8.2.4 The Function foldr
+The function foldr may be defined by the equation
+foldr f b []
+= b
+foldr f b (a:as) = f a (foldr f b as)
+Again, foldr is to a certain extent indifferent to the types of its arguments. For
+example, the following make perfect sense:
+(i) foldr plus 0 [7,1,4]
+where plus means binary addition. The function foldr is used here with the
+type:
+(num -> num -> num)
+num
+<-
+[num]
+num
+(ii) foldr append [] ["str1","str2","str3"]
+Here append is the function which concatenates two lists. The function
+foldr is being used here with type:
+(string -> string -> string)
+string
+[string]
+string

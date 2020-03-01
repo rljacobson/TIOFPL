@@ -1,0 +1,40 @@
+222
+Chapter 13 Supercombinators and Lambda-lifting
+rest of this chapter and the next to it. After this, we spend a chapter discussing
+an important optimization to lambda-lifting, called full laziness, and Chapter
+16 then digresses to describe an important alternative transformation, into SK
+combinators. Finally, the bulk of the third part of the book (Chapters 18-21)
+is spent in an extended discussion of how to compile the transformed program
+into a linear instruction sequence, and the optimizations which this opens up.
+13.2 Solving the Problem of Free Variables
+In this section we outline our strategy for dealing with the problem of free
+variables. We do so by using a modified form of B-reduction, in which we may
+effectively perform several B-reductions at once.
+Consider our current example
+Ax . Ay . - y x
+Suppose we applied it to two arguments, thus:
+(Ax. Ay . - y x) 3 4
+The lambda reducer described in Chapter 12 would proceed like this:
+(Ax. Ay. - y x) 3 4
+(xy . - y 3) 4
+- 4 3
+There is no reason, however, why we should not perform the Ax and Ay
+reductions simultaneously, thus:
+(Ax. Ay . - y x) 3 4
+4 3
+This 'multi-argument' reduction entails constructing an instance of the body
+(- y x) whilst substituting 3 for free occurrences of x, and 4 for free
+occurrences of y. The following observations are crucial:
+(i) Much is gained by performing the reductions simultaneously. Firstly,
+doing so builds less intermediate structure in the heap, since the inter-
+mediate result of the Ax reduction is never constructed. Second (and
+more important), no problems are presented by the free occurrence of x
+in the Ay abstraction.
+(ii) Nothing is lost by performing the Ax and Ay reductions simultaneously.
+The result of performing the Ax reduction alone is a Ay abstraction, and
+(assuming that we perform normal order reduction until WHNF is
+reached) no further work can be done on the Ay abstraction until it is given
+another argument.
+Hence we may as well wait until both arguments are present and then
+perform both reductions at once. This applies even if the application of the
+Ax abstraction to a single argument is shared.

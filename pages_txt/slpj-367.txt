@@ -1,0 +1,32 @@
+Section 21.1 Tail calls
+369
+Root of $F-redex
+E3
+E2
+E1
+Figure 21.2 Current context on entry to three-argument supercombinator W
+A much more efficient way to get from Figure 21.1 to Figure 21.2 is simply
+to slide the top four elements of the stack down, squeezing out the two
+arguments to $F. We write this instruction
+SQUEEZE 4 2
+meaning 'slide down the top four elements of the stack, squeezing out the two
+elements below them'. The rule for SQUEEZE is
+<n1:. ..:nk:m1:. . .:md:S, G, SQUEEZE k d:C, D>
+=> <n1:. ..:nk:S, G, C, D>
+instruction
+After doing this we want to enter the code for W, so we invent another new
+JFUN
+which expects to find a function on top of the stack, pops it and enters its code
+(we omit a formal definition of JFUN as it will be subsumed by the next
+section). The complete code for $F would now read:
+CI E3 Il p d;
+CI E2 ] p (d+1);
+CI[ E1 1 p (d+2);
+PUSHGLOBAL W;
+SQUEEZE 4 2; JFUN
+JFUN should, of course, enter the code after the arity check and stack
+rearrangement; that is, it should enter at the EXEC entry (see Section 19.4.3).
+This code makes a number of savings over our previous attempts:
+(i) the vertebrae of the result of the $F-reduction are never allocated at all;
+(ii) no update need take place at the end of the $F code because the code for
+W will update the same node;

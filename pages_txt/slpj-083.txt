@@ -1,0 +1,48 @@
+82
+Chapter 5 Efficient Compilation of Pattern-matching
+(5.1) given above:
+match [uf, . .., Un]
+[( [p1,1, ..., P1, ], E1 ),
+E
+( [pm,1, ..., Pm,n], Em )]
+This call should return an expression equivalent to the expression (5.1), and
+we take (5.1) as the definition of match from a semantic point of view. A call of
+match takes three arguments: a list of variables, a list of equations and a
+default expression. Each equation is a pair, consisting of a list of patterns
+(representing the left-hand side of the equation) and an expression (repre-
+senting the right-hand side). Notice that the list of variables and each list of
+patterns have the same length.
+We will also sometimes write calls of match in the form
+match us qs E
+Here us is the list of argument variables (of length n), and qs is a list of
+equations (of length m). Each equation qi in qs has the form (psi, Ei), where ps;
+is the list of patterns on the left-hand side (of length n) and Er is the expression
+on the right-hand side.
+As a running example, we will use the following Miranda function:
+demo f [] ys
+= A f ys
+demo f (x:xs) []
+= Bf x xs
+demo f (x:xs) (y:ys) = C f x xs y ys
+This function is similar in structure to mappairs, but it has been changed
+slightly in order to simplify and clarify the following examples. The right-hand
+sides use three unspecified expressions A, B and C.
+Translating this into the enriched lambda calculus using TD gives:
+demo
+= AU1 . Au2 . Au3. ((Af. ANIL. Ays. A f ys) U1 U2 U3)
+0 ((Af.A(CONS x xs).ANIL. B f x xs) U1 U2 U3)
+0 ((Af. A(CONS x xs).A(CONS y ys).C f x xs y ys) U1 U2 U3)
+I ERROR
+where U1, U2, U3 are new variable names which do not occur free in A, B or C.
+Now, we transform the definition of demo, by replacing its body with a call of
+match:
+demo
+= Au1 . Au2. Au3. match [U1, U2, U3]
+C([f, NIL,
+ys
+], (A f ys)
+( [f, CONS x xS, NIL
+], (B f x xs)
+( [f, CONS x xs, CONS y ys], (C f x xs y ys)) ]
+ERROR
+The following sections give rules to transform any call of match to an

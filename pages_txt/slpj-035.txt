@@ -1,0 +1,37 @@
+34
+Chapter 2 The Lambda Calculus
+2.5.5 The Correctness of the Conversion Rules
+The conversion rules given earlier in this chapter express equivalences
+between lambda expressions. It is vital that these equivalences are mirrored in
+the denotational world. For example, using a-conversion we may write
+(Ax. + x 1) = (Ay. + y 1)
+Our hope is that both of these expressions mean the same thing or, more
+precisely, denote the same function, so that
+Eval[[ Ax. + x 1 ] = Eval[[ Ay. + y 1 ]
+as follows:
+In general, we hope that conversion preserves meaning, which we may state
+E1 + E2
+implies
+Eval[[ E1 ] = Evall[ E2
+In other words, if E1 is convertible to E2 then the meaning of Er is certainly the
+same as the meaning of Ez. (As we will see in the next section, however, the
+reverse is not always true.) There is a burden of proof here, to show that the
+above statement always holds, given the conversion rules and the semantic
+function Eval. We will content ourselves with observing that proof is required,
+leaving the hard work to Stoy [1981].
+Since the reduction rules (6-reduction and n-reduction) are a subset of the
+conversion rules, we certainly know that
+E1 - E2
+implies
+E1 + E2
+and hence
+E1 - E2
+implies
+Eval[[ E, ] = Eval[[ E2 I
+2.5.6 Equality and Convertibility
+In the previous section we saw that conversion preserves equality. But is the
+reverse true? In particular, does the equality of two expressions imply their
+interconvertibility? The answer is 'no', as the following example shows.
+Consider the two lambda abstractions, which we will call Fi and F2:
+F1 = (\x. + x x)
+F2 = (Ax. * x 2)

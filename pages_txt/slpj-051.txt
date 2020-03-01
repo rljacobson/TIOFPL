@@ -1,0 +1,41 @@
+50 Chapter 3 Translating a High-level Functional Language into the Lambda Calculus
+Miranda program
+Type
+declarations
+Simple
+Pattern-
+ZF
+constructs
+matching
+expressions
+(Chapter 3)
+(Chapter 4)
+(Chapter 7)
+Pattern-matching
+lambda
+Pattern-
+abstractions
+Enriched
+matching
+lambda
+compiler
+calculus
+(Chapter 5)
+Case-expressions
+Chapter 6
+Chapter 6
+Ordinary
+Ordinary
+lambda calculus
+lambda calculus
+augmented with
+Type-checking
+let and letrec
+(Chapter 8)
+Figure 3.4 Organization of Chapters 4-8
+References
+Gordon, M.J.C. 1979. The Denotational Description of Programming Languages.
+Springer Verlag.
+Turner, D.A. 1985. Miranda - a non-strict functional language with polymorphic
+types. In Conference on Functional Programming Languages and Computer
+Architecture, Nancy, pp. 1-16, Jouannaud (editor). LNCS 201. Springer Verlag.

@@ -1,0 +1,42 @@
+350
+Chapter 20 Optimizations to the G-machine
+This optimization applies to all built-in functions with more than one
+argument which evaluate their first argument. In particular, this means +, IF
+and their analogs -, *, etc., and CASE.
+In fact, we can do rather better for IF. Consider the function (IF TRUE). It
+behaves as follows:
+(IF TRUE) E, E2 - E1
+that is, it behaves exactly like the K combinator. What does (IF FALSE)
+behave like? Suppose we generalize the K combinator to a family of
+combinators K-n-i (where isn), which have the semantic rule
+K-n-i E1 ... Ei . .. En = Ei
+Then K is the same as K-2-1, and (IF FALSE) behaves like K-2-2. Now we can
+use the following rule for IF:
+RI IFE]] pd
+= E[[ E ] p d; JFALSE L;
+LABEL L;
+PUSHGLOBAL $K-2-1; UPDATE( d+1); POP d; UNWIND
+PUSHGLOBAL $K-2-2; UPDATE( d+1); POP d; UNWIND
+This is better than the previous rule, both because it does not construct the
+graph of (IF E), and because it does not subsequently need to inspect the
+graph of (IF E). A precisely similar optimization applies to CASE.
+The only exception to the statement that the (f x) will eventually be applied
+to something is when the result of the whole program is the function (f x),
+which we ignore because most implementations insist that the result of the
+program is a data object.
+The modifications required to the R, RS, E and ES schemes to achieve
+these optimizations are given in the next section. The rule for + is omitted,
+since it is subsumed by the optimization described in the next section. The rule
+for IF is put in the RS and ES schemes to maximize its effectiveness.
+20.5.2 Using Global Strictness Information
+The optimizations of the previous section rely on special information
+concerning the built-in functions. Consider, however, the supercombinators
+$F x y = +y x
+$G x = $F (* x x) (+ x x)
+We can see at a glance that $F will certainly evaluate both its arguments (i.e.
+$F is strict in both arguments), so when compiling $G we could use E to
+compile the (* x x) and the (+ x x). Unfortunately, this information is not so
+obvious to the compiler.
+expression
+Similar remarks apply to let-expressions; for example, when evaluating the
+let x = E in (+ x 1)

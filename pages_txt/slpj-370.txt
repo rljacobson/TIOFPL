@@ -1,0 +1,40 @@
+372
+Chapter 21 Optimizing Generalized Tail Calls
+(iii) W is a function (supercombinator or built-in) of exactly three
+arguments (this is the tail call case);
+(iv) W is a function (supercombinator or built-in) of less than three
+arguments;
+(v) W is a function (supercombinator or built-in) of more than three
+arguments.
+We handle these cases separately in the succeeding sections. Since the built-in
+functions have G-code sequences just like supercombinators, we will not
+distinguish supercombinators from built-in functions in the following.
+In discussing the execution of the DISPATCH instruction, the ground rules
+are:
+(i) The current context looks like Figure 21.3 on entry to the DISPATCH
+instruction.
+(ii) The execution of the DISPATCH instruction must be precisely equivalent
+to (though perhaps more efficient than) the following steps:
+(a) construct the spine in the heap from the ribs on the stack;
+(b) update the root of the redex (at the bottom of the current context)
+with the spine thus constructed;
+(c) UNWIND
+21.2.1 W is an Application Node
+If W is an application node, then (unless DISPATCH looks inside it, which
+seems rather complicated) we know nothing about how many arguments W
+takes. Therefore we take the easy way out:
+i) construct the spine of the body of $F;
+update the root of the $F-redex;
+) UNWIND.
+We can, however, make one optimization. Instead of constructing the spine
+in the heap and then unwinding it back onto the stack, we can perform the first
+part of the UNWIND as we construct the spine. When DISPATCH has done this,
+the context looks like:
+Root of $F-redex
+r:@
+V2:@
+n3:E3
+V1: @
+n2: E2
+f:W
+n1:E1

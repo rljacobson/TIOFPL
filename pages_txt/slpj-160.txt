@@ -1,0 +1,45 @@
+Section 8.5 How to find types
+159
+8.5.5 Local Definitions
+We have presented type-checking as the search for the solution of a system of
+constraints, represented by equations T' = T between type expressions. So
+far, we know that when type-checking an expression of let or letrec form, we
+should impose the constraint that the types of the occurrences of the defined
+variables in the body should equal new instances of the types derived for their
+right-hand sides. But just which type variables may be instantiated?
+To understand this issue, we have to probe a little into the reason for our
+conviction that a defined name can take on different types in the body of its
+definition. The reason seems to be this:
+An expression (let x = E in E') is well typed just in case the expression
+E'[E/x] is well typed, which is the expression obtained by substituting E for
+the free occurrences of x in E'.
+For each occurrence of x in E', we should be able to instantiate the type
+variables in the type tree for E in such a way that it forms a subtree of the type
+tree for E'[E/x]. This instantiation is only possible if we do not thereby violate
+the law that occurrences of a x-bound variable must have the same type, or the
+corresponding law for letrecs.
+Consider the expression (Ax. let y = x in y y). By the principle above, this
+is well typed just in case (Ax.x x) is well typed, which it blatantly is not. The
+problem is that the type expression for y contains (is!) a variable occurring in
+the type of a more global A-bound variable. We cannot instantiate that
+variable differently at the different occurrences of y in (y y).
+Consider the partial expression
+Ax.
+let | = AZ. Z
+prxl = Ac. (c x 1)
+p1 = \x.Ay. x
+in . . .
+p2 = Ax. Ay. y
+Informally, the types of the defined names are
+I ::A -> A
+prxl :: (X -> (A -> A) -> B) -> B
+p1 :: A -> B ->
+p2
+::A -> B -> B
+where A and B are schematic variables, and X is the type of x. If we take the
+body of the let-expression to be the expression
+prxi p1 (prxl p1)
+then it cannot be typed. For to satisfy the type constraints of this body, we
+would have to instantiate X differently at the different occurrences of prxi. On
+the other hand, if the body were
+prxi p2 (prxl p2)

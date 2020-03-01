@@ -1,0 +1,33 @@
+Section 10.4 Tags and type-checking
+189
+Tag
+Field 1
+Tag
+Field 2
+Tag
+Field n-1
+Field n
+Notice that, since the size of the structured object is determined by the
+structure tag, the last cell can contain the last two fields.
+10.3.2 Other Uses for Variable-sized Cells
+As we have seen, the provision of variable-sized cells gives a much more
+efficient representation of structured data objects. However, variable-sized
+cells may also be useful to contain other objects such as:
+arrays;
+EEEE
+arbitrary precision integers;
+blocks of compiled code;
+multiple applications; for example, we could represent (f a b) as a single
+three-field cell containing f, a and b. This takes less space than the normal
+method, which requires two two-field cells.
+Unfortunately, variable-sized cells carry an implementation cost, as we will
+see in Chapter 17.
+10.4 Tags and Type-checking
+In what follows we will find it convenient to distinguish two families of tags.
+The structure tags identify data objects, and distinguish them from one
+another. For example, a CONS cell and NIL would have distinct structure tags.
+System tags identify cells holding system objects, such as application nodes,
+lambda abstractions, built-in operators, and so on. The '. . . and so on' is
+highly implementation-dependent. For example, some implementations may
+tag an application node differently if it is discovered to be irreducible, so that
+repeated efforts to reduce it can be avoided.

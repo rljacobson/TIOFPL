@@ -1,0 +1,30 @@
+Eight
+POLYMORPHIC TYPE-CHECKING
+Peter Hancock
+In common with several other modern programming languages, Miranda
+has the property that a programmer need not specify the types of the objects
+defined in his program. The compiler can work out those types, if the program
+can be consistently typed at all. The part of the compiler that does this is
+usually called the 'type-checker'. It attempts to infer the types of expressions
+in the program from their contexts. This kind of type-checking was first
+implemented for the language ML, around 1976. The type discipline was first
+expounded by Milner [1978].
+Whether or not a type-checker requires information from the programmer
+to check that a program is well typed, type-checking is of great value in
+drawing the programmer's attention to a variety of errors, from trivial slips in
+program entry, to gross logical blunders. It helps us to write robust programs.
+Another advantage of type-checking is that it helps to build faster
+implementations of programming languages. If a program is passed by the
+type-checker, then no type error should occur at run-time, such as the use of
+an integer as if it were a function, a boolean as if it were an integer, or a
+function as if it were a tuple. In Milner's words, well-typed expressions do not
+go wrong': at run-time we will never misinterpret the representation of an
+expression. By omitting run-time checks for such errors, the implementation
+of a language can be made simpler and faster. Of course, any implementation
+should still provide for diagnosis of its own internal errors.
+The purpose of this chapter is to explain in some detail how a type-checker
+works. Then, in Chapter 9, we put the ideas into practice by constructing a
+type-checker for a simple functional language. The type-checker is con-
+structed in Miranda, in the hope that the development of such a functional
+program may itself be of some additional interest.
+139

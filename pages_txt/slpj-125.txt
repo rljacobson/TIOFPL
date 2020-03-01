@@ -1,0 +1,40 @@
+124
+Chapter 6 Transforming the Enriched Lambda Calculus
+abstractions (Section 3.2.4), so in this section we will see how to transform
+case-expressions into simple let-expressions instead.
+In the case of a product type, we use the following transformation:
+case v of
+let V1 = SEL-t-1 v
+tVi ...V=> E1
+= SEL-t-r v
+in Et
+This transformation is precisely equivalent to the one given before, as can be
+confirmed by transforming the let-expression into lambda abstractions using
+the transformation that defines simple let-expressions (Section 3.2.1). The
+addPair example would then become
+addPair = Aw . (let x = SEL-PAIR-1 w
+y = SEL-PAIR-2 W
+in (+ x y))
+This looks more complicated than the previous version, but it is more
+efficient, because addPair can now be applied in fewer reductions.
+This idea can be applied to the sum-constructor case as well, by applying the
+transformation
+case v of
+S1 V1,1 . . . V1,71
+Sn Vn,1 . . . Vnim = En
+CASE-T v (let V1,1 = SEL-SUM-S1-1 v
+in E1)
+V1,r = SEL-SUM-S1-r1 V
+(let Vn,1 = SEL-SUM-Sn-1 v
+Vn,in = SEL-SUM-Sn-In V
+in En)
+The selector function SEL-SUM-s-i selects the ith component of an object built
+with the sum constructor s. (Remember that the selector functions SEL-t-i
+apply only to objects of product type.) Again, the correctness of this trans-
+formation can easily be shown using the equations for CASE-T and the
+definition of simple let-expressions.
+As before, the transformation seems to increase the complexity of the
+expression, but it achieves the important objective of eliminating a lambda
+abstraction. The result may run less efficiently on simple implementations,
+but it will run much more efficiently on sophisticated implementations (see
+Sections 20.10.4 and 20.11).
