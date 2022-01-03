@@ -1,4 +1,5 @@
 ## Project Specific
+build/
 .ipynb_checkpoints
 *.ipynb
 

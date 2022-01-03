@@ -4,6 +4,10 @@
 \usepackage[b5paper,total={6in, 9in}]{geometry}
 \geometry{margin=0.5in, top=1in}
 
+% Citations at the end of each chapter
+\usepackage[sectionbib]{natbib}
+\usepackage{chapterbib}
+
 % Required for LaTeXDraw
  \usepackage[usenames,dvipsnames]{pstricks}
  \usepackage{pstricks-add}
@@ -48,7 +52,7 @@
 %\DeclareUnicodeCharacter{03BB}{\lt}
 %\usepackage{newunicodechar}
 %\newunicodechar{λ}{\lt}
- 
+
 % For source code highlighting.
 %\usepackage[no-math]{fontspec}
 %\usepackage{minted}
@@ -71,7 +75,7 @@
 
 %\usepackage{fullpage} %Comment this out before submission.
 %Only used for DRAFTS to include the time of compilation as a versioning system
-\usepackage{datetime} 
+\usepackage{datetime}
 
 % Whitespace adjustments
 \newcommand{\vs}{\vspace{.5\baselineskip}}
@@ -94,7 +98,7 @@
 	\sffamily\spaceskip=2\fontdimen2\font
 	\list{}{\rightmargin20pt\leftmargin20pt}\item[] % This line is how the quote environment is defined.
 %	\noindent\par\vspace{0.5\baselineskip}
-%	\begin{quote}	
+%	\begin{quote}
 }{
 	\endlist
 %	\end{quote}
@@ -131,7 +135,7 @@
 		\vspace*{\drop}
 		{\noindent\HUGE\fontfamily{qhv}\selectfont\uppercase \@title}\par
 		\rule{\linewidth}{3pt}
-		
+
 		\vspace{2cm}
 		{\LARGE\fontfamily{qhv}\selectfont\@author}\par
 		%	\rule{\unitlength}{1.6pt}

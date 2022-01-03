@@ -1,0 +1,178 @@
+Abelson, H., and Sussman, G.J. 1985. Structure and Interpretation of Computer Programs. MIT Press.
+
+Darlington, J. 1984. Functional programming. In Distributed Computing. Duce (Editor). Academic Press.
+
+Fairbairn, J. 1985. Design and implementation of a simple typed language based on the lambda calculus. PhD thesis, TechnicalReport 75. University of Cambridge. May.
+
+Glaser, H., Hankin, C., and Till, D. 1984. Principles of Functional Programming. Prentice-Hall.
+
+Henderson, P. 1980. Functional Programming. Prentice-Hall.
+
+Turner, D.A. 1976. The SASL language manual. University of St Andrews. December.
+
+Wadler, P. 1985. Introduction to Orwell. Programming Research Group, University of Oxford.
+
+Barendregt, H.P. 1984. The Lambda Calculus-Its Syntax and Semantics, 2nd edition. North-Holland.
+
+Church, A. 1941. The Calculi of Lambda Conversion. Princeton University Press.
+
+Curry, H.B., and Feys, R. 1958. Combinatory Logic, Vol. 1. North-Holland.
+
+Kennaway, J.R. 1984. An Outline of Some Results of Staples on Optimal Reduction Orders in Replacement Systems. CSA/19/1984, School of information Systems, University of East Anglia. March.
+
+Levy, J.J. 1980. Optimal reductions in the lambda calculus. In Essays on Combinatory Logic, pp.159-92. Hindley and Seldin (editors). Academic Press.
+
+Scott, D. 1981. Lectures on a Mathematical Theory of Computation. PRG-19. Programming Research Group, Oxford. May.
+
+Stoy, J.E. 1981. Denotational Semantics. MIT Press.
+
+Welch,P. 1975. Some Notes on the Martin-Lof Proof of the Church Rosser Theorem as Rediscovered by Park. Computer Lab., University of Kent. October.
+
+Burstall, R.M. 1977. Design considerations for a functional programming language. In Proceedings Infotech State of the Art Conference, Copenhagen, pp. 54-7.
+
+Turner, D.A., 1981.. Aspects of the implementation of programming languages. D.Phil. thesis, University of Oxford. February.
+
+Wadler, P. 1985. A Splitting Headache- and Its Cure. Programming Research Group, Oxford. January.
+
+Barrett, G., and Wadler, P. 1986. Derivation of a Pattern-matching Compiler. Programming Research Group, Oxford.
+
+Hoffmann, C.M., and O'Donnell, M.J. 1983. Implementation of an interpreter for abstract equations. In 10th ACM Symposium on Principles of Programming Languages, pp. 111-21. ACM.
+
+Huet, G., and Levy, J.J. 1979. Computations in Non-ambiguous Linear Term Rewriting Systems. INRIA technical report 359.
+
+Aho, A.V., Hopcroft, J.E., and Ullman, D. 1974. The Design and Analysis of Computer Algorithms, pp. 189-95. Addison Wesley.
+
+Aho, A.V., Hopcroft, J.E., and Ullman, D. 1983a. Data Structures and Algorithms, pp. 222-6. Addison Wesley.
+
+Aho, A.V., Hopcroft, J.E., and Ullman, D. 1983b. Data Structures and Algorithms, pp. 221-2. Addison Wesley.
+
+Dijkstra, E.W. 1976. A Discipline of Programming, pp. 192-200. Prentice Hall.
+
+Gaeck, P., and Black, M. (editors) 1970. Function and concept. In Translations from the Philosophical Writings of Gottlob Frege. Basil Blackwell.
+
+Strachey, C. 1967. Fundamental concepts in programming languages. In Notes for the International Summer School in Computer Programming, Copenhagen.
+
+Whitehead, A.N., and Russell, B.A.W. 1910-1913. Principia Mathematica, Volume One. Cambridge University Press.
+
+Whitehead, A.N., and Russell, B.A.W. 1910-1913. Principia Mathematica, Volume Two. Cambridge University Press.
+
+Whitehead, A.N., and Russell, B.A.W. 1910-1913. Principia Mathematica, Volume Three. Cambridge University Press.
+
+Damas,L. 1985.Type Assignment in Programming Languages. CST-33-35. Department of Computer Science, University of Edinburgh. April.
+
+Wadler, P. 1985. How to replace failure by a list of successes. In Conference on Functional Programming Languages and
+Computer Architecture, Nancy. Jouannaud (editor). LNCS 201. Springer Verlag.
+
+Richards, H. 1985. An Overview of Burroughs NORMA. Austin Research Center, Burroughs Corp., Austin, Texas. January
+
+Abelson, H., and Sussman, G.J. 1985. Structure and Interpretation of Computer Programs. MITPress.
+
+Arvind, Kathail, V., and Pingali, K. 1984. Sharing of Computation in Functional Language Implementations. Laboratory for Computer Science, MIT.July.
+
+Barendregt, H.P., Kennaway, J.R., Klop, J.W., and Sleep, M.R. 1986. Needed reduction and spine strategies for the lambda calculus. Report CS-R8621. Centre for Mathematics and Computer Science, Amsterdam. May.
+
+Henderson, P. 1980. Functional Programming - Application and Implementation. Prentice-Hall.
+
+Peyton Jones, S.L. 1986. Functional programming languages as a software engineering tool. In Software Engineering - The Critical Decade. Ince (editor). Peter Peregrinus.
+
+Turner, D.A. 1983. The SASL Language Manual. University of Kent. November.
+
+Watson, P., Watson, I., and Woods, V. 1986. A Model of Computation for the Parallel Evaluation of Functional Languages. PMP/MU/PW/000001. Department of ComputerScience, University of Manchester. February.
+
+Mago, G.A. 1980. A cellular computer architecture for functional programming. IEEE Computer Society COMPCON,pp.179-87.
+
+Wadsworth, C.P. 1971. Semantics and pragmatics of the lambda calculus, Chapter4. PhD thesis, Oxford.
+
+Barendregt, H.P. 1984. The Lambda Calculus: Its Syntax and Semantics, 2nd edition,p.24. North-Holland.
+
+Curry, H.B., and Feys, R. 1958. Combinatory Logic, Vol. 1. North-Holland.
+
+Henderson, P. 1980. Functional Programming: application and implementation. Prentice-Hall.
+
+Hughes, R.J.M. 1984. The design and implementation of programming languages. PhD thesis, PRG-40, Programming Research Group, Oxford. September.
+
+Keller, R.M. 1985. Distributed graph reduction from first principles. Department of Computer Science, University of Utah.' Klop, J.W.1980. Combinatory reduction systems. PhD thesis, Mathematisch Centrum, Amsterdam.
+
+Fairbairn, J. 1985. The design and implementation of a simple typed language based on the lambda calculus, pp. 59-60. PhD thesis, Technical Report 75. University of Cambridge. May.
+
+Hughes, R.J.M. 1984. The design and implementation of programming languages. PhD thesis, PRG-40. Programming Research Group, Oxford. September.
+
+Wadsworth, C.P. 1971. Semantics and pragmatics of the lambda calculus, Chapter4. PhD thesis, Oxford.
+
+Curry, H.B., and Feys, R. 1958. Combinatory Logic, Vol. 1. North-Holland. Hughes, R.J.M. 1984. The design and implementation of programming languages. PhD thesis, PRG-40. Programming Research Group, Oxford.
+
+Kennaway, J.R. 1982. The Complexity of a Translation of Lambda Calculus to Combinators. Department of Computer Science, University of East Anglia.
+
+Kennaway, J.R., and Sleep, M.R. 1982a. Director Strings as Combinators. Department ofComputer Science, University of East Anglia.
+
+Kennaway, J.R., and Sleep, M.R. 1982b. Counting Director Strings. Department of Computer Science, University ofEast Anglia.
+
+Stoye, W.R. 1983. The SKIM microprogrammer's guide. Technical Report 31. University of Cambridge. October.
+
+Stoye, W.R. 1985. The implementation of functional languages using custom hardware. PhD thesis, Computer Lab., University ofCambridge. May.
+
+Turner, D.A. 1976. SASL Reference Manual. University of St Andrews.
+
+Aerts, J.P.H. 1981. Implementing SASL without Garbage Collection. EUT-Report 81-WSK-05. Eindhoven Univ. of Technology. November.
+
+Hudak, P. 1983a. Distributed Graph Marking. Research report 268, Computer Science Dept, Yale. January.
+
+Hughes, R.J.M. 1982. Reference-counting with Circular Structures in Virtual Memory Applicative Systems. Programming Research Group, Oxford.
+
+Knuth, D. 1976. The Art of Computer Programming. Vol. 1, Section 2.5. Addison Wesley.
+
+Mohamed-Ali, K.A. 1984. Object oriented storage management and garbage collection in distributed processing systems. PhD Thesis, report TRITA-CS-8406. Royal Institute of Technology, Stockholm. December.
+
+Clark, R. (editor) 1981. UCSD P-system and UCSD Pascal Users' Manual, 2nd edition. Softech Microsystems, San Diego.
+
+Elworthy, D. 1985. Implementing a Ponder cross compiler for the SKIM processor. Dip. Comp.Sci. Dissertation, Computer Lab., Cambridge. July.
+
+Fairbairn, J. 1982. Ponder and its type system. Technical Report 31. Computer Lab., Cambridge. November.
+
+Fairbairn,J. 1985. Design and implementation of a simple typed language based on the lambda calculus. Technical Report 75. Computer Lab, Cambridge. May.
+
+Field, A. 1985. The Compilation of FP/M Programs into Conventional Machine Code. Dept Comp.Sci., Imperial College. June.
+
+Lester, D. 1985. The correctness of a G-machine compiler. MSc dissertation, Programming Research Group, Oxford. December.
+
+Rees, J.A., and Adams, N.1. 1982. T -a dialect of LISP. In Proceedings of the ACM Symposium on Lisp and Functional Programming, pp. 114-22, August.
+
+Steele, G.L., and Sussman, G.J. 1978. The Revised Report on Scheme. Al Memo452, MIT. January.
+
+Aho, A.V., and Ullman, J.D. 1977. Principles of Compiler Design. Addison Wesley. Bauer, F.L., and Eickel, J. 1976. Compiler Construction. Springer Verlag.
+
+Wulf, W., Johnsson, R.K., Weinstock, C.B., Hobbs, S.O., and Geschke, C.M. 1975.The Design of an Optimising Compiler. Elsevier.
+
+Cardelli, L. 1983. The functional abstract machine. Polymorphism. Vol. 1, no.1.
+
+Steele, G.L. 1977. Lambda - the ultimate goto. Al Memo 443. MIT Artificial Intelligence Lab. October.
+
+Wadler, P. 1985a. Strictness Analysis on Non-flat Domains. Programming Research Group, Oxford. November.
+
+Wray, S.C. 1986. Implementation and programming techniques for functional languages. PhD thesis, University of Cambridge. January.
+
+Hughes, R.J.M. 1984. Parallel Functional Programs use Less Space. Programming Research Group, Oxford.
+
+Meira, S.R.L. 1985. On the efficiency of applicative algorithms. PhD thesis, Computer Laboratory, University of Kent, p. 36. March.
+
+Clack, C.D., and Peyton Jones, S.L. 1985. Generating Parallelism from Strictness Analysis. Internal Note 1679, Dept Comp. Sci., University College London. February.
+
+Cripps, M.D., and Field, A.J. 1983, An Asynchronous Structure-independent Switching System with System-level Fault Tolerance. Dept Comp. Sci., Imperial College, London.
+
+Denning, P.J. 1972. On modeling program behavior. In Proceedings of the Spring Joint Computer Conference, 40, pp. 937-44. AFIPS Press.
+
+Hudak,P. 1984. Distributed Applicative Processing Systems. YALEU/DCS/TR-317. Dept Comp.Sci., Yale. May.
+
+Hudak,P., and Goldberg, B. 1985b. Serial combinators. In Conference on Functional Programming and Computer Architecture, Nancy. Jouannaud (editor). LNCS 201. Springer Verlag.
+
+Hudak, P., and Smith, L. 1985. Para-functional Programming - a Paradigm for Programming MultiprocessorSystems. YALEU/DCS/RR-390. Dept Comp.Sci., Yale University. June. Intel 1985. iPSC User's Guide. Intel Corporation, Order Number 175455-003. October.
+
+----------------------------------------------------------------
+
+Keller, R.M. 1985. Rediflow Architecture Prospectus, UUCS-85-105. Dept Comp. Sci., University of Utah. August.
+
+Peyton Jones, S.L., Clack, C.D., and Salkild, J. 1985. GRIP - a Parallel Graph Reduction Machine, Dept Comp.Sci., University College London. November.
+
+Tighe, S. 1985. A Study of the Parallelism Inherent in Combinator Reduction. Parallel processing program, MCC, Austin, Texas. August.
+
+Turner, D.A. 1976. SASL language manual. St Andrews University Technical Report. December.

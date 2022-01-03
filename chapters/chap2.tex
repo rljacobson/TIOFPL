@@ -45,7 +45,7 @@ redex for reduction, we write
 \begin{mlcoded}
 (+ ($*$ 5 6) ($*$ 8 3)) $\to$ (+ 30 ($*$ 8 3))
 \end{mlcoded}
-where the \ml{$\to$} is pronounced 'reduces to'. Now there is only one redex, \ml{(* 8 3)},
+where the \ml{$\to$} is pronounced `reduces to'. Now there is only one redex, \ml{(* 8 3)},
 which gives
 \begin{mlcoded}
 (+ 30 ($*$ 8 3)) $\to$ (+ 30 24)
@@ -140,7 +140,7 @@ with a suitable collection of such built-in functions.
 
 These include arithmetic functions (such as \ml{+}, \ml{--}, $*$, \ml{/}\,) and constants (\ml{0}, \ml{1},
 \ldots), logical functions (such as \ml{AND}, \ml{OR}, \ml{NOT}) and constants (\ml{TRUE},
-\ml{FALSE}), and character constants (\ml{'a'}, \ml{'b'}, \ldots). For example
+\ml{FALSE}), and character constants (\ml{`a'}, \ml{`b'}, \ldots). For example
 \begin{mlalign}
 	-- 5 4 &$\to$ 1\\
 AND TRUE FALSE &$\to$ FALSE
