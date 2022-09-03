@@ -179,6 +179,23 @@
 % Section Formatting
 \usepackage{titlesec}
 
+
+% Dedication
+\newcommand{\dedication}{To Dorothy}
+% Dedication formatting, very similar to chapter and part formatting below
+\newcommand{\dedicationstyle}[1]{{
+		\normalfont\fontsize{20}{20}\selectfont \sffamily
+		\makebox[2pt][l]{%\hspace-1.7cm
+					\rule[-6pt]{\widthof{ttttttt\dedication}}{3pt}
+				
+		}
+		%	\upshape\Large\sffamily
+		\hspace{\widthof{ttttt}}
+		\vspace{-5pt}
+		#1
+}}
+
+
 % Chapter title formatting
 \titleformat{\chapter}[display]{\normalfont\fontsize{30}{20}\selectfont\itshape \sffamily}{
    \makebox[2pt][l]{\hspace{-1.7cm}
@@ -228,9 +245,6 @@
 	David Turner, University of Kent, Canterbury
 }
 
-
-\newcommand{\dedication}{To Dorothy}
-
 \newlength{\drop}
 \drop=0.1\textheight
 
@@ -252,12 +266,13 @@
 
 \maketitlepg
 
-% Dedication
+% Make Dedication
 \begin{flushleft}
 	\thispagestyle{empty}
 	\vspace*{\drop}
-	\huge
-	\dedication
+%	\huge
+%	\dedication
+	\dedicationstyle{\dedication}
 \end{flushleft}
 \clearpage
 
