@@ -185,7 +185,7 @@ binds it. You can think of it like this:
 \begin{tabular}{llllll}
 	\ml{(\tl}	&\ml{x}  &\ml{.}  &\ml{+}  &\ml{x} &\ml{1}\,)  \\
 	\;\;$\uparrow$	&$\uparrow$  &$\uparrow$  &$\uparrow$  &$\uparrow$ &$\uparrow$ \\
-	That function of &\ml{x}  & which  &adds  &\ml{x} to &\ml{1} 
+	That function of &\ml{x}  & which  &adds  &\ml{x} to &\ml{1}
 \end{tabular}
 \end{quote}
 A lambda abstraction \textit{always} consists of all the four parts mentioned: the \tl,
@@ -226,21 +226,25 @@ Figure 2. 1 summarizes the forms which a lambda expression may take. Notice
 that a lambda \textit{abstraction} is not the same as a lambda \textit{expression}; in fact the
 former is a particular instance of the latter.
 
-<exp> :: = <constant>
-Built-in constants
-<variable>
-Variable names
-<exp> <exp>
-A <variable>.<exp>
-Applications
-Lambda abstractions
-This is the abstract syntax of lambda expressions. In order to write down
-such an expression in concrete form we use brackets to disambiguate its
+\boxedfigure{
+
+	\begin{tabular}{lllll}
+		<exp>	& ::=  & <constant> & & Built-in constants  \\
+			& |  & <variable> & & Variable names  \\
+			& |  & <exp> <exp> & & Applications  \\
+			& |  & \ml{\tl} <variable>\ml{.}<exp> & & Lambda abstractions
+	\end{tabular}
+	\vspace{\baselineskip}
+
+\noindent This is the \textit{abstract} syntax of lambda expressions. In order to write down
+such an expression in \textit{concrete} form we use brackets to disambiguate its
 structure (see Section 2.1.2).
-We will use lower-case letters for variables (e.g. x, f), and upper-case
-letters to stand for whole lambda expressions (e.g. M, E).
+
+We will use lower-case letters for variables (e.g. \ml{x}, \ml{f}), and upper-case
+letters to stand for whole lambda expressions (e.g. \ml{M}, \ml{E}).
+
 The choice of constants is rather arbitrary; we assume integers and
-booleans (e.g. 4, TRUE), together with built-in functions to manipulate
-them (e.g. AND, IF, +). We also assume built-in list-processing functions
-(e.g. CONS, HEAD).
-Figure 2.1 Syntax of a lambda expression (in BNF)
+booleans (e.g. \ml{4}, \ml{TRUE}), together with built-in functions to manipulate
+them (e.g. \ml{AND}, \ml{IF}, \ml{+}). We also assume built-in list-processing functions
+(e.g. \ml{CONS}, \ml{HEAD}).
+}{Syntax of a lambda expression (in BNF)}

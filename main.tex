@@ -187,7 +187,7 @@
 		\normalfont\fontsize{20}{20}\selectfont \sffamily
 		\makebox[2pt][l]{%\hspace-1.7cm
 					\rule[-6pt]{\widthof{ttttttt\dedication}}{3pt}
-				
+
 		}
 		%	\upshape\Large\sffamily
 		\hspace{\widthof{ttttt}}
@@ -259,6 +259,37 @@
 
 \newenvironment{references}{\begin{description}\itemsep -5pt \footnotesize
 }{\end{description}}
+
+% Boxed asides.
+\usepackage{float}
+\newcommand{\boxedfigure}[2]{
+	\begin{figure}[H]
+		\centering
+
+		{%
+			\setlength{\fboxrule}{1pt}%
+			\setlength{\fboxsep}{10pt}%
+			\fbox{%
+				\begin{minipage}{0.9\textwidth}
+					\small
+					\setlength{\parindent}{10pt}
+					\setlength{\parskip}{0mm plus 0mm minus 0mm}
+					#1
+			\end{minipage}%
+			}%
+		}%
+
+		% \noindent\fbox{%
+		% 	\parbox{0.9\textwidth}{%
+		% 			#1
+		% 	}%
+		% }
+
+		\caption{#2}
+	\end{figure}
+}
+
+
 
 \begin{document}
 
