@@ -24,13 +24,13 @@ next chapter.
 
 Here is a simple expression in the lambda calculus:
 \begin{mlcoded}
-(+ 4 5)
+($+$ 4 5)
 \end{mlcoded}
 All function applications in the lambda calculus are written in \textit{prefix} form, so,
-for example, the function + precedes its arguments 4 and 5. A slightly more
+for example, the function $+$ precedes its arguments 4 and 5. A slightly more
 complex example, showing the (quite conventional) use of brackets, is
 \begin{mlcoded}
-(+ ($*$ 5 6) (+ 8 3))
+($+$ ($*$ 5 6) ($+$ 8 3))
 \end{mlcoded}
 In both examples, the outermost brackets are redundant, but have been
 added for clarity (see Section 2.1.2).
@@ -38,21 +38,21 @@ added for clarity (see Section 2.1.2).
 From the implementation viewpoint, a functional program should be
 thought of as an \textit{expression}, which is `executed' by \textit{evaluating} it. Evaluation
 proceeds by repeatedly selecting a \textit{reducible expression} (or \textit{redex}) and
-reducing it. In our last example there are two redexes: ($*$ 5 6) and (+ 8 3).
-The whole expression \ml{(+ ($*$ 5 6) ($*$ 8 3))} is not a redex, since a \ml{+} needs to be
+reducing it. In our last example there are two redexes: ($*$ 5 6) and ($+$ 8 3).
+The whole expression \ml{($+$ ($*$ 5 6) ($*$ 8 3))} is not a redex, since a \ml{+} needs to be
 applied to two \textit{numbers} before it is reducible. Arbitrarily choosing the first
 redex for reduction, we write
 \begin{mlcoded}
-(+ ($*$ 5 6) ($*$ 8 3)) $\to$ (+ 30 ($*$ 8 3))
+($+$ ($*$ 5 6) ($*$ 8 3)) $\to$ ($+$ 30 ($*$ 8 3))
 \end{mlcoded}
 where the \ml{$\to$} is pronounced `reduces to'. Now there is only one redex, \ml{(* 8 3)},
 which gives
 \begin{mlcoded}
-(+ 30 ($*$ 8 3)) $\to$ (+ 30 24)
+($+$ 30 ($*$ 8 3)) $\to$ ($+$ 30 24)
 \end{mlcoded}
 This reduction creates a new redex, which we now reduce
 \begin{mlcoded}
-(+ 30 24) $\to$ 54
+($+$ 30 24) $\to$ 54
 \end{mlcoded}
 \indent When there are several redexes we have a choice of which one to reduce
 first. This issue will be addressed later in this chapter.
@@ -68,9 +68,9 @@ the application of a function to several arguments? We could use a new
 notation, like \ml{(f (x,y))}, but instead we use a simple and rather ingenious
 alternative. To express `the sum of 3 and 4' we write
 \begin{mlcoded}
-	((+ 3) 4)
+	(($+$ 3) 4)
 \end{mlcoded}
-The expression \ml{(+ 3)} denotes the function that adds \ml{3} to its argument. Thus
+The expression \ml{($+$ 3)} denotes the function that adds \ml{3} to its argument. Thus
 the whole expression means `the function \ml{+} applied to the argument \ml{3}, the
 result of which is a function applied to \ml{4}'. (In common with all functional
 programming languages, the lambda calculus allows a function to return a
@@ -86,11 +86,11 @@ In mathematics it is conventional to omit redundant brackets to avoid
 cluttering up expressions. For example, we might omit brackets from the
 expression
 \begin{mlcoded}
-	(ab) + ((2c)/d)
+	(ab) $+$ ((2c)/d)
 \end{mlcoded}
 to give
 \begin{mlcoded}
-	ab + 2c/d
+	ab $+$ 2c/d
 \end{mlcoded}
 The second expression is easier to read than the first, but there is a danger that
 it may be ambiguous. It is rendered unambiguous by establishing conventions
@@ -99,37 +99,37 @@ binds more tightly than addition)..
 
 Sometimes brackets cannot be omitted, as in the expression:
 \begin{mlcoded}
-	(b + c)/a
+	(b $+$ c)/a
 \end{mlcoded}
 Similar conventions are useful when writing down expressions in the
 lambda calculus. Consider the expression:
 \begin{mlcoded}
-	((+ 3) 2)
+	(($+$ 3) 2)
 \end{mlcoded}
 By establishing the convention that function application associates to the left,
 we can write the expression more simply as:
 \begin{mlcoded}
-	(+ 3 2)
+	($+$ 3 2)
 \end{mlcoded}
 or even
 \begin{mlcoded}
-	+ 3 2
+    $+$ 3 2
 \end{mlcoded}
 
 We performed some such abbreviations in the examples given earlier. As a
 more complicated example, the expression:
 \begin{mlcoded}
-	((f ((+ 4) 3)) (g x))
+	((f (($+$ 4) 3)) (g x))
 \end{mlcoded}
 is fully bracketed and unambiguous. Following our convention, we may omit
 redundant brackets to make the expression easier to read, giving:
 \begin{mlcoded}
-	f (+ 4 3) (g x)
+	f ($+$ 4 3) (g x)
 \end{mlcoded}
 No further brackets can be omitted. Extra brackets may, of course, be
 inserted freely without changing the meaning of the expression; for example
 \begin{mlcoded}
-	(f (+ 4 3) (g x))
+	(f ($+$ 4 3) (g x))
 \end{mlcoded}
 is the same expression again.
 
@@ -142,7 +142,7 @@ These include arithmetic functions (such as \ml{+}, \ml{--}, $*$, \ml{/}\,) and 
 \ldots), logical functions (such as \ml{AND}, \ml{OR}, \ml{NOT}) and constants (\ml{TRUE},
 \ml{FALSE}), and character constants (\ml{`a'}, \ml{`b'}, \ldots). For example
 \begin{mlalign}
-	-- 5 4 &$\to$ 1\\
+	$-$ 5 4 &$\to$ 1\\
 AND TRUE FALSE &$\to$ FALSE
 \end{mlalign}
 We also include a conditional function, \ml{IF}, whose behavior is described by the
@@ -175,10 +175,10 @@ lambda abstraction, to denote new (non-built-in) functions. A lambda
 abstraction is a particular sort of expression which denotes a function. Here is
 an example of a lambda abstraction:
 \begin{mlcoded}
-	(\tlb{x}+ x 1)
+	(\tlb{x}$+$ x 1)
 \end{mlcoded}
 The \tl says `here comes a function', and is immediately followed by a variable,
-\ml{x} in this case; then comes a . followed by the \textit{body} of the function, \ml{(+ x 1)} in
+\ml{x} in this case; then comes a . followed by the \textit{body} of the function, \ml{($+$ x 1)} in
 this case. The variable is called the \textit{formal parameter}, and we say that the \tl
 binds it. You can think of it like this:
 \begin{quote}\setlength{\tabcolsep}{3pt}
@@ -196,7 +196,7 @@ conventional language, such as C:
 \begin{mlcoded}
 	Inc( x )\\
 	int x;\\
-	\{ return( x + 1 ); \}
+	\{ return( x $+$ 1 ); \}
 \end{mlcoded}
 The formal parameter of the lambda abstraction corresponds to the formal
 parameter of the function, and the body of the abstraction is an expression
@@ -207,17 +207,17 @@ languages must have a name (such as \ml{Inc}), whereas lambda abstractions are
 The body of a lambda abstraction extends \textit{as far to the right as possible}, so
 that in the expression
 \begin{mlcoded}
-	(\tlb{x}+ x 1) 4
+	(\tlb{x}$+$ x 1) 4
 \end{mlcoded}
-the body of the \ml{\tl{}x} abstraction is \ml{(+ x 1)}, not just \ml{+}. As usual, we may add
+the body of the \ml{\tl\,x} abstraction is \ml{($+$ x 1)}, not just \ml{$+$}. As usual, we may add
 extra brackets to clarify, thus
 \begin{mlcoded}
-	(\tlb{x}(+ x 1)) 4
+	(\tlb{x}($+$ x 1)) 4
 \end{mlcoded}
 When a lambda abstraction appears in isolation we may write it without any
 brackets:
 \begin{mlcoded}
-	\tlb{x}+ x 1
+	\tlb{x}$+$ x 1
 \end{mlcoded}
 
 \subsection{Summary}
@@ -248,3 +248,758 @@ booleans (e.g. \ml{4}, \ml{TRUE}), together with built-in functions to manipulat
 them (e.g. \ml{AND}, \ml{IF}, \ml{+}). We also assume built-in list-processing functions
 (e.g. \ml{CONS}, \ml{HEAD}).
 }{Syntax of a lambda expression (in BNF)}
+
+In what follows we will use lower-case names for variables, and single
+upper-case letters to stand for whole lambda expressions. For example we
+might say `for any lambda expression \ml{E}, \dots,'. We will also write the names of
+built-in functions in upper case, but no confusion should arise.
+
+\section{The Operational Semantics of the Lambda Calculus}
+
+So far we have described only the \textit{syntax} of the lambda calculus, but to dignify
+it with the title of a `calculus' we must say how to `calculate' with it. We will do
+this by giving three \textit{conversion rules} which describe how to convert one
+lambda expression into another.
+
+First, however, we introduce an important piece of terminology.
+
+\subsection{Bound and Free Variables}
+
+Consider the lambda expression
+\begin{mlcoded}
+	(\tlb{x}$+$ x y) 4
+\end{mlcoded}
+In order to evaluate this expression completely, we need to know the `global'
+value of \ml{y}. In contrast, we do not need to know a `global' value for \ml{x}, since it is
+just the formal parameter of the function, so we see that \ml{x} and \ml{y} have a rather
+different status.
+
+The reason is that \ml{x} occurs bound by the \ml{\tl\,x}; it is just a `hole' into which
+
+\boxedfigure{
+	\noindent An occurrence of a variable must be either free or bound.\\
+
+	\textit{Definition of 'occurs free'}
+
+	\hspace{-0.4em}\ml{x} occurs free in \ml{x} (but not in any other variable or constant)\\
+	\begin{tabular}{llrl}
+	  \ml{x} occurs free in \ml{(E F)} & <=> & & \ml{x} occurs free in \ml{E} \\
+		& & \textit{or} & \ml{x} occurs free in \ml{F} \\
+	  \ml{x} occurs free in \ml{\tlb{y} E} & <=> & & \ml{x} and \ml{y} are different variables \\
+		& & \textit{and} & \ml{x} occurs free in \ml{E} \\
+	\end{tabular}\\
+
+	\textit{Definition of `occurs bound'}
+
+	\begin{tabular}{llrl}
+		\ml{x} occurs bound in \ml{(E F)} & <=> & & \ml{x} occurs bound in \ml{E}\\
+		& & \textit{or} & \ml{x} occurs bound in \ml{F} \\
+		\ml{x} occurs bound in \ml{\tlb{y}E} & <=> & & (\ml{x} and \ml{y} are the same variable\\
+		& & & \textit{and} \ml{x} occurs free in \ml{E}) \\
+		& & \textit{or} & \ml{x} occurs bound in \ml{E} \\
+	\end{tabular}\\
+
+	\noindent(No variable occurs bound in an expression consisting of a single constant
+	or variable.)\\
+
+	\noindent Note: '<=>' means 'if and only if'
+}{Definitions of bound and free}
+
+
+\noindent the
+argument \ml{4} is placed when applying the lambda abstraction to its argument.
+On the other hand, \ml{y} is not bound by any \ml{A}, and so occurs \textit{free} in the
+expression. In general, the value of an expression depends only on the values
+of its free variables.
+
+An occurrence of a variable is bound if there is an enclosing lambda
+abstraction which binds it, and is free otherwise. For example, \ml{x} and \ml{y} occur
+bound, but \ml{z} occurs free in this example:
+\begin{mlcoded}
+	\tlb{x}$+$ ((\tlb{y}$+$ y z) 7) x
+\end{mlcoded}
+Notice that the terms `bound' and `free' refer to \textit{specific occurrences} of the
+variable in an expression. This is because a variable may have both a bound
+occurrence and a free occurrence in an expression; consider for example
+\begin{mlcoded}
+	$+$ x ((\tlb{x}$+$ x 1) 4)
+\end{mlcoded}
+in which \ml{x} occurs free (the first time) and bound (the second time). Each
+individual occurrence of a variable must be either free or bound.
+
+Figure 2.2 gives formal definitions for `free' and `bound', which cover the
+forms of lambda expression given in Figure 2.1 case by case.
+
+\subsection{Beta-conversion}
+
+A lambda abstraction denotes a function, so we must describe how to apply it
+to an argument. For example, the expression
+\begin{mlcoded}
+	(\tlb{x}$+$ x 1) 4
+\end{mlcoded}
+is the juxtaposition of the lambda abstraction \ml{(\tlb{x}$+$ x 1)} and the argument \ml{4},
+and hence denotes the application of a certain function, denoted by the
+lambda abstraction, to the argument \ml{4}. The rule for such function application
+is very simple:
+\begin{quote}
+	The result of applying a lambda abstraction to an argument is an instance of
+	the body of the lambda abstraction in which (free) occurrences of the
+	formal parameter in the body are replaced with (copies of) the argument.
+\end{quote}
+Thus the result of applying the lambda abstraction \ml{(\tlb{x}$+$ x 1)} to the
+argument \ml{4} is
+\begin{mlcoded}
+    $+$ 4 1
+\end{mlcoded}
+The \ml{($+$ 4 1)} is an instance of the body \ml{($+$ x 1)} in which occurrences of the
+formal parameter, \ml{x}, are replaced with the argument, \ml{4}. We write the
+reduction using the arrow `$\rightarrow$' as before:
+\begin{mlcoded}
+	(\tlb{x}$+$ x 1) 4 $\rightarrow$ $+$ 4 1
+\end{mlcoded}
+This operation is called \textit{\tb{}-reduction}, and much of this book is concerned with
+its efficient implementation. We will use a series of examples to show in detail
+how \tb{}-reduction works.
+
+\subsubsection{Simple examples of beta-reduction}
+
+The formal parameter may occur several times in the body:
+\begin{mlalign}
+	(\tlb{x}$+$ x x) 5  & $\rightarrow$ $+$ 5 5 \\
+	 & $\rightarrow$ 10
+\end{mlalign}
+
+Equally, there may be no occurrences of the formal parameter in the body:
+\begin{mlcoded}
+	(\tlb{x}3) 5 $\rightarrow$ 3
+\end{mlcoded}
+In this case there are no occurrences of the formal parameter (\ml{x}) for which the
+argument (\ml{5}) should be substituted, so the argument is discarded unused.
+
+The body of a lambda abstraction may consist of another lambda
+abstraction:
+\begin{mlalign}
+	(\tlb{x}(\tlb{y}$-$ y x)) 4 5 &$\rightarrow$ (\tlb{y}$-$ y 4) 5 \\
+	& $\rightarrow$ 5 4 \\
+	& $\rightarrow$ 1
+\end{mlalign}
+Notice that, when constructing an instance of the body of the \ml{\tl\,x} abstraction,
+we copy the entire body including the embedded \ml{\tl\,x} abstraction (while
+substituting for \ml{x}, of course). Here we see currying in action: the application
+of the \ml{\tl\,x} abstraction returned a function (the \ml{\tl\,y} abstraction) as its result,
+which when applied yielded the result (\ml{- 5 4}).
+
+We often abbreviate
+\begin{mlcoded}
+	(\tlb{x}(\tlb{y}E))
+\end{mlcoded}
+to
+\begin{mlcoded}
+	(\tlb{x}\tlb{y}E)
+\end{mlcoded}
+
+Functions can be arguments too:
+\begin{mlalign}
+	(\tlb{f}f 3) (\tlb{x}$+$ x 1) & $\rightarrow$ (\tlb{x}$+$ x 1) 3 \\
+    & $\rightarrow$  $+$ 3 1 \\
+    & $\rightarrow$  4
+\end{mlalign}
+An instance of the \ml{\tl\,x} abstraction is substituted for \ml{f} wherever \ml{f} appears in the
+body of the \ml{\tl{}f} abstraction.
+
+\subsubsection{Naming}
+Some slight care is needed when formal parameter names are not unique. For example,
+\begin{mlalign}
+    & \phantom{$\rightarrow$} (\tlb{x}(\tlb{x}$+$ ($-$ x 1)) x 3) 9  \\
+    & $\rightarrow$ (\tlb{x}$+$ ($-$ x 1)) 9 3 \\
+    & $\rightarrow$ $+$ ($-$ 9 1) 3 \\
+    & $\rightarrow$ 11
+\end{mlalign}
+Notice that we did \textit{not} substitute for the inner \ml{x} in the first reduction, because
+it was shielded by the enclosing \ml{\tl\,x}; that is, the inner occurrence of \ml{x} is not free
+in the body of the outer \ml{\tl\,x} abstraction.
+
+
+Given a lambda abstraction \ml{(\tlb{x}E)}, how can we identify exactly those
+occurrences of \ml{x} which should be substituted for? It is easy: we should
+substitute for \textit{those occurrences of \ml{x} which are free} in \ml{E}, because, if they are
+free in \ml{E}, then they will be bound by the \ml{\tl\,x} abstraction \ml{(\tlb{x}E)}. So, when
+applying the outer \ml{\tl\,x} abstraction in the above example, we examine its body
+\begin{mlcoded}
+    (\tlb{x}$+$ ($-$ x 1)) x 3
+\end{mlcoded}
+and see that only the second occurrence of \ml{x} is free, and hence qualifies for
+substitution.
+
+This is why the rule given above specified that only the \textit{free} occurrences of
+the formal parameter in the body are to be substituted for. The nesting of the
+scope of variables in a block-structured language is closely analogous to this
+rule.
+
+Here is another example of the same kind
+\begin{mlalign}
+    & \phantom{$\rightarrow$} (\tlb{x}\tlb{y}$+$ x ((\tlb{x}$-$ x 3) y)) 5 6 \\
+    & $\rightarrow$ (\tlb{y}$+$ 5 ((\tlb{x}$-$ x 3) y)) 6 \\
+    & $\rightarrow$ $+$ 5 ((\tlb{x}$-$ x 3) 6) \\
+    & $\rightarrow$ $+$ 5 ($-$ 6 3) \\
+    & $\rightarrow$ 8
+\end{mlalign}
+Again, the inner \ml{x} is not substituted for in the first reduction, since it is not free
+in the body of the outer \ml{\tl\,x} abstraction.
+
+\subsubsection{A larger example}
+As a larger example, we will demonstrate the somewhat surprising fact that
+data constructors can actually be modelled as pure lambda abstractions. We
+define \ml{CONS}, \ml{HEAD} and \ml{TAIL} in the following way:
+\begin{mlalign}
+    CONS &= (\tlb{a}\tlb{b}\tlb{f}f a b) \\
+    HEAD &= (\tlb{c}c (\tlb{a}\tlb{b}a)) \\
+    TAIL &= (\tlb{c}c (\tlb{a}\tlb{b}b))
+\end{mlalign}
+These obey the rules for \ml{CONS}, \ml{HEAD} and \ml{TAIL} given in Section 2.1.3. For
+example,
+\begin{mlalign}
+    \phantom{$\rightarrow$} & HEAD (CONS p q) \\
+    $=$ & (\tlb{c}c (\tlb{a}\tlb{b}a)) (CONS p q) \\
+    $\rightarrow$ & CONS p q (\tlb{a}\tlb{b}a) \\
+    $=$ & (\tlb{a}\tlb{b}\tlb{f}f a b) p q (\tlb{a}\tlb{b}a) \\
+    $\rightarrow$ & (\tlb{b}\tlb{f}f p b) q (\tlb{a}\tlb{b}a) \\
+    $\rightarrow$ & (\tlb{f}f p q) (\tlb{a}\tlb{b}a) \\
+    $\rightarrow$ & (\tlb{a}\tlb{b}a) p q \\
+    $\rightarrow$ & (\tlb{b}p) q \\
+    $\rightarrow$ & p
+\end{mlalign}
+This means, incidentally, that there is no essential need for the built-in
+functions \ml{CONS}, \ml{HEAD} and \ml{TAIL}, and it turns out that all the other built-in functions can also be modelled as lambda abstractions. This is rather satisfying from a theoretical viewpoint, but all practical implementations support
+built-in functions for efficiency reasons.
+
+\subsubsection{Conversion, reduction and abstraction}
+We can use the \ml{\tb{}}-rule backwards, to introduce new lambda abstractions, thus
+\begin{mlcoded}
+    $+$ 4 1 $\leftarrow$ (\tlb{x}$+$ x 1) 4
+\end{mlcoded}
+This operation is called \tb{}-\textit{abstraction}, which we denote with a backwards reduction arrow `$\leftarrow$'. \tb{}-\textit{conversion} means \tb{}-reduction or \tb{}-abstraction, and we denote it with a double-ended arrow `\conversion{\beta}'. Thus we write
+\begin{mlcoded}
+    $+$ 4 1 \conversion{\beta} (\tlb{x}$+$ x 1) 4
+\end{mlcoded}
+The arrow is decorated with \tb{} to distinguish \tb{}-conversion from the other forms of conversion we will meet shortly. An undecorated reduction arrow `$\rightarrow$' will stand for one or more \tb{}-reductions, or reductions of the built-in functions. An undecorated conversion arrow `$\leftrightarrow$' will stand for zero or more conversions, of any kind.
+
+Rather than regarding \tb{}-reduction and \tb{}-abstraction as \textit{operations}, we can regard \tb{}-conversion as expressing the \textit{equivalence} of two expressions which `look different' but `ought to mean the same'. It turns out that we need two more rules to satisfy our intuitions about the equivalence of expressions, and we turn to these rules in the next two sections.
+
+\subsection{Alpha-conversion}
+Consider the two lambda abstractions
+\begin{mlcoded}
+    (\tlb{x}$+$ x 1)
+\end{mlcoded}
+and
+\begin{mlcoded}
+    (\tlb{y}$+$ y 1)
+\end{mlcoded}
+Clearly they `ought' to be equivalent, and \ta-\textit{conversion} allows us to change the name of the formal parameter of any lambda abstraction, so long as we do so consistently. So
+\begin{mlcoded}
+    (\tlb{x}$+$ x 1) \conversion{\alpha} (\tlb{y}$+$ y 1)
+\end{mlcoded}
+where the arrow is decorated with an \ta{} to specify an \ta-conversion. The newly introduced name must not, of course, occur free in the body of the original lambda abstraction. \ta-conversion is used solely to eliminate the sort of name clashes exhibited in the example in the previous section.
+
+Sometimes \ta{}-conversion is essential (see Section 2.2.6).
+
+\subsection{Eta-conversion}
+One more conversion rule is necessary to express our intuitions about what lambda abstractions `ought' to be equivalent. Consider the two expressions
+\begin{mlcoded}
+    (\tlb{x}$+$ 1 x)
+\end{mlcoded}
+and
+\begin{mlcoded}
+    ($+$ 1)
+\end{mlcoded}
+These expressions behave in exactly the same way when applied to an argument: they add 1 to it. \te{}-conversion is a rule expressing their equivalence:
+\begin{mlcoded}
+    (\tlb{x}$+$ 1 x) \reduction{\eta} ($+$ 1)
+\end{mlcoded}
+More generally, we can express the \te{}-conversion rule like this:
+\begin{mlcoded}
+    (\tlb{x}F x) \reduction{\eta} F
+\end{mlcoded}
+provided \ml{x} does not occur free in \ml{F}, and \ml{F} denotes a function.
+
+The condition that \ml{x} does not occur free in \ml{F} prevents false conversions. For example,
+\begin{mlcoded}
+    (\tlb{x}$+$ x x)
+\end{mlcoded}
+is not \te{}-convertible to
+\begin{mlcoded}
+    ($+$ x)
+\end{mlcoded}
+because \ml{x} occurs free in \ml{($+$ x)}. The condition that \ml{F} denotes a function prevents other false conversions involving built-in constants; for example:
+\begin{mlcoded}
+    TRUE
+\end{mlcoded}
+is not \te{}-convertible to
+\begin{mlcoded}
+    (\tlb{x}TRUE x)
+\end{mlcoded}
+When the \te{}-conversion rule is used from left to right it is called \te{}-reduction.
+
+\subsection{Proving Interconvertibility}
+We will quite frequently want to prove the interconvertibility of two lambda expressions. When the two expressions denote a function such proofs can become rather tedious, and in this section we will demonstrate a convenient method that abbreviates the proof without sacrificing rigor.
+
+As an example, consider the two lambda expressions:
+\begin{mlcoded}
+    IF TRUE ((\tlb{p}p) 3)
+\end{mlcoded}
+and
+\begin{mlcoded}
+    (\tlb{x}3)
+\end{mlcoded}
+Both denote the same function, namely the function which always delivers the result \ml{3} regardless of the value of its argument, and we might hope that they were interconvertible. This hope is justified, as the following sequence of conversions shows:
+\begin{mlalign}
+    IF TRUE ((\tlb{p}p) 3) & \conversion{\beta} IF TRUE 3 \\
+    & \conversion{\eta} (\tlb{x}IF TRUE 3 x) \\
+    & $ \leftrightarrow $ (\tlb{x}3)
+\end{mlalign}
+The final step is the reduction rule for \ml{IF}.
+
+An alternative method of proving convertibility of expressions denoting functions, which is often more convenient, is to apply both expressions to an arbitrary argument, \ml{w}, say
+\begin{mlcoded}\setlength{\tabcolsep}{2pt}
+\begin{tabular}{ll}
+    IF TRUE ((\tlb{p}p) 3) w\hspace{2cm} & (\tlb{x}3) w \\
+    $ \rightarrow $ (\tlb{p}p) 3  & $ \rightarrow $ 3 \\
+    $ \rightarrow $ 3 &
+\end{tabular}
+\end{mlcoded}
+Hence,
+\begin{mlcoded}
+    (IF TRUE ((\tlb{p}p) 3)) $\leftrightarrow$ (\tlb{x}3)
+\end{mlcoded}
+This proof has the advantage that it only uses reduction, and it avoids the explicit use of \te{}-conversion. If it is not immediately clear why the final step is justified, consider the general case, in which we are given two lambda expressions \ml{F$_1$} and \ml{F$_2$}. If we can show that
+\begin{mlalign}
+    F$_1$ w & $ \rightarrow $ E
+\end{mlalign}
+and
+\begin{mlalign}
+    F$_2$ w & $ \rightarrow $ E
+\end{mlalign}
+where \ml{w} is a variable which does not occur free in \ml{F$_1$} or \ml{F$_2$}, and \ml{E} is some expression, then we can reason as follows:
+\begin{mlalign}
+    F$_1$ & \conversion{\eta} (\tlb{w}F$_1$ w) \\
+    & $ \leftrightarrow $ (\tlb{w}E) \\
+    & $ \leftrightarrow $ (\tlb{w}F$_2$ w) \\
+    & \conversion{\eta} F$_2$
+\end{mlalign}
+and hence \ml{F$_1$ $\leftrightarrow$ F$_2$}.
+
+It is not always the case that lambda expressions which `ought' to mean the same thing are interconvertible, and we will have more to say about this point in Section 2.5.
+
+\subsection{The Name-capture Problem}
+As a warning to the unwary we now give an example to show why the lambda calculus is trickier than meets the eye. Fortunately, it turns out that none of our implementations will come across this problem, so this section can safely
+be omitted on first reading.
+
+Suppose we define a lambda abstraction TWICE thus:
+\begin{mlcoded}
+    TWICE $=$ (\tlb{f}\tlb{x}f (f x))
+\end{mlcoded}
+Now consider reducing the expression \ml{(TWICE TWICE)} using \tb{}-reductions:
+\vspace{-\baselineskip}
+\begin{mlalign}
+    & TWICE TWICE \\
+    $=$ & (\tlb{f}\tlb{x}f (f x)) TWICE \\
+    $\rightarrow$ & (\tlb{x}TWICE (TWICE x))
+\end{mlalign}
+Now there are two \tb{}-redexes, \ml{(TWICE x)} and \ml{(TWICE (TWICE x))}, so let us
+(arbitrarily) choose the inner one for reduction, first expanding the \ml{TWICE} to
+its lambda abstraction:
+\begin{mlcoded}
+    $=$ \tlb{x}TWICE ((\tlb{f}\underline{\tlb{x}f (f x)}) x)
+\end{mlcoded}
+Now we see the problem. To apply \ml{TWICE} to \ml{x}, we must make a new instance
+of the body of \ml{TWICE} (underlined) replacing occurrences of the formal
+parameter, \ml{f}, with the argument, \ml{x}. But \ml{x} is \textit{already used as a formal parameter}
+inside the body. It is clearly wrong to reduce to
+\begin{mlalign}
+    & \tlb{x}TWICE ((\tlb{f}\underline{\tlb{x}f (f x)}) x) \\
+    $=$& \tlb{x}TWICE (\tlb{x}x (x x)) \hspace{3cm} \normalfont{\small \textit{wrong!}}
+\end{mlalign}
+because then the \ml{x} substituted for \ml{f} would be `captured' by the inner \ml{\tl{}\,x}
+abstraction. This is called the \textit{name-capture} problem. One solution is to use
+\ta{}-conversion to change the name of one of the \ml{\tl{}\,x}'s; for instance:
+\begin{mlalign}
+    & \tlb{x}TWICE ((\tlb{f}\underline{\tlb{x}f (f x)}) x)\\
+    \conversion{\alpha} & \tlb{x}TWICE ((\tlb{f}\underline{\tlb{y}f (f y)}) x) \\
+    $\rightarrow$ & \tlb{x}TWICE (\tlb{y}x (x y)) \hspace{3cm} \normalfont{\small \textit{right!}}
+\end{mlalign}
+
+We conclude:
+\begin{numbered}
+    \item \tb{}-reduction is only valid provided the free variables of the argument do
+    not clash with any formal parameters in the body of the lambda
+    abstraction.
+    \item \ta{}-conversion is sometimes necessary to avoid (i).
+\end{numbered}
+
+\subsection{Summary of Conversion Rules}
+
+We have now developed three conversion rules which allow us to interconvert
+expressions involving lambda abstractions. They are
+\begin{numbered}
+    \item \textit{Name changing.} \ta{}-conversion allows us to change the name of the formal
+    parameter of a lambda abstraction, so long as we do so consistently.
+    \item \textit{Function application.} \tb{}-reduction allows us to apply a lambda abstraction to an argument, by making a new instance of the body of the abstraction, substituting the argument for free occurrences of the formal
+    parameter. Special care needs to be taken when the argument contains
+    free variables.
+    \item \textit{Eliminating redundant lambda abstractions.} \te{}-reduction can sometimes
+    eliminate a lambda abstraction.
+\end{numbered}
+Within this framework we may also regard the built-in functions as one more
+form of conversion, \td{}-conversion. For this reason the reduction rules for
+built-in functions are sometimes called \textit{delta rules}.
+
+As we have seen, the application of the conversion rules is not always
+straightforward, so it behooves us to give a formal definition of exactly what the
+conversion rules are. This requires us to introduce one new piece of notation.
+The notation
+\begin{mlcoded}
+    E[M/x]
+\end{mlcoded}
+means the expression \ml{E} with \ml{M} substituted for free occurrences of \ml{x}.
+
+As a mnemonic, imagine `multiplying' \ml{E} by \ml{M/x}, giving \ml{M} where the \ml{x}'s
+cancel out, so that \ml{x[M/x] = M}. This notation allows us to express
+\tb{}-conversion very simply:
+\begin{mlcoded}
+    (\tlb{x}E) M \conversion{\beta} E[M/x]
+\end{mlcoded}
+and it is useful for \ta{}-conversion too.
+
+Figures 2.3 and 2.4 give the formal definitions of substitution and
+conversion. They are rather forbidding, but all the complexity arises because
+of the name-capture problem described in Section 2.2.6 which will not arise at
+all in our implementations. Hence \ta{}-conversion will not be necessary, \tb{}-
+reduction can proceed by simple substitution, and \te{}-reduction will prove to
+be a compile-time technique only.
+
+To summarize our progress so far, we now have:
+\begin{numbered}
+    \item a set of formal rules for constructing expressions (Figure 2.1);
+    \item a set of formal rules for converting one expression into an equivalent one
+    (Figures 2.2-2.4).
+\end{numbered}
+\boxedfigure{
+\begin{tabular}{lll}
+    \ml{x [M/x]} &$=$ \ml{M} \\
+    \ml{c [M/x]} &where \ml{c} is any variable or constant other than \ml{x}\\
+    &$=$ \ml{c}\\
+    \ml{(E F)[M/x]} &$=$ \ml{E[M/x] F[M/x]}\\
+    \ml{(\tlb{x}E)[M/x]} &$=$ \ml{\tlb{x}E}\\
+    \ml{(\tlb{y}E)[M/x]} &where \ml{y} is any variable other than \ml{x}\\
+    &$=$ \ml{\tlb{y}E[M/x]}\;\;\; if \ml{x} does not occur free in \ml{E}\\
+    &\phantom{$=$ \ml{\tlb{y}E[M/x]}\;\;\; }or \ml{y} does not occur free in \ml{M}\\
+    &$=$ \ml{\tlb{z}(E[z/y])[M/x]} otherwise\\
+    &\phantom{$=$ }where \ml{z} is a new variable name which does not\\
+    &\phantom{$=$ }occur free in \ml{E} or \ml{M}
+\end{tabular}
+}{Definition of \ml{E[M/x]}}
+It turns out that this small formal base is sufficient to build a large and complex theory of interconvertibility; the standard work is Barendregt [1984]. While this book is very well written, it is not intended for the casual reader, and Stoy [1981] gives a less comprehensive but more readable treatment. Curry and Feys also give a clear account of the historical origins and basic properties of the lambda calculus [Curry and Feys, 1958]. The lambda calculus was originally invented by Church [1941].
+
+We will not take the lambda calculus any further as an end in itself; rather we will simply appropriate the fruits of the theory as and when we need them.
+
+\boxedfigure{
+\vspace{\baselineskip}
+\begin{tabular}{ll}
+    \ta{}-conversion:\hspace{1cm} & if \ml{y} is not free in \ml{E} then \\
+                      & \ml{(\tlb{x}E) \conversion{\alpha} (\tlb{y}E[y/x])} \\
+    \tb{}-conversion: & \ml{(\tlb{x}E) M \conversion{\beta} E[M/x]}\\
+    \te{}-conversion: & if \ml{x} is not free in \ml{E}\\
+                      & \quad and \ml{E} denotes a function then\\
+                      & \ml{(\tlb{x}E x) \conversion{\eta} E}\\
+\end{tabular}
+
+\vspace{\baselineskip}
+\noindent When used left to right, the \tb{} and \te{} rules are called reductions, and may be written with a `$\rightarrow$' arrow.
+\vspace{\baselineskip}
+}{Definitions of \ta{}-, \tb{}- and \te{}-conversions}
+
+\section{Reduction Order}
+
+If an expression contains no redexes then evaluation is complete, and the expression is said to be in \textit{normal form}. So the evaluation of an expression consists of successively reducing redexes until the expression is in normal form.
+
+However, an expression may contain more than one redex, so \textit{reduction can proceed by alternative routes}. For example, the expression
+\ml{(+ (* 3 4) (* 7 8)) }
+can be reduced to normal form with the sequence
+\begin{mlalign}
+                  & (+ (* 3 4) (* 7 8))\\
+    $\rightarrow$ & (+ 12 (* 7 8))\\
+    $\rightarrow$ & (+ 12 56)\\
+    $\rightarrow$ & 68
+\end{mlalign}
+or the sequence
+\begin{mlalign}
+    & (+ (* 3 4) (* 7 8))\\
+    $\rightarrow$ & (+ (* 3 4) 56)\\
+    $\rightarrow$ & (+ 12 56)\\
+    $\rightarrow$ & 68
+\end{mlalign}
+
+Not every expression has a normal form; consider for example
+\begin{mlcoded}
+    (D D)
+\end{mlcoded}
+where \ml{D} is \ml{(\tlb{x}x x)}. The evaluation of this expression would not terminate since \ml{(D D)} reduces to \ml{(D D)}:
+\begin{mlalign}
+    (\tlb{x}x x) (\tlb{x}x x) & $\rightarrow$ (\tlb{x}x x) (\tlb{x}x x)\\
+    & $\rightarrow$ (\tlb{x}x x) (\tlb{x}x x)
+\end{mlalign}
+This situation corresponds directly to an imperative program going into an infinite loop.
+
+Furthermore, \textit{some} reduction sequences may reach a normal form while \textit{others do not}. For example, consider
+\begin{mlcoded}
+    (\tlb{x}3) (D D)
+\end{mlcoded}
+If we first reduce the application of \ml{(\tlb{x}3)} to \ml{(D D)} (without evaluating \ml{(D D)}) we get the result \ml{3}; but if we first reduce the application of \ml{D} to \ml{D}, we just get \ml{(D D)} again, and if we keep choosing the \ml{(D D)} the evaluation will fail to terminate.
+
+\subsection{Normal Order Reduction}
+
+These complications raise an embarrassing question: can two different reduction sequences lead to different normal forms? Fortunately the answer is `no'. This is a consequence of a profound and powerful pair of theorems, the \textit{Church-Rosser Theorems I and II}, which save the day.
+
+\theorembox{Church-Rosser Theorem I \normalfont{(CRT I)}}{
+If \ml{E$_1$ $\leftrightarrow$ E$_2$}, then there exists an expression \ml{E}, such that
+\begin{mlcoded}
+E$_1$ $\rightarrow$ E \normalfont{and} E$_2$ $\rightarrow$ E
+\end{mlcoded}
+}
+
+\noindent The following corollary is an easy consequence:
+\begin{pcorollary}
+No expression can be converted to two distinct normal forms (that is, normal forms that are not \ta{}-convertible).
+\end{pcorollary}
+\vspace{-23pt}
+\begin{pproof}
+Suppose that \ml{E $\leftrightarrow$ E$_2$} and \ml{E $\leftrightarrow$ E$_2$}, where \ml{E$_1$} and \ml{E$_2$} are in normal form. Then, \ml{E$_1$  $\leftrightarrow$ E$_2$} and, by CRT I, there must exist an expression \ml{F}, such that \ml{E$_1$ $\rightarrow$ F} and \ml{E$_2$ $\rightarrow$ F}. But \ml{E$_1$} and \ml{E$_2$} have no redexes, so \ml{E$_1$ = F = E$_2$}.
+\end{pproof}
+\noindent Informally, the corollary says that all reduction sequences which terminate will reach the same result. The second Church-Rosser Theorem concerns a particular reduction order, called \textit{normal order}.
+
+\theorembox{Church-Rosser Theorem II \normalfont{(CRT II)}}{
+    If \ml{E$_1$ $\leftrightarrow$ E$_2$}, and \ml{E$_2$} is in normal form, then there exists a \textit{normal order} reduction sequence from \ml{E$_1$} to \ml{E$_2$}.
+}
+
+\noindent This is as much as we can hope for; there is at most one possible result, and normal order reduction will find it if it exists. Notice that no reduction sequence can give the `wrong' answer -- the worst that can happen is non-termination.
+
+\plainbox{
+Normal order reduction specifies that the \textit{leftmost outermost redex} should be reduced first.
+}
+
+\noindent Thus, in our example above \ml{((\tlb{x}3) (D D))}, we would choose the \ml{\tl{}x}-redex first, not the \ml{(D D)}. This rule embodies the intuition that \textit{arguments to functions may be discarded}, so we should apply the function \ml{(\tlb{x}3)} first, rather than first evaluating the argument \ml{(D D)}.
+
+The shortest proofs of the Church-Rosser Theorem I (which is the harder one) are in Welch [1975] and Rosser [1982].
+
+\subsection{Optimal Reduction Orders}
+
+While normal order reduction guarantees to find a normal form (if one exists), it does \textit{not} guarantee to do so in the fewest possible number of reductions. In fact, for tree reduction (see Section 12.1.1) it is provably least favorable, but fortunately for graph reduction (see Section 12.1.1) it seems that normal order is `almost optimal', and that it probably takes more time to find the optimal redex than to pursue normal order. Some work has been done on finding more nearly optimal reduction orders that preserve the desirable properties of normal order [Levy, 1980].
+
+For SK-combinator reduction (see Chapter 16), normal order graph reduction has been shown to be optimal. This result, among many others on graph reduction, is shown in Staples' series of papers [Staples, 1980a, 1980b, 1980c]. A more accessible treatment of this work is given by Kennaway [1984].
+
+\section{Recursive Functions}
+
+We began by saying that we propose to translate all functional programs into the lambda calculus. One pervasive feature of all functional programs is recursion, and this throws the viability of the whole venture into doubt, because the lambda calculus appears to lack anything corresponding to recursion.
+
+In the remainder of this section, therefore, we will show that the lambda calculus is capable of expressing recursive functions without further extension. This is quite a remarkable feat, as the reader may verify by trying it before reading the following sections.
+
+\subsection{Recursive Functions and \ml{Y}}
+
+Consider the following recursive definition of the factorial function:
+\begin{mlcoded}
+FAC $=$ (\tlb{n}IF ($=$ n 0) 1 ($*$ n (FAC ($-$ n 1))))
+\end{mlcoded}
+The definition relies on the ability to name a lambda abstraction, and then to refer to this name inside the lambda abstraction itself. No such construct is provided by the lambda calculus. The problem is that lambda abstractions are \textit{anonymous} functions, so they cannot name (and hence refer to) themselves.
+
+We proceed by simplifying the problem to one in which recursion is expressed in its purest form. We begin with a recursive definition:
+\begin{mlcoded}
+FAC $=$ \tlb{n}(\,$\ldots$\,FAC\,$\ldots$\,)
+\end{mlcoded}
+(We have written parts of the body of the lambda abstraction as `$\ldots$' to focus attention on the recursive features alone.)
+
+By performing a \tb{}-abstraction on \ml{FAC}, we can transform its definition to:
+\begin{mlcoded}
+    FAC $=$ (\tlb{fac}(\tlb{n}(\,$\ldots$\,fac\,$\ldots$\,))) FAC
+\end{mlcoded}
+We may write this definition in the form:
+%\begin{equation}
+%    \text{\hspace{-0.9em}\ml{FAC $=$ H FAC}}
+%\end{equation}
+\begin{mlnumbered}
+FAC $=$ H FAC
+\end{mlnumbered}
+where
+\begin{mlcoded}
+    H $=$ (\tlb{fac}(\tlb{n}(\,$\ldots$\,fac\,$\ldots$\,)))
+\end{mlcoded}
+The definition of \ml{H} is quite straightforward. It is an ordinary lambda abstraction and does not use recursion. The recursion is expressed solely by definition (2.1).
+
+The definition (2.1) is rather like a mathematical equation. For example, to solve the mathematical equation
+\begin{equation*}
+    x^{2} - 2 = x
+\end{equation*}
+we seek values of $x$ which satisfy the equation (namely $x = -1$ and $x = 2$). Similarly, to solve (2.1) we seek a lambda expression for \ml{FAC} which satisfies (2.1). As with mathematical equations, there may be more than one solution.
+
+The equation (2.1)
+\begin{mlcoded}
+    FAC $=$ H FAC
+\end{mlcoded}
+states that when the function \ml{H} is applied to \ml{FAC}, the result is \ml{FAC}. We say that \ml{FAC} is a \textit{fixed point} (or \textit{fixpoint}) of \ml{H}. A function may have more than one fixed point. For example, both 0 and 1 are fixed points of the function
+\begin{mlcoded}
+    \tlb{x}$*$ x x
+\end{mlcoded}
+which squares its argument.
+
+To summarize our progress, we now seek a fixed point of \ml{H}. It is clear that
+this can depend on \ml{H} only, so let us invent (for now) a function \ml{Y} which takes a
+function and delivers a fixed point of the function as its result. Thus \ml{Y} has the
+behavior that
+\begin{mlcoded}
+    Y H $=$ H (Y H)
+\end{mlcoded}
+and as a result \ml{Y} is called a \textit{fixpoint combinator}. Now, if we can produce such a
+\ml{Y}, our problems are over. For we can now give a solution to (2.1), namely
+\begin{mlcoded}
+    FAC $=$ Y H
+\end{mlcoded}
+which is a non-recursive definition of \ml{FAC}. To convince ourselves that this
+definition of \ml{FAC} does what is intended, let us compute \ml{(FAC 1)}. We recall the
+definitions for \ml{FAC} and \ml{H}:
+\begin{mlalign}
+    FAC $=$ &Y H\\
+    H   $=$ &\tlb{fac}\tlb{n}IF ($=$ n 0) 1 ($*$ n (fac ($-$ n 1)))
+\end{mlalign}
+So
+\begin{mlalign}
+    &FAC 1\\
+    $=$ &Y H 1 \\
+    $=$ &H (Y H) 1 \\
+    $=$ &(\tlb{fac}\tlb{n}IF ($=$ n 0) 1 ($*$ n (fac ($-$ n 1)))) (Y H) 1 \\
+    $\rightarrow$ &(\tlb{n}IF ($=$ n 0) 1 ($*$ n (Y H ($-$ n 1)))) 1 \\
+    $\rightarrow$ &IF ($=$ 1 0) 1 ($*$ 1 (Y H ($-$ 1 1))) \\
+    $\rightarrow$ &$*$ 1 (Y H 0) \\
+    $=$ &$*$ 1 (H (Y H) 0) \\
+    $=$ &$*$ 1 ((\tlb{fac}\tlb{n}IF ($=$ n 0) 1 ($*$ n (fac ($-$ n 1)))) (Y H) 0) \\
+    $\rightarrow$ &$*$ 1 ((\tlb{n}IF ($=$ n 0) 1 ($*$ n (Y H ($-$ n 1)))) 0) \\
+    $\rightarrow$ &$*$ 1 (IF ($=$ 0 0) 1 ($*$ 0 (Y H ($-$ 0 1)))) \\
+    $\rightarrow$ &$*$ 1 1\\
+    $\rightarrow$ &1
+\end{mlalign}
+
+\subsection{\ml{Y} Can Be Defined as a Lambda Abstraction}
+
+We have shown how to transform a recursive definition of \ml{FAC} into a non-recursive one, but we have made use of a mysterious new function \ml{Y}. The
+property that \ml{Y} must possess is
+\begin{mlcoded}
+    Y H $=$ H (Y H)
+\end{mlcoded}
+and this seems to express recursion in its purest form, since we can use it to
+express all other recursive functions. Now here comes the magic: \ml{Y} can be
+defined as a lambda abstraction, without using recursion!
+\begin{mlcoded}
+    Y $=$ (\tlb{h}(\tlb{x}h (x x)) (\tlb{x}h (x x)))
+\end{mlcoded}
+
+To see that \ml{Y} has the required property, let us evaluate
+\begin{mlalign}
+    &Y H \\
+    $=$ &(\tlb{h}(\tlb{x}h (x x)) (\tlb{x}h (x x))) H \\
+    $\leftrightarrow$ &(\tlb{x}H (x x)) (\tlb{x}H (x x)) \\
+    $\leftrightarrow$ &H ((\tlb{x}H (x x)) (\tlb{x}H (x x))) \\
+    $\leftrightarrow$ &H (Y H)
+\end{mlalign}
+and we are home and dry.
+
+For those interested in \textit{polymorphic typing} (see Chapter 8), the only respect
+in which \ml{Y} might be considered an `improper' lambda abstraction is that the
+subexpression \ml{(\tlb{x}h (x x))} does not have a finite type.
+
+The fact that \ml{Y} can be defined as a lambda abstraction is truly remarkable
+from a mathematical point of view. From an implementation point of view,
+however, it is rather inefficient to implement \ml{Y} using its lambda abstraction,
+and most implementations provide \ml{Y} as a built-in function with the reduction
+rule
+\begin{mlcoded}
+    Y H $=$ H (Y H)
+\end{mlcoded}
+
+We mentioned above that a function may have more than one fixed point,
+so the question arises of which fixed point \ml{Y} produces. It seems to be the `right'
+one, in the sense that the reduction sequence of \ml{(FAC 1)} given above does
+mirror our intuitive understanding of recursion, but this is hardly satisfactory
+from a mathematical point of view. The answer is to be found in \textit{domain
+theory}, and the solution produced by \ml{(Y H)} turns out to be the unique \textit{least
+fixpoint} of \ml{H} [Stoy, 1981], where `least' is used in a technical domain-theoretic
+sense.
+
+\section{The Denotational Semantics of the Lambda Calculus}
+
+There are two ways of looking at a function: as an algorithm which will
+produce a value given an argument, or as a set of ordered argument-value
+pairs.
+
+The first view is `dynamic' or \textit{operational}, in that it sees a function as a
+sequence of operations in time. The second view is `static' or \textit{denotational}: the
+function is regarded as a fixed set of associations between arguments and the
+corresponding values.
+
+In the previous three sections we have seen how an expression may be
+evaluated by the repeated application of reduction rules. These rules
+prescribe purely \textit{syntactic} transformations on permitted expressions, without
+reference to what the expressions `mean'; and indeed the lambda calculus can
+be regarded as a formal system for manipulating syntactic symbols. Nevertheless, the development of the conversion rules was based on our intuitions about abstract functions, and this has, in effect, provided us with an
+\textit{operational semantics} for the lambda calculus. But what reason have we to
+suppose that the lambda calculus is an accurate expression of the idea of an
+abstract function?
+
+To answer this question requires us to give a \textit{denotational semantics} for the
+lambda calculus. The framework of denotational semantics will be useful in
+the rest of the book, so we offer a brief sketch of it in the remainder of this
+section.
+
+\subsection{The \eval{} Function}
+
+The purpose of the denotational semantics of a language is to assign a \textit{value} to
+every \textit{expression} in that language. An expression is a \textit{syntactic} object, formed
+according to the syntax rules of the language. A value, by contrast, is an
+\textit{abstract} mathematical object, such as `the number 5', or `the function which
+squares its argument'.
+
+We can therefore express the semantics of a language as a (mathematical)
+function, \eval{}, from expressions to values:
+
+\begin{center}
+        \framebox{\strut\ Expressions\ } $\xrightarrow{\qquad\text{\normalsize \eval{}}\qquad}$ \framebox{\strut\ Values\ }
+\end{center}
+
+We can now write equations such as
+\begin{mlcoded}
+    \evalbb{+ 3 4} = 7
+\end{mlcoded}
+This says `the meaning (i.e. value) of the expression \ml{(+ 3 4)} is the abstract
+numerical value \ml{7}'. We use bold double square brackets to enclose the
+argument to \eval{}, to emphasize that it is a syntactic object. This convention is
+widely used in denotational semantics. We may regard the expression \ml{(+ 3 4)}
+as a \textit{representation} or \textit{denotation} of the value \ml{7} (hence the term \textit{denotational semantics}).
+
+We will now give a very informal development of the \eval{} function for the
+lambda calculus. The task is to give a value for \evalbb{E}, for every lambda
+expression \ml{E}, and we can proceed by direct reference to the syntax of lambda
+expressions (Figure 2.1), which gives the possible forms which \ml{E} might take.
+
+For the moment we will omit the question of constants and built-in
+functions, returning to it in Section 2.5.3. Suppose, then, that \ml{E} is a variable,
+\ml{x}. What should be the value of
+\begin{mlcoded}
+    \evalbb{x}
+\end{mlcoded}
+where \ml{x} is a variable? Unfortunately, the value of a variable is given by its
+surrounding context, so we cannot tell its value in isolation. We can solve this
+problem by giving \eval{} an extra parameter, \tr{}, which gives this contextual
+information. The argument \tr{} is called an environment, and it is a function
+which maps variable names on to their values. Thus
+\begin{mlcoded}
+    \evalbb{x} \tr{} $=$ \tr{} x
+\end{mlcoded}
+
+

@@ -89,7 +89,7 @@ particular high-level language.
 
 The intermediate language into which we will translate the high-level
 functional program is the notation of the lambda calculus (Figure~\ref{fig:implfunctprog}). The
-lambda calculus is an extremely well-studied language, and we give an introduction 
+lambda calculus is an extremely well-studied language, and we give an introduction
 to it in Chapter 2.
 
 \begin{figure}[h]
@@ -151,7 +151,7 @@ and Chapter 9 in which a type-checker is constructed in Miranda.
 \section{Part II: Graph Reduction}
 
 The rest of the book describes how the lambda calculus may be implemented
-using a technique called graph reduction. It is largely independent of the later
+using a technique called \textit{graph reduction}. It is largely independent of the later
 chapters in Part I, Chapters 2--4 being the essential prerequisites.
 
 As a foretaste of things to come, we offer the following brief introduction to
@@ -170,7 +170,7 @@ that is, the function \ml{f} applied to \ml{4}. We can think of the program like
 \end{center}
 where the \ml{@} stands for function application. Applying \ml{f} to \ml{4} gives
 \begin{center}
-	\pstree[nodesep=4pt,levelsep=5ex]{ \TR{\ml{$*$}} }{  
+	\pstree[nodesep=4pt,levelsep=5ex]{ \TR{\ml{$*$}} }{
 		\pstree{\TR{\ml{+}}}{ \TR{\ml{4}} \TR{\ml{1}} }
 		\pstree{\TR{\ml{--}}}{ \TR{\ml{4}} \TR{\ml{1}} }
 	}

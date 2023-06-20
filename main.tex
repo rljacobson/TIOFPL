@@ -2,23 +2,23 @@
 \documentclass[12pt, b5paper, oldfontcommands, draft]{memoir}
 % Margins
 \usepackage[b5paper,total={6in, 9in}]{geometry}
-\geometry{margin=0.5in, top=1in}
+\geometry{margin=2.4cm, top=2.5cm}
 
 % Citations at the end of each chapter
 \usepackage[sectionbib]{natbib}
 \usepackage{chapterbib}
 
 % Required for LaTeXDraw
- \usepackage[usenames,dvipsnames]{pstricks}
- \usepackage{pstricks-add}
- \usepackage{epsfig}
- \usepackage{pst-grad} % For gradients
- \usepackage{pst-plot} % For axes
- \usepackage[space]{grffile} % For spaces in paths
- \usepackage{etoolbox} % For spaces in paths
- \makeatletter % For spaces in paths
- \patchcmd\Gread@eps{\@inputcheck#1 }{\@inputcheck"#1"\relax}{}{}
- \makeatother
+\usepackage[usenames,dvipsnames]{pstricks}
+\usepackage{pstricks-add}
+\usepackage{epsfig}
+\usepackage{pst-grad} % For gradients
+\usepackage{pst-plot} % For axes
+\usepackage[space]{grffile} % For spaces in paths
+\usepackage{etoolbox} % For spaces in paths
+\makeatletter % For spaces in paths
+\patchcmd\Gread@eps{\@inputcheck#1 }{\@inputcheck"#1"\relax}{}{}
+\makeatother
 
 % Required for grammar trees
 \usepackage{pst-node,pst-tree}
@@ -32,23 +32,34 @@
 %\usepackage{fix-cm}
 
 \usepackage{tgheros} % "TEX Gyre Heros", Helvetica, code: qhv
-\usepackage{tgbonum} % "TEX Gyre Bonum", ITCBookman, code: qbk
+%\usepackage{tgbonum} % "TEX Gyre Bonum", ITCBookman, code: qbk
+% Keep commented. Somehow ptm still loads, while uncommenting messes up Greek letters.
+%\usepackage{mathptmx} % Times, code: ptm
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
 \usepackage{anyfontsize}
 %\usepackage{microtype}
-\renewcommand{\rmdefault}{qbk}
-\renewcommand{\sfdefault}{qhv}
+\renewcommand{\rmdefault}{ptm} % Times
+\renewcommand{\sfdefault}{qhv} % Helvetica
 \renewcommand{\familydefault}{\rmdefault}
 
-\usepackage{amsmath, amssymb, amsthm}
+\usepackage[fleqn]{amsmath}
 \usepackage{mathrsfs} % Math script
+\usepackage{mathtools}
 %\usepackage{textgreek} % Greek characters in text mode.
 %\newcommand{\tl}{λ}
 \newcommand{\tlb}[1]{$\boldsymbol{\lambda}$\,#1.\,}
-\newcommand{\tl}{$\boldsymbol{\lambda}$\,{}}
+\newcommand{\tl}{$\boldsymbol{\lambda}$}
+\newcommand{\ta}{$\boldsymbol{\alpha}$}
+\newcommand{\tb}{$\boldsymbol{\beta}$}
+\newcommand{\te}{$\boldsymbol{\eta}$}
+\newcommand{\td}{$\boldsymbol{\delta}$}
+\newcommand{\tr}{$\boldsymbol{\rho}$}
+\newcommand{\conversion}[1]{$\underset{\boldsymbol{#1}}{\leftrightarrow}$}
+\newcommand{\reduction}[1]{$\underset{\boldsymbol{#1}}{\rightarrow}$}
+\newcommand{\antireduction}[1]{$\underset{\boldsymbol{#1}}{\leftarrow}$}
 %\DeclareUnicodeCharacter{03BB}{\lt}
 %\usepackage{newunicodechar}
 %\newunicodechar{λ}{\lt}
@@ -61,6 +72,14 @@
 %\usepackage{tabu} % Tables
 %\usepackage{subcaption} % Subfigures (side-by-side)
 %\usepackage{wrapfig}
+
+
+% Get rid of those hideous arrows
+\usepackage{chemarrow}
+\renewcommand{\rightarrow}{\rarrowfill{1.2em}}
+\renewcommand{\to}{\rarrowfill{1.2em}}
+\renewcommand{\leftarrow}{\larrowfill{1em}}
+\renewcommand{\leftrightarrow}{\larrowfill{1em}\hspace{-0.75em}\rarrowfill{1em}}
 
 % enumerations
 \usepackage{paralist}
@@ -81,7 +100,7 @@
 \newcommand{\vs}{\vspace{.5\baselineskip}}
 \newcommand{\pg}{\clearpage}
 
-% We create a math mode for the Miranda code, because there is occassional need
+% We create a math mode for the Miranda code, because there is occasional need
 % for mathematical operators.
 %\usepackage{sansmath}
 %\usepackage{mathastext}
@@ -106,12 +125,23 @@
 }
 \newenvironment{mlalign}{
 	\begin{mlcoded}\setlength{\tabcolsep}{2pt}
+%    \vspace{-.3cm}
 	\begin{tabular}{rl}
 }{
 	\end{tabular}
+%    \vspace{-.2cm}
 	\end{mlcoded}
 }
 
+\usepackage{environ}
+
+\NewEnviron{mlnumbered}{%
+    \begin{equation}
+    \text{\hspace{-0.9em}\ml{\BODY}}%
+    \end{equation}%
+}{%
+%what goes here?
+}
 
 % Inline Miranda code: "this is \ml{f x} applied to...."
 %\newcommand{\ml}[1]{{\sansmath$#1$}}
@@ -176,6 +206,9 @@
 % For underlining the chapter number
 \usepackage{calc}
 
+\usepackage{caption}
+\captionsetup{labelsep=quad,font={sf}}
+
 % Section Formatting
 \usepackage{titlesec}
 
@@ -222,8 +255,9 @@
 \titleclass{\part}{top}
 \newcommand{\partbreak}{\clearpage\thispagestyle{empty}}
 % Section heading spacing
-\titleformat{\section}{\large\bf}{\textsf{\thesection}}{8pt}{\textsf}[]
+\titleformat{\section}{\bf}{\textsf{\thesection}}{8pt}{\textsf}[]
 \titleformat{\subsection}{\large}{\textsf{\thesubsection}}{8pt}{\textsf}
+%\titleformat{\subsubsection}{\large}{\textsf{\thesubsubsection}}{8pt}{\textsf}
 
 % Removes page numbers on first part/chapter/title pages. Since it clobbers the plain page
 % style, we can't use that style anywhere.
@@ -285,11 +319,66 @@
 		% 	}%
 		% }
 
-		\caption{#2}
+		\caption{\textsf #2}
 	\end{figure}
 }
 
+\newcommand{\theorembox}[2]{
+    {\centering
 
+        {%
+            \vspace{0.5\baselineskip}
+            \setlength{\fboxrule}{1pt}%
+            \setlength{\fboxsep}{10pt}%
+            \fbox{%
+                \begin{minipage}{0.9\textwidth}
+                    \small
+                    \setlength{\parindent}{10pt}
+					\setlength{\parskip}{0mm plus 0mm minus 0mm}
+                    {\centering
+
+                        THEOREM
+
+                    }
+                    \vspace{0.4\baselineskip}
+
+                    \noindent\textit{#1}
+                    \vspace{0.4\baselineskip}
+
+                    \noindent #2
+                \end{minipage}%
+            }%
+            \vspace{0.5\baselineskip}
+        }%
+
+    }%
+}
+
+\newcommand{\plainbox}[1]{
+    {\centering
+
+        {%
+            \vspace{0.5\baselineskip}
+            \setlength{\fboxrule}{1pt}%
+            \setlength{\fboxsep}{10pt}%
+            \fbox{%
+                \begin{minipage}{0.9\textwidth}
+                    \small
+                    \setlength{\parindent}{10pt}
+                    \setlength{\parskip}{0mm plus 0mm minus 0mm}
+                    \noindent #1
+                \end{minipage}%
+            }%
+            \vspace{0.5\baselineskip}
+        }%
+
+    }
+}
+
+\newenvironment{pcorollary}{\begin{quote}\textit{Corollary.\;}}{\end{quote}}
+\newenvironment{pproof}{\begin{quote}\textit{Proof.\;}}{\end{quote}}
+\newcommand{\eval}{\ml{\bfseries Eval}}
+\newcommand{\evalbb}[1]{\ml{\bfseries Eval[[\ }\ml{#1}\ml{\bfseries\ ]]}}
 
 \begin{document}
 
