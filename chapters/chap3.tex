@@ -1,0 +1,94 @@
+\chapter[Translating a high-level functional language into the lambda calculus][Translating a high-level functional language into the lambda calculus]{Translating a high-level\\ functional language into the\\ lambda calculus}
+
+In the next few chapters we will describe how to translate a high-level functional language into the lambda calculus. We can regard this translation in two ways:
+
+\begin{numbered}
+    \item As a description of the semantics of the language, giving the meaning of each of its constructs in terms of lambda expressions, whose meaning is well understood. This is precisely the approach taken by \textit{denotational semantics} [Gordon 1979].
+    \item As a step in the implementation of the high-level language, by expressing all its constructs in terms of the lambda notation.
+\end{numbered}
+
+For the sake of definiteness we use a subset of the language Miranda [Turner 1985], but the techniques apply to any functional language. An introduction to Miranda can be found in the Appendix.
+\vfill
+
+\plainbox{
+    \footnotesize
+    {\centering
+
+    \textbf{Disclaimer:}
+
+    }
+    \noindent In this book Miranda is used as an example of a modern functional programming language, to illustrate various points about the implementation of functional programming languages in general. This book is not intended to be a source of reference for the definition of Miranda. Note that:
+    \begin{numbered}
+        \item Miranda has a number of features, both major and minor, which are not discussed here at all.
+        \item The material about Miranda in this book was based on a prerelease version of the Miranda system and may therefore be inaccurate by the time it is published.
+    \end{numbered}
+
+    The Miranda functional programming system is a product of Research Software Limited, and a full description of the language and its programming environment is in preparation by them.
+}
+
+\section{The Overall Structure of the Translation Process}
+Miranda is a powerful, high-level functional language, providing a rich set of programming constructs. The purpose of the next few chapters is to demonstrate how some of these constructs can be translated into the lambda calculus. Specifically, we will discuss structured data types, pattern-matching, conditional equations and ZF expressions. Miranda includes a number of other constructs, such as abstract data types and structured data types with laws, which we will not study in this book.
+
+Even so, the translation we describe is a substantial task, and we begin by outlining the structure of the translation process. It might be possible to translate a program directly from Miranda into the lambda calculus, but this would be an extremely complicated translation, so we will take a more step-by-step approach. In order to do this, it is convenient to regard much of the translation as a process of successively \textit{transforming} one program into another, until finally the result is a program in the lambda notation. (We are here using `translation' to suggest a process which takes a program in one language and produces a program in another, while a `transformation' produces a program in the \textit{same} language.)
+
+Two ways of organizing the translation then suggest themselves:
+
+\begin{numbered}
+    \item We could perform most of the translation by successive transformations of one Miranda program into another, each transformation performing a simplification step. We would complete the process by translating the resulting (simple) Miranda program into the lambda calculus. The idea is that the earlier transformations would have done all the hard work, so the final step should consist of little more than a change of syntax.
+
+    \item Alternatively, we could begin the translation by performing a simple syntactic translation of the Miranda program into an enriched version of the lambda calculus. This enriched lambda calculus would include the ordinary lambda calculus as a subset, but would also include extra constructs, chosen so that the first step consists of little more than a change of syntax. Then we could do most of the hard work by successively transforming the expression into simpler and simpler forms, until it becomes an ordinary lambda expression, free from any of the extra constructs.
+\end{numbered}
+
+Initially, the first method looks more attractive than the second, because it does not require us to define a new language (the enriched lambda calculus). However, we choose to follow the second course of action for the following reasons:
+
+\begin{numbered}
+    \item Miranda is designed to be a language for programmers, not compilers, and it lacks certain features that are desirable for a transformation-based compiler. (The particular features lacking are lambda abstractions and the ability to qualify any expression with local definitions. This is not a criticism of Miranda -- it just has a different purpose.)
+
+    \item To a much greater extent than is the case for imperative languages, functional languages are largely syntactic variations of one another, with relatively few semantic differences. Using the second method allows the transformations we present to be applied easily to other languages, by altering only the translation of the high-level language into the enriched lambda calculus.
+\end{numbered}
+
+Figure 3.1 depicts the overall plan of action. We will use the term \textit{ordinary lambda calculus} to refer to the language described in Chapter 2, and \textit{enriched lambda calculus} to refer to the language introduced here.
+
+The enriched lambda calculus is simply the ordinary lambda calculus augmented with extra constructs, chosen to allow an easy translation from Miranda. For each construct we will:
+
+\begin{numbered}
+    \item say what it looks like (give its syntax);
+    \item say what it means (give its semantics).
+\end{numbered}
+
+\boxedfigure{
+    \centering\sffamily\footnotesize
+
+    \begin{minipage}{10cm}
+        \centering
+
+        \framebox{\ Miranda program\ }\\
+        \hspace{4cm}$\Bigg\downarrow$ \begin{minipage}{4cm}
+            {A simple translation\\ (specific to Miranda)}
+        \end{minipage}\\
+        \framebox{\
+            \begin{minipage}{4.5cm}
+                {Expression in the\\ enriched lambda calculus}
+            \end{minipage}
+            \ }\\
+        \hspace{4cm}$\Bigg\downarrow$ \begin{minipage}{4cm}
+            {Multiple transformations\\ (independent of Miranda)}
+        \end{minipage}\\
+        \framebox{\
+            \begin{minipage}{4.5cm}
+                {Expression in the\\ ordinary lambda calculus}
+            \end{minipage}
+            \ }\\
+
+    \end{minipage}
+
+}{Translation of Miranda into the lambda calculus}
+
+
+The semantics for each construct can be given by providing a simple transformation which shows how to express that construct in terms of the ordinary lambda calculus. Then we could, in principle, translate from Miranda into the ordinary lambda calculus by first translating into the enriched lambda calculus, and then using the semantics of each construct repeatedly to transform the expression into an ordinary lambda expression.
+
+
+While this method generates correct results, far greater efficiency is attainable by using more complicated transformations, but we can always confirm their correctness by reference to the inefficient version.
+
+\section{The Enriched Lambda Calculus}
+The enriched lambda calculus is a superset of the ordinary lambda calculus, so that any expression in the ordinary lambda calculus is also an expression in the enriched lambda calculus. The syntax for function application, lambda

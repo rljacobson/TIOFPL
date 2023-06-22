@@ -1003,3 +1003,341 @@ which maps variable names on to their values. Thus
 \end{mlcoded}
 
 
+The notation \ml{(\tr{} x)}, on the right-hand side, means 'the function \ml{(\tr{})} applied to
+the argument \ml{(x)}'.
+
+Next we treat applications. It seems reasonable that the value of \ml{(E$_1$ E$_2$)}
+should be the value of \ml{(E$_1$)} applied to the value of \ml{(E$_2$)}:
+\begin{mlcoded}
+    \evalbb{E$_1$ E$_2$} \tr{} $=$ (\evalbb{E$_1$} \tr{}) (\evalbb{E$_2$} \tr{})
+\end{mlcoded}
+The final case is that of a lambda abstraction. What should be the value of
+(\evalbb{\tlb{x. E}} \tr{})? It is certainly a function, and so we can fully define it by
+giving its value when applied to an arbitrary argument, \ml{(a)}:
+\begin{mlcoded}
+    (\evalbb{\tlb{x} E} \tr{}) a
+\end{mlcoded}
+(Following our usual conventions about currying, we will omit the brackets in
+future.) The following statement sums up our intuitions about lambda
+abstractions:
+\begin{quote}
+The value of a lambda abstraction, applied to an argument, is the value of
+the body of the lambda abstraction, in a context where the formal
+parameter is bound to the argument.
+\end{quote}
+Formally, we write
+\begin{mlcoded}
+    \evalbb{\tlb{x}E} \tr{} a $=$ \evalbb{E} \tr{}[x$=$a]
+\end{mlcoded}
+where the notation \ml{(\tr{}[x=a])} means `the function \ml{(\tr{})} extended with the
+information that the variable \ml{(x)} is bound to the value \ml{(a)}'. More precisely:
+\begin{mlalign}
+    \tr{}[x$=$a] x & $=$ a \\
+    \tr{}[x$=$a] y & $=$ \tr{} y
+\end{mlalign}
+if \ml{(y)} is a different variable from \ml{(x)}.
+
+That's it! Apart from constants and built-in functions, each of which require
+individual treatment, we have now provided a simple denotational semantics
+for the lambda calculus. Figure 2.5 summarizes our progress.
+
+Needless to say, this account is greatly simplified (though hopefully not
+misleading). The main component that is missing is a description of the
+collection of all possible values which \eval{} can produce. This collection is
+called a \textit{domain}, and it is quite a complicated structure, since it includes all the functions and data values that can be denoted by a lambda expression.
+
+\boxedfigure{
+    \small
+\begin{tabular}{ll}
+    \evalbb{k} \tr{} & $=$ <see Section 2.5.3> \\
+    \evalbb{x} \tr{} & \ml{$=$ \tr{} x} \\
+    \evalbb{E$_1$ E$_2$} \tr{} & \ml{$=$ (\evalbb{E$_1$} \tr{})\quad (\evalbb{E$_2$} \tr{})} \\
+    \ml{\evalbb{\tlb{x. E}} \tr{} a} & \ml{$=$ \evalbb{E} \tr{}[x=a]}
+\end{tabular}
+\vs
+
+\begin{tabular}{rll}
+    \hspace{2em}where\hspace{1em} &\ml{k} &is a constant or built-in function\\
+          &\ml{x} &is a variable\\
+          &\ml{E}, \ml{E$_1$}, \ml{E$_2$} &are expressions
+\end{tabular}
+}{Denotational semantics of the lambda calculus}
+
+\noindent The
+really serious complication is that, in view of the self-application required in
+the \tl{} abstraction for \ml{Y}, the domain must include its own function space. Giving a sound theory to such domains is the purpose of \textit{domain theory} [Scott 1981].
+
+We will take the existence and soundness of domain theory and denotational semantics for granted, and the framework they provide will prove to be
+quite useful. They are rich and beautiful areas of computer science, and Stoy
+[1981] is a good starting-point for further reading.
+
+\textit{A note on notation}: as we have seen, the environment \tr{} is an essential
+argument to \eval{}. Nevertheless, in all the situations where we use \eval{} in the
+rest of this book, \tr{} plays no significant role. For the sake of simplicity, we will
+therefore omit the argument \tr{} from now on -- it could be restored by adding \tr{}
+to every call of \eval{}. For example, we will write
+
+\begin{mlalign}
+    \evalbb{E$_1$} & $=$ \evalbb{E$_2$}
+\end{mlalign}
+
+where we should more correctly write
+
+\begin{mlalign}
+    \evalbb{E$_1$} \tr{} & $=$ \evalbb{E$_2$} \tr{}
+\end{mlalign}
+
+\subsection{The Symbol $\bot$}
+
+One of the most useful features of the theory we have described in this section
+is that it gives us a way to reason about the termination (or otherwise) of
+programs.
+
+As remarked in Section 2.3, the reduction of an expression may not reach a
+normal form. What value should the semantics assign to such programs? All
+that we have to do is to include an element $\bot$, pronounced `bottom', in the
+value domain, which is the value assigned to an expression without a normal
+form:
+
+\begin{mlcoded}
+    \evalbb{{\normalfont <expression with no normal form>}} $= \bot$
+\end{mlcoded}
+
+\noindent$\bot$ has a perfectly respectable mathematical meaning in domain theory, and,
+like the symbol \ml{0} (which also stands for `nothing'), its use often allows us to
+write down succinct equations instead of rambling words. For example,
+instead of saying `the evaluation of the expression \ml{E} fails to terminate', we can
+write
+
+\begin{mlalign}
+    \evalbb{E} & $= \bot$
+\end{mlalign}
+
+\subsection{Defining the Semantics of Built-in Functions and Constants}
+
+In this section we will see how to define the value of \evalbb{k}, where \ml{k} is a
+constant or built-in function.
+
+For example, what is the value of \evalbb{$*$}? It is certainly a function of two arguments, and we can define it by giving the value of this function
+applied to arbitrary arguments:
+\begin{mlcoded}
+    \evalbb{$*$} a b $=$ a $\times$ b
+\end{mlcoded}
+This gives the meaning of the lambda calculus $*$ in terms of the mathematical
+operation of multiplication $\times$. The distinction between the $*$ and $\times$ is crucial:
+the $*$ is a syntactic expression in the lambda calculus, while $\times$ is the abstract
+mathematical operation. In the case of multiplication, the mathematical
+notation $\times$ differs from the program notation $*$, but in the case of addition (for
+example) the symbol $+$ is used by both. This is a ready source of confusion,
+and we must keep a clear head!
+
+We will use lower-case letters, such as $a$ and $b$, to stand for values in
+semantic equations.
+
+The equation given above is, however, an incomplete specification for $*$
+We must define what $*$ does to each possible argument, including $\bot$. The full
+set of equations should therefore be:
+\begin{mlcoded}
+    \evalbb{$*$} a b $=$ a $\times$ b \qquad {\normalfont if} a $\neq \bot$ {\normalfont and} b $\neq \bot$ \\
+    \evalbb{$*$} $\bot$ b $= \bot$ \\
+    \evalbb{$*$} a $\bot = \bot$
+\end{mlcoded}
+The two new equations complete the definition of $*$, by specifying that if
+either argument of $*$ fails to terminate, then so does the application of $*$.
+They are not the only possible set of equations for a multiplication
+operator. For example, here are the equations for a more `intelligent'
+multiplication operator, \textit{\#}:
+\begin{mlcoded}
+    \hspace{-2em}
+    \begin{tabular}{ll}
+        \evalbb{\textit{\#}} a b $=$ a $\times$ b &{\normalfont if} a $\neq \bot$ {\normalfont and} a $\neq$ 0 {\normalfont and} b $\neq \bot$\\
+    \evalbb{\textit{\#}} 0 b $=$ 0 &\\
+    \evalbb{\textit{\#}} a $\bot = \bot$ &{\normalfont if} a $\neq$ 0 \\
+    \evalbb{\textit{\#}} $\bot$ b $= \bot$ &
+    \end{tabular}
+\end{mlcoded}
+These equations imply that \textit{\#} should evaluate its first argument and, if it is
+zero, return the result zero without examining the second argument at all;
+otherwise it behaves just like $*$. Using \textit{\#} instead of $*$ would cause the
+evaluation of some expressions to terminate when they would not have done
+so before.
+
+The point of the example is that the semantic equations for a built-in
+function enable us to express subtle variations in its behavior, with a precision
+that is hard to achieve by giving reduction rules. The semantic equations for a
+function both specify the meaning of the function and imply its operational
+behavior (reduction rules).
+
+Strictly speaking we should also provide equations such as
+\begin{mlalign}
+    \evalbb{6} & $=$ 6
+\end{mlalign}
+where the `\ml{6}' on the left-hand side is a lambda expression, and the `\ml{6}' on the
+right-hand side is the abstract mathematical object. Ideally, we should distinguish the two kinds of `\ml{6}' typographically, but common practice is to
+write them in the same way and distinguish them only by context. This applies
+to all constants and built-in functions. Thus we write
+\begin{mlcoded}
+    \evalbb{TRUE} $=$ TRUE \\
+    \evalbb{IF} $=$ IF \\
+    \evalbb{$+$} $= +$
+\end{mlcoded}
+and so on.
+
+This is sloppy, but it saves clutter. For example, using this more relaxed
+notation, we could write the following semantic equations for the built-in
+function \ml{IF}:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{2pt}
+    \begin{tabular}{lll}
+    &IF TRUE &a b $=$ a \\
+    &IF FALSE &a b $=$ b \\
+    &IF $\bot$ &a b $=$ $\bot$
+    \end{tabular}
+\end{mlcoded}
+The use of $=$ and the occurrence of $\bot$ continue to remind us that we are looking
+at semantic equations rather than reduction rules.
+
+\subsection{Strictness and Laziness}
+
+We say that a function is \textit{strict} if it is sure to need the value of its argument.
+This is a concept that will arise repeatedly in the book. Can we give a
+denotational definition of strictness?
+
+If a function, \ml{f}, is sure to need the value of its argument, and the evaluation
+of the argument will not terminate, then the application of \ml{f} to the argument
+will certainly fail to terminate. This verbose, operational argument suggests
+the following concise, denotational, definition of strictness:
+
+\definitionbox{\vspace{-1.2\baselineskip}}{
+{\centering
+A function \ml{f} is \textit{strict} if and only if\\
+\ml{f $\bot = \bot$}
+
+}
+}
+
+The definition generalizes easily to functions of several arguments. For
+example, if \ml{g} is a function of three arguments, then \ml{g} is strict in its second
+argument if and only if
+\begin{mlcoded}
+    g a $\bot$ c $= \bot$
+\end{mlcoded}
+for all values of \ml{a} and \ml{c}.
+
+If a function is non-strict, we say that it is \textit{lazy}. Technically, this is an abuse
+of terminology, since lazy evaluation is an implementation technique which
+implements non-strict semantics. However, `lazy' is such an evocative term
+that it is often used where `non-strict' would be more correct.
+
+\subsection{The Correctness of the Conversion Rules}
+
+The conversion rules given earlier in this chapter express equivalences
+between lambda expressions. It is vital that these equivalences are mirrored in
+the denotational world. For example, using \ta-conversion we may write
+\begin{mlcoded}
+    (\tlb{x}+ x 1) \conversion{\alpha} (\tlb{y}+ y 1)
+\end{mlcoded}
+Our hope is that both of these expressions mean the same thing or, more
+precisely, denote the same function, so that
+\begin{mlcoded}
+    \evalbb{\tlb{x} + x 1} = \evalbb{\tlb{y}+ y 1}
+\end{mlcoded}
+In general, we hope that \textit{conversion preserves meaning}, which we may state
+as follows:
+\begin{mlcoded}
+    E$_1$ $\rightarrow$ E$_2$
+\end{mlcoded}
+implies
+\begin{mlcoded}
+    \evalbb{E$_1$} $=$ \evalbb{E$_2$}
+\end{mlcoded}
+In other words, if E$_1$ is convertible to E$_2$ then the meaning of E$_1$ is certainly the
+same as the meaning of E$_2$. (As we will see in the next section, however, the
+reverse is not always true.) There is a burden of proof here, to show that the
+above statement always holds, given the conversion rules and the semantic
+function \eval. We will content ourselves with observing that proof is required,
+leaving the hard work to [Stoy 1981].
+Since the reduction rules (\tb-reduction and \te-reduction) are a subset of the
+conversion rules, we certainly know that
+\begin{mlcoded}
+    E$_1$ \reduction{\beta} E$_2$
+\end{mlcoded}
+implies
+\begin{mlcoded}
+    E$_1$ $\rightarrow$ E$_2$
+\end{mlcoded}
+and hence
+\begin{mlcoded}
+    E$_1$ \reduction{\beta} E$_2$
+\end{mlcoded}
+implies
+\begin{mlcoded}
+    \evalbb{E$_1$} $=$ \evalbb{E$_2$}
+\end{mlcoded}
+
+\subsection{Equality and Convertibility}
+
+In the previous section we saw that conversion preserves equality. But is the
+reverse true? In particular, does the equality of two expressions imply their
+interconvertibility? The answer is `no', as the following example shows.
+Consider the two lambda abstractions, which we will call F$_1$ and F$_2$:
+\begin{mlalign}
+    F$_1$ & $=$ \tlb{x}$+$ x x \\
+    F$_2$ & $=$ \tlb{x}$*$ x 2
+\end{mlalign}
+It is clear that F$_1$ cannot be converted into F$_2$ using the conversion rules of the
+lambda calculus. To a mathematician, however, a function is a `black box',
+and two functions are the same if (and only if) they give the same result for
+each possible argument. This sort of equality of functions is called \textit{extensional
+equality}. The function denoted by F$_1$ and that denoted by F$_2$ are certainly
+(extensionally) equal, so we may write
+\begin{mlcoded}
+    \evalbb{F$_1$} $=$ \evalbb{F$_2$}
+\end{mlcoded}
+So F$_1$ and F$_2$ are not interconvertible, but they do denote the same function.
+
+To summarize the main conclusion:
+
+\hspace{-1.5em}
+\begin{tabular}{ll}
+if & \ml{E$_1$ \conversion{\alpha} E$_2$} \\
+then  \quad\quad & \ml{\evalbb{E$_1$} $=$ \evalbb{E$_2$}}\\
+\end{tabular}\\
+but not necessarily the other way around.
+
+We can therefore regard conversion as a weak form of reasoning about the
+equality of expressions. It can never cause us to believe that two expressions
+are equal when they are not, but it may not allow us to prove the equality of
+two expressions which are in fact equal. From this point of view, reduction is a
+still weaker form of inference.
+
+\section{Summary}
+A working understanding of the lambda calculus will prove extremely useful
+for the rest of the book, and in this chapter we have tried to give a compact
+summary of the material we will require. The treatment has necessarily been
+rather superficial, and the reader is again referred to Stoy [1981] or
+Barendregt [1984] for fuller treatments.
+
+\section*{References}
+\begin{references}
+\item Barendregt, H.P. 1984. \textit{The Lambda Calculus -- Its Syntax and Semantics}, 2nd edition.
+North-Holland.
+\item Church, A. 1941. \textit{The Calculi of Lambda Conversion}. Princeton University Press.
+\item Curry, H.B., and Feys, R. 1958. \textit{Combinatory Logic}, Vol. 1. North-Holland.
+\item Kennaway, J.R. 1984. \textit{An Outline of Some Results of Staples on Optimal Reduction
+Orders in Replacement Systems}. CSA/19/1984. School of Information Systems,
+University of East Anglia March.
+\item Levy, J.J. 1980. Optimal reductions in the lambda calculus. In \textit{Essays on Combinatory
+Logic}, pp. 159-92. Hindley and Seldin (editors). Academic Press.
+\item Rosser, J.B. 1982. Highlights of the history of the lambda calculus. \textit{Proceedings of the
+ACM Symposium on Lisp and Functional Programming}, Pittsburgh, pp. 216-25.
+\item Schonfinkel, M. 1924. Uber die Bausteine der mathematischen Logik. \textit{Mathematische
+Annalen.} Vol. 92, pp. 305-16.
+\item Scott, D. 1981. \textit{Lectures on a Mathematical Theory of Computation}. PRG-19.
+Programming Research Group, Oxford. May.
+\item Staples, J. 1980a. Computation on graph-like expressions. \textit{Theoretical Computer Science}. Vol. 10, pp. 171-85.
+\item Staples, J. 1980b. Optimal evaluations of graph-like expressions. \textit{Theoretical Computer Science}. Vol. 10, pp. 297-316.
+\item Staples, J. 1980c. Speeding up subtree replacement systems. \textit{Theoretical Computer Science}. Vol. 11, pp. 39-47.
+\item Stoy, J.E. 1981. \textit{Denotational Semantics}. MIT Press.
+\item Welch, P. 1975. \textit{Some Notes on the Martin-L\"of Proof of the Church Rosser Theorem as Rediscovered by Park}. Computer Lab., University of Kent. October.
+\end{references}

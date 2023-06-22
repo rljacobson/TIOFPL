@@ -5,8 +5,9 @@
 \geometry{margin=2.4cm, top=2.5cm}
 
 % Citations at the end of each chapter
-\usepackage[sectionbib]{natbib}
+\usepackage[sectionbib,square,comma]{natbib}
 \usepackage{chapterbib}
+\bibliographystyle{bib/genbibstyle}
 
 % Required for LaTeXDraw
 \usepackage[usenames,dvipsnames]{pstricks}
@@ -41,6 +42,7 @@
 \usepackage[english]{babel}
 \usepackage{anyfontsize}
 %\usepackage{microtype}
+\usepackage{sfmath} % Sans Serif math fonts
 \renewcommand{\rmdefault}{ptm} % Times
 \renewcommand{\sfdefault}{qhv} % Helvetica
 \renewcommand{\familydefault}{\rmdefault}
@@ -80,6 +82,9 @@
 \renewcommand{\to}{\rarrowfill{1.2em}}
 \renewcommand{\leftarrow}{\larrowfill{1em}}
 \renewcommand{\leftrightarrow}{\larrowfill{1em}\hspace{-0.75em}\rarrowfill{1em}}
+\newcommand{\xdownarrow}[1]{%
+    {\left\downarrow\vbox to #1{}\right.\kern-\nulldelimiterspace}
+}
 
 % enumerations
 \usepackage{paralist}
@@ -237,10 +242,11 @@
 }{.7cm}
 {
 %	{\vspace{-1.1\baselineskip}\hrule height 3pt width 1.25in \relax}\vspace{\baselineskip}
-	\upshape\LARGE\sffamily\MakeUppercase
+	\upshape\Large\sffamily\MakeUppercase
 }[]
-\titlespacing*{\chapter}{ 1.7cm}{ 1cm}{3cm}  %[ right sep ]
+\titlespacing*{\chapter}{ 1.7cm}{ 1cm}{1cm}  %[ right sep ]
 \newcommand{\chapterbreak}{\clearpage\thispagestyle{empty}}
+
 % Part title formatting - identical to chapter formatting
 \titleformat{\part}[display]{\normalfont\fontsize{30}{20}\selectfont\itshape \sffamily}{
 	\makebox[2pt][l]{\hspace{-1.7cm}
@@ -255,8 +261,9 @@
 \titleclass{\part}{top}
 \newcommand{\partbreak}{\clearpage\thispagestyle{empty}}
 % Section heading spacing
-\titleformat{\section}{\bf}{\textsf{\thesection}}{8pt}{\textsf}[]
-\titleformat{\subsection}{\large}{\textsf{\thesubsection}}{8pt}{\textsf}
+% \titleformat{<command>}[<shape>]{<format>}{<label>}{<sec>}{<before-code>}[<after-code>]
+\titleformat{\section}{\bf\sffamily}{\thesection}{8pt}{}
+\titleformat{\subsection}{\sffamily}{\thesubsection}{8pt}{}
 %\titleformat{\subsubsection}{\large}{\textsf{\thesubsubsection}}{8pt}{\textsf}
 
 % Removes page numbers on first part/chapter/title pages. Since it clobbers the plain page
@@ -323,36 +330,6 @@
 	\end{figure}
 }
 
-\newcommand{\theorembox}[2]{
-    {\centering
-
-        {%
-            \vspace{0.5\baselineskip}
-            \setlength{\fboxrule}{1pt}%
-            \setlength{\fboxsep}{10pt}%
-            \fbox{%
-                \begin{minipage}{0.9\textwidth}
-                    \small
-                    \setlength{\parindent}{10pt}
-					\setlength{\parskip}{0mm plus 0mm minus 0mm}
-                    {\centering
-
-                        THEOREM
-
-                    }
-                    \vspace{0.4\baselineskip}
-
-                    \noindent\textit{#1}
-                    \vspace{0.4\baselineskip}
-
-                    \noindent #2
-                \end{minipage}%
-            }%
-            \vspace{0.5\baselineskip}
-        }%
-
-    }%
-}
 
 \newcommand{\plainbox}[1]{
     {\centering
@@ -366,7 +343,7 @@
                     \small
                     \setlength{\parindent}{10pt}
                     \setlength{\parskip}{0mm plus 0mm minus 0mm}
-                    \noindent #1
+                    #1
                 \end{minipage}%
             }%
             \vspace{0.5\baselineskip}
@@ -375,10 +352,32 @@
     }
 }
 
+
+\newcommand{\titledbox}[3]{%
+\plainbox{%
+{\centering
+
+#1
+
+}
+\vspace{0.4\baselineskip}
+
+\noindent\textit{#2}
+\vspace{0.4\baselineskip}
+
+\noindent #3
+}%
+}%
+
+\newcommand{\theorembox}[2]{\titledbox{THEOREM}{\noindent #1}{\noindent #2}}
+\newcommand{\definitionbox}[2]{\titledbox{DEFINITION}{\noindent #1}{\noindent #2}}
+
 \newenvironment{pcorollary}{\begin{quote}\textit{Corollary.\;}}{\end{quote}}
 \newenvironment{pproof}{\begin{quote}\textit{Proof.\;}}{\end{quote}}
 \newcommand{\eval}{\ml{\bfseries Eval}}
-\newcommand{\evalbb}[1]{\ml{\bfseries Eval[[\ }\ml{#1}\ml{\bfseries\ ]]}}
+
+\def\bracketadjust{\hspace{-1.2pt}}
+\newcommand{\evalbb}[1]{\ml{\mbox{\bfseries Eval[\bracketadjust[\ }}\ml{#1}\ml{\mbox{\bfseries\ ]\bracketadjust]}}}
 
 \begin{document}
 
@@ -413,8 +412,9 @@
 \part[Compiling High-Level Functional Languages]{Compiling High-Level\\ Functional Languages}
 
 \include{chapters/chap2}
+\include{chapters/chap3}
 
-\backmatter
+%\backmatter
 
 %\include{appendix}
 
