@@ -92,3 +92,262 @@ While this method generates correct results, far greater efficiency is attainabl
 
 \section{The Enriched Lambda Calculus}
 The enriched lambda calculus is a superset of the ordinary lambda calculus, so that any expression in the ordinary lambda calculus is also an expression in the enriched lambda calculus. The syntax for function application, lambda
+abstractions, constants and built-in functions therefore remains exactly as described in Chapter 2. Likewise, all functions are written in prefix form, and the same conventions hold concerning brackets.
+
+The only difference from the ordinary lambda calculus is the provision of four extra constructs. They are:
+
+\begin{numbered}
+    \item \ml{let}-expressions and \ml{letrec}-expressions;
+    \item pattern-matching lambda abstractions;
+    \item the infix operator \fatbar;
+    \item case-expressions.
+\end{numbered}
+
+Of these, we will only describe the first here. The other three all concern pattern-matching, and cannot be defined before the discussion of pattern-matching itself. This is given in Chapter 4, and the remaining three constructs are defined there.
+
+Figure 3.2 summarizes the syntax of the enriched lambda calculus for future reference.
+
+\subsection{Simple let-expressions}
+One of the main constructs in any functional language is the \textit{definition}, whereby a name is bound to a value. This mechanism is provided in the enriched lambda calculus, using \ml{let}-expressions and \ml{letrec}-expressions.
+
+We begin by defining \textit{simple} \ml{let}-expressions. They are called `simple' by contrast with \textit{pattern-matching} \ml{let}-expressions, which we deal with later. A simple \ml{let}-expression has the following syntax:
+\begin{mlcoded}
+    let v = B in E
+\end{mlcoded}
+
+\boxedfigure{
+\hspace{-2em}
+\begin{tabular}{llll}
+    <exp> & ::= & <constant> & Constants \\
+          & | & <variable>   & Variables \\
+          & | & <exp> <exp>  & Applications \\
+          & | & \tl{} <variable> . <exp>   & Lambda abstractions \\
+          & | & \ml{let\phantom{rec}} <pattern> = <exp> \ml{in} <exp> & \ml{Let}-expressions \\
+          & | & \ml{letrec} <pattern> = <exp>  & \ml{Letrec}-expressions \\
+          &   & \phantom{\ml{letrec}} $\cdots$ & \\
+          &   & \phantom{\ml{letrec}} <pattern> = <exp>  &  \\
+          &   & \ml{in} <exp> & \\
+          & | & <exp> \fatbar{} <exp>  & Fat bar \\
+          & | & \ml{case} <variable> \ml{of} & \ml{Case}-expression \\
+          &   & <pattern>\quad $\Rightarrow$\quad <exp> & \\
+          &   & $\cdots$ & \\
+          &   & <pattern>\quad $\Rightarrow$\quad <exp> & \\
+\end{tabular}
+
+\hspace{-2em}
+\begin{tabular}{lllll}
+    <pattern> & ::= & <constant> &  & Constant patterns\\
+              & |   & <variable> &  & Variable patterns\\
+              & |   & <constructor> & <pattern> ,\qquad\qquad  & Constructor patterns\\
+              &     &  & $\cdots$  & \\
+              &     &  & <pattern>  & \\
+\end{tabular}
+
+}{Syntax of enriched lambda expressions}
+
+
+\noindent where the \ml{v} is a variable, and \ml{B} and \ml{E} are expressions in the (enriched) lambda notation.
+
+It introduces a definition for a variable \ml{v}, which binds \ml{v} to \ml{B} in \ml{E}. The definition is in scope with \ml{E} but not \ml{B}. We say that the `\ml{v = B}' is the \textit{definition of the} \ml{let}, the \ml{v} is the variable \textit{bound by the} \ml{let}, and the \ml{B} is the \textit{definition body}.
+
+For example, consider the following \ml{let}-expression:
+\begin{mlcoded}
+    let x $=$ 3 in ($*$ x x)
+\end{mlcoded}
+Intuitively, the value of this expression is found by substituting \ml{3} for \ml{x} in the body \ml{($*$ x x)}, and then evaluating the body, giving the result \ml{9}:
+\begin{mlalign}
+    & let x $=$ 3 in ($*$ x x)\\
+    $\rightarrow$ & $*$ 3 3\\
+    $\rightarrow$ & 9
+\end{mlalign}
+
+A \ml{let}-expression is an expression like any other, and can be used in the same way as any other expression. For example,
+\begin{mlalign}
+    & $+$ 1 (let x $=$ 3 in ($*$ x x))\\
+    $\rightarrow$ & $+$ 1 ($*$ 3 3)\\
+    $\rightarrow$ & $+$ 1 9\\
+    $\rightarrow$ & 10
+\end{mlalign}
+
+For the same reason, \ml{let}-expresions can be nested:
+\begin{mlalign}
+    & let x $=$ 3 in (let y $=$ 4 in ($*$ x y))\\
+    $\rightarrow$ & let y $=$ 4 in ($*$ 3 y)\\
+    $\rightarrow$ & $*$ 3 4\\
+    $\rightarrow$ & 12
+\end{mlalign}
+
+As a matter of convenience, we also allow ourselves to write multiple definitions in the same let; thus:
+\begin{letalign}
+    let & x $=$ 3\\
+        & y $=$ 4\\
+    in  & $*$ x y
+\end{letalign}
+
+This expression means precisely the same as the previous one. We define a \ml{let}-expresion with several definitions to mean the same as the nested set of \ml{let}-expresions which defines the same variables in the same order, one per \ml{let}-expresion. (Syntactically, it would have been possible to specify that multiple definitions are separated with semicolons, but layout will suffice for our purposes.)
+
+Earlier in this section we developed an informal reduction rule for \ml{let}-expresions. This involved \textit{substitution} and is very reminiscent of the \tb{}-reduction rule, which also uses substitution. For example, to evaluate
+\begin{mlcoded}
+    (\tlb{x}$*$ x x) 3
+\end{mlcoded}
+
+we substitute \ml{3} for \ml{x} in the body \ml{($*$ x x)}, and then evaluate the body. Generalizing this idea, we can now define the semantics of a simple \ml{let}-expresion as follows:
+\begin{mlcoded}
+    (let v $=$ B in E) $=$ ((\tlb{v}E) B)
+\end{mlcoded}
+
+(We use the symbol $=$ to denote the equivalence of two expressions.) That is all that is needed to define its semantics! By repeated application of this equivalence, we could eliminate all simple \ml{let}-expresions from an expression, in favor of lambda abstractions.
+
+\subsection{Simple \ml{letrec}-expresions}
+The syntax of a \textit{simple} \ml{letrec}-expresion is similar to that of a simple \ml{let}-expresion:
+\begin{letalign}
+    letrec & v$_1 =$ E$_1$ \\
+           & v$_2 =$ E$_2$ \\
+           & $\cdots$ \\
+           & v$_n =$ E$_n$ \\
+    in & \\
+    & E
+\end{letalign}
+
+where the \ml{v$_i$} are variables, and \ml{E}, \ml{E$_1$}, ..., \ml{E$_n$} are expressions in the (enriched) lambda notation. We will sometimes abbreviate `\ml{letrec}-expresion' to `letrec' (and `\ml{let}-expresion' to `\ml{let}'), where no ambiguity arises.
+
+The term `\ml{letrec}' is short for `let recursively', and it introduces possibly recursive bindings for a number of variables \ml{v$_i$}. The difference between \ml{let}s and \ml{letrec}s is that the \ml{v$_i$} are in scope in the \ml{E$_i$} (as well as \ml{E}) of a \ml{letrec}. To take an example, the expression
+\noindent
+\begin{letalign}
+    letrec & factorial $=$ \tlb{n}IF ($=$ n 0) 1 ($*$ n (factorial ($-$ n 1)))\\
+    in & factorial 4
+\end{letalign}
+defines a recursive function \ml{factorial}, and applies it to the argument \ml{4}. The value of the expression is thus \ml{24}.
+
+Like \ml{let}-expresions, \ml{letrec}-expresions can appear embedded anywhere in an expression. Unlike \ml{let}-expresions, however, it is essential to allow multiple definitions in a \ml{letrec}-expresion, so as to permit mutual recursion. This is demonstrated by the following example:
+\begin{letalign}
+    letrec & f $= \ldots$ f $\ldots$ g $\ldots$ \\
+           & g $= \ldots$ f $\ldots$ \\
+    in $\ldots$ &
+\end{letalign}
+
+Here, \ml{f} refers to itself and \ml{g}, and \ml{g} refers to \ml{f}. This cannot be transformed into a nested pair of \ml{letrec}s, because then either \ml{g} would not be in scope in the body of \ml{f}, or vice versa.
+
+It is easy to provide a semantics for a \ml{letrecs} with only a single definition, using the \ml{Y} operator developed in Section 2.4. In particular,
+\begin{mlcoded}
+    (letrec v $=$ B in E) $=$ (let v $=$ Y (\tlb{v}B) in E)
+\end{mlcoded}
+The use of \ml{Y} renders the definition non-recursive, so we can then use a \ml{let}-expresion, whose semantics has already been defined.
+
+The case of multiple definitions requires the use of pattern-matching, and so is postponed until Chapter 6.
+
+\subsection{Pattern-matching let$-$ and \ml{letrec}-expresions}
+We will also allow \textit{patterns}, as well as variables, to appear on the left-hand side of definitions in \ml{let}s and \ml{letrec}s. We have not yet defined what a pattern is, so we postpone the topic until Chapter 6. However, a variable is just a simple form of pattern, so simple \ml{let(rec)}-expressions are just simple forms of pattern-matching \ml{let(rec)}-expressions.
+
+\subsection{Let(rec)s versus Lambda Abstractions}
+So far we have regarded the ordinary lambda calculus as the target language, into which we will transform the program, and \ml{let(rec)}-expressions as intermediate embellishments. However, there are strong efficiency reasons for including \textit{simple} \ml{let(rec)}-expressions in the target language, rather than transforming them into the ordinary lambda calculus.
+
+Specifically, the transformation of a \ml{let}-expresion
+\begin{mlcoded}
+    let v $=$ B in E
+\end{mlcoded}
+into the application of a lambda abstraction
+\begin{mlcoded}
+    (\tlb{v}E) B
+\end{mlcoded}
+is using a sledgehammer (lambda abstraction) to crack a nut (\ml{let}-expresions). The lambda abstraction \ml{(\tlb{v}.E)} could be applied to many arguments, but it is in fact only ever applied to one, namely \ml{B}. The generality of lambda abstraction is not required, and the special case (that of application to a unique argument) can be exploited by the more sophisticated compilers described later in this book.
+
+This issue manifests itself in a number of ways:
+\begin{numbered}
+    \item Miranda is a polymorphically typed language, and in Chapter 8 we give an algorithm for type-checking programs. Unfortunately, it is not possible to type-check the program once it has been transformed into the ordinary lambda calculus, but the addition of simple \ml{let(rec)}-expressions is sufficient to solve the problem.
+    \item In all implementations except the very simplest, \ml{let}-expressions can be evaluated very much more efficiently than the corresponding application of a lambda abstraction. This applies to all the implementations described from Chapter 14 onwards.
+    \item A related problem is that the transformation of \ml{letrec}-expressions into the ordinary lambda calculus compels us to use \ml{Y} to express recursion. The resulting expression is not an efficient implementation, and a more
+    sophisticated compiler may wish to handle recursion in a different way
+    (see Chapter 14). Keeping the recursion explicit using \ml{letrec} allows scope
+    for these optimizations.
+\end{numbered}
+
+To summarize, all our implementations, except the very simplest, will require the program to be transformed into the ordinary lambda calculus augmented with simple \ml{let(rec)}-expressions. This approach makes a dramatic contribution to the efficiency of the resulting implementations. On the other hand, little seems to be gained by augmenting the language still further.
+
+\section{Translating Miranda into the Enriched Lambda Calculus}
+A program consists of a set of definitions, together with an expression to be evaluated. To keep these two components of the program separate we will use a box, like this:
+
+\begin{center}
+\setlength{\tabcolsep}{18pt}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|c|}
+    \hline
+    Set of definitions \\
+    \hdashline
+    Expression to be evaluated \\
+    \hline
+\end{tabular}
+\end{center}
+
+\noindent For example, we could compute twice the square of 5 with the following Miranda program:
+\begin{center}
+\setlength{\tabcolsep}{18pt}
+\renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|c|}
+        \hline
+        \ml{square n $=$ n*n } \\
+        \hdashline
+        \ml{2 $*$ (square 5)} \\
+        \hline
+    \end{tabular}
+\end{center}
+
+\noindent(Note: Miranda is an interactive language, and defines a `program' to be a set of definitions, while the `expression to be evaluated' is typed by the user. For the rest of this book, however, we will use `program' to mean `a set of definitions together with an expression to be evaluated'.) Proceeding informally, we can translate this Miranda program into the enriched lambda calculus quite easily, to produce the expression
+\begin{letalign}
+    let &square $=$ \tlb{n}$*$ n n\\
+    in &($*$ 2 (square 5))
+\end{letalign}
+
+We now introduce some notation to help describe the translation process. Consider the translation of the Miranda expression \ml{(2 $*$ (square 5))} into the lambda expression \ml{($*$ 2 (square 5))}. We may regard this translation process as a \textit{function} \metafn{TE}, which takes the Miranda expression as its input, and produces the lambda expression as its output. We write the translation like this:
+\begin{mlcoded}
+    \metafnbb{TE}{2 $*$ (square 5)} $\equiv *$ 2 (square 5)
+\end{mlcoded}
+The double square brackets \doublebracket{} are used to enclose the Miranda expression,
+to emphasize that the argument to \metafn{TE} is a \textit{syntactic} object. This convention was used in Chapter 2, but the difference on this occasion is that the result of the translation is a syntactic object also, and we use \ml{$\equiv$} rather than \ml{$=$} to remind us of this fact. We call \metafn{TE} a \textit{translation scheme}.
+
+We also need another translation scheme \metafn{TD}, which translates Miranda definitions into definitions suitable for a \ml{letrec}. For example,
+
+\begin{mlcoded}
+    \metafnbb{TD}{square n $=$ n*n} $\equiv$ square $=$ \tlb{n}$*$ n n
+\end{mlcoded}
+
+Here we see another reason for using \ml{$\equiv$} when writing translation schemes: it avoids confusion with \ml{$=$} symbols in the program being translated. We can now generalize the translation scheme as follows. Given the Miranda program
+
+\begin{center}
+    \setlength{\tabcolsep}{18pt}
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|c|}
+        \hline
+        \ml{\strut Definition$_1$} \\
+        $\vdots$\\
+        \ml{\strut Definition$_n$} \\
+        \hdashline
+        \ml{\strut Expression} \\
+        \hline
+    \end{tabular}
+\end{center}
+we generate the following (enriched) lambda expression:
+\begin{mlcoded}
+    letrec \\
+    \phantom{ww}\metafnbb{TD}{Definition$_1$} \\
+    \phantom{ww}$\cdots$ \\
+    \phantom{ww}\metafnbb{TD}{Definition$_n$} \\
+    in\\
+    \phantom{ww}\metafnbb{TE}{Expression}
+\end{mlcoded}
+In the previous example we used a \ml{let} instead of a \ml{letrec}, but Miranda definitions are all potentially recursive, so we must use a \ml{letrec} in general (later work will optimize this--Section 6.2.8).
+
+What we have now done is to reduce the translation problem to one of defining the two translation schemes \metafn{TD} and \metafn{TE}. We will define them for simple cases in the succeeding two sections, and then lay out the plan of the next few chapters, which will extend them to cover more complicated cases.
+
+For the moment, we completely avoid the question of declarations of new types and type-checking. The former will be introduced in Chapter 4 and the latter in Chapter 8.
+
+\subsection{The \metafn{TE} Translation Scheme}
+
+The translation scheme \metafn{TE} is a function, which takes a Miranda expression as its argument, and produces an equivalent lambda expression as its result, thus:
+
+\begin{center}
+    \framebox{\strut\ Miranda expression\ } $\xrightarrow{\qquad\text{\normalsize \metafn{TE}}\qquad}$ \framebox{\strut\ Lambda expression\ }
+\end{center}
+
+\noindent We will describe \metafn{TE} by case analysis, giving a rule for each possible form of a
+Miranda expression.

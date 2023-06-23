@@ -101,6 +101,9 @@
 %Only used for DRAFTS to include the time of compilation as a versioning system
 \usepackage{datetime}
 
+\usepackage{arydshln} % Dashed line in table
+\usepackage{dashrule} % \hdashrule
+
 % Whitespace adjustments
 \newcommand{\vs}{\vspace{.5\baselineskip}}
 \newcommand{\pg}{\clearpage}
@@ -120,7 +123,7 @@
 % This is the mlcoded environment, a math environment in upright Helvetica.
 \newenvironment{mlcoded}{
 	\sffamily\spaceskip=2\fontdimen2\font
-	\list{}{\rightmargin20pt\leftmargin20pt}\item[] % This line is how the quote environment is defined.
+	\list{}{\rightmargin10pt\leftmargin10pt}\item[] % This line is how the quote environment is defined.
 %	\noindent\par\vspace{0.5\baselineskip}
 %	\begin{quote}
 }{
@@ -136,6 +139,16 @@
 	\end{tabular}
 %    \vspace{-.2cm}
 	\end{mlcoded}
+}
+
+\newenvironment{letalign}{
+    \begin{mlcoded}\setlength{\tabcolsep}{2pt}
+        %    \vspace{-.3cm}
+        \begin{tabular}{ll}
+        }{
+        \end{tabular}
+        %    \vspace{-.2cm}
+    \end{mlcoded}
 }
 
 \usepackage{environ}
@@ -369,15 +382,27 @@
 }%
 }%
 
+\newcommand{\hdashsep}{\vbox{\noindent\hdashrule[0pt][x]{\fill}{0.5pt}{5pt 2pt}}}
+
 \newcommand{\theorembox}[2]{\titledbox{THEOREM}{\noindent #1}{\noindent #2}}
 \newcommand{\definitionbox}[2]{\titledbox{DEFINITION}{\noindent #1}{\noindent #2}}
 
 \newenvironment{pcorollary}{\begin{quote}\textit{Corollary.\;}}{\end{quote}}
 \newenvironment{pproof}{\begin{quote}\textit{Proof.\;}}{\end{quote}}
-\newcommand{\eval}{\ml{\bfseries Eval}}
 
 \def\bracketadjust{\hspace{-1.2pt}}
-\newcommand{\evalbb}[1]{\ml{\mbox{\bfseries Eval[\bracketadjust[\ }}\ml{#1}\ml{\mbox{\bfseries\ ]\bracketadjust]}}}
+\newcommand{\doublebracket}[1]{%
+    \ml{\mbox{\bfseries[\bracketadjust[\ }}%
+    \ml{#1}%
+    \ml{\mbox{\bfseries\ ]\bracketadjust]}}%
+}%
+
+\newcommand{\metafn}[1]{\ml{\bfseries #1}}
+\newcommand{\metafnbb}[2]{\metafn{#1}\doublebracket{#2}}
+
+
+% Infix box operator
+\newcommand{\fatbar}{{\sffamily [\hspace{-1pt}]}}
 
 \begin{document}
 
