@@ -1,0 +1,989 @@
+\chapter[Structured Types and the Semantics of Pattern-Matching][Structured Types and the Semantics of Pattern-Matching]{Structured Types and the\\Semantics of\\Pattern-Matching}
+\chapterauthors{Simon L. Peyton Jones and Philip Wadler}
+\vspace{3cm}
+
+
+\noindent This chapter concerns structured types, a powerful and general mechanism
+for defining data types, provided by several functional languages, including
+Miranda, ML and Hope. Intimately associated with structured types is a
+notational device known as pattern-matching, which is used by such
+languages for defining functions.
+
+Section 4.1 gives a general introduction to structured types and pattern-matching. Section 4.2 begins with a more in-depth look at pattern-matching
+and conditional equations, and then introduces two new constructs in the
+enriched lambda calculus, \fatbar{} and pattern-matching lambda abstractions. Using
+these constructs, we then show how to translate a general Miranda function
+definition into the enriched lambda calculus. Section 4.3 is devoted to
+providing a precise semantics for pattern-matching lambda abstractions.
+
+We conclude in Section 4.4 by defining case-expressions, the last new
+construct of the enriched lambda calculus. This clears the way for Chapter 5,
+which will show how to transform pattern-matching lambda abstractions into
+case-expressions, thus giving a considerable gain in efficiency.
+
+What in this chapter are called `structured types' are called `algebraic types'
+in Miranda, and `free data types' by some others [Burstall and Goguen, 1982].
+
+\section{Introduction to Structured Types}
+
+Suppose that we wish to define binary trees with leaves that are numbers. In the notation of Miranda, this could be done by declaring a structured type tree as follows:
+\begin{mlcoded}
+    tree \typedecl{} \ml{LEAF} num | \ml{BRANCH} tree tree
+\end{mlcoded}
+(The symbol `\typedecl{}' identifies this as a type declaration.) This might be read as follows: `a tree is either a \ml{LEAF}, which contains a \ml{num}, or a \ml{BRANCH}, which contains a tree and a tree'. Here \ml{LEAF} and \ml{BRANCH} are called \textit{constructors} of the type. Miranda requires that constructors (and only constructors) begin with an upper-case letter, but we will always write them entirely in upper case. \ml{LEAF} has one \textit{field}, of type \ml{num}, and \ml{BRANCH} has two, both of type tree. The number of fields associated with a constructor is called its \textit{arity}; thus \ml{LEAF} has arity 1 and \ml{BRANCH} has arity 2.
+
+Constructors can be used as functions, to create values of type \ml{tree}. For example, the following equation
+\begin{mlcoded}
+    tree1 $=$ BRANCH (BRANCH (LEAF 1) (LEAF 2)) (LEAF 3)
+\end{mlcoded}
+defines \ml{tree1} to be a \ml{tree}. Informally, this tree might be drawn as:
+\begin{mlcoded}
+\begin{center}
+    \begin{forest}
+        [. [. [1] [2]] [3]]
+    \end{forest}
+\end{center}
+\end{mlcoded}
+
+Constructors can also appear on the left-hand side of an equation, as in the following Miranda function definition:
+\begin{mlcoded}
+    \begin{tabular}{ll}
+    reflect (LEAF n) &$=$ LEAF n \\
+    reflect (BRANCH t1 t2) &$=$ BRANCH (reflect t2) (reflect t1)
+    \end{tabular}
+\end{mlcoded}
+For example, \ml{(reflect tree1)} returns
+\begin{mlcoded}
+    BRANCH (LEAF 3) (BRANCH (LEAF 2) (LEAF 1))
+\end{mlcoded}
+
+A definition with patterns on the left-hand side, such as that of \ml{reflect}, is said to use \textit{pattern-matching} to perform \textit{case analysis}. For example, in evaluating \ml{(reflect t)} there are two cases to choose from: \ml{t} matches the pattern \ml{(LEAF n)}, or \ml{t} matches the pattern \ml{(BRANCH t1 t2)}. If, say, \ml{t} is \ml{(LEAF 1)} then the first case is chosen, with \ml{n} bound to \ml{1}. Much more will be said about pattern-matching later.
+
+An important difference in the treatment of structured types in Miranda from that in ML or Hope, is that in Miranda constructor functions are lazy; that is, they do not evaluate their arguments. The components of a structured object are evaluated only when (and if) they are subsequently extracted and used, not when the object is built.
+
+\subsection{Type Variables}
+
+Type declarations may also contain type variables. For example, the definition of the type tree above may be rewritten to allow trees with leaves of any type:
+\begin{mlcoded}
+    tree $*$ \hastype$=$ \ml{LEAF} $*$ | \ml{BRANCH} (tree $*$) (tree $*$)
+\end{mlcoded}
+Here $*$ is called a \textit{generic} (or \textit{schematic}) \textit{type variable}. The declaration could be read as follows: `a tree of $*$ is either a \ml{LEAF}, which contains a $*$, or a \ml{BRANCH} which contains a tree of $*$ and a tree of $*$, for any type $*$'.
+
+Leaves of any particular tree must all contain values of the same type, but different trees may have leaves of different types. Examples of trees and their types are
+\begin{mlcoded}
+    \begin{tabular}{ll}
+
+    \ml{BRANCH} (\ml{LEAF} 1) (\ml{LEAF} 2)
+    &\hastype tree num\\
+    \ml{BRANCH} (\ml{LEAF} `a') (\ml{LEAF} `b')
+    &\hastype tree char
+
+    \end{tabular}
+\end{mlcoded}
+(The symbol \hastype is pronounced `has type'.) Here, `tree' is called a \textit{type-forming operator}, since it takes a type (such as \ml{num} or \ml{char}) as an `argument' and produces a type (respectively, \ml{(tree num)} or \ml{(tree char)}).
+
+The repeated use of $*$ on the right-hand side of the type declaration specifies that the two branches of a tree must be of uniform type. For example,
+\begin{mlcoded}
+    \ml{BRANCH} (\ml{LEAF} 1) (\ml{LEAF} 'a')
+\end{mlcoded}
+is not legal, since it has leaves of mixed type. More will be said about types and type variables in Chapter 8.
+
+\subsection{Special Cases}
+
+This section shows how three `built-in' types, namely lists, tuples and enumerated types, can be regarded as instances of general structured types.
+
+\subsubsection{Lists}
+
+Miranda has a special syntax to denote lists, but lists are just an instance of a general structured type. Lists could be defined as follows:
+
+\begin{mlcoded}
+    list $*$ \hastype$=$ \ml{NIL} | \ml{CONS} $*$ (list $*$)
+\end{mlcoded}
+
+This type declaration defines the two new constructors \ml{NIL} and \ml{CONS}. Miranda's built-in syntax for lists could then be translated to use \ml{NIL} and \ml{CONS}, as follows:
+
+\begin{quote}
+    \ml{[ ]} is translated to \ml{NIL}\\
+    \ml{(x:xs)} is translated to \ml{(CONS x xs)}.\\
+    \ml{[x,y,z]} is a Miranda abbreviation for \ml{(x:y:z:[ ])} and hence is translated to
+    \ml{(CONS x (CONS y (CONS z NIL)))}\\
+    \ml{[$*$]} is translated to (list \ml{$*$})
+\end{quote}
+
+\begin{figure}[H]
+\centering
+
+{%
+    \setlength{\fboxrule}{1pt}%
+    \setlength{\fboxsep}{10pt}%
+    \fbox{%
+        \begin{minipage}{\textwidth}
+            \footnotesize
+\begin{mlcoded}
+    \begin{tabular}{lll}
+        \metafnbb{TE}{:}  &$\equiv$ &CONS \\
+        \metafnbb{TE}{[ ]}  &$\equiv$ &NIL \\
+        \metafnbb{TE}{[E$_1$, E$_2$, $\ldots$, E$_n$]}  &$\equiv$ &CONS \metafnbb{TE}{E$_1$} \metafnbb{TE}{[E$_2$, $\ldots$, E$_n$]}\\
+        \metafnbb{TE}{(E$_1$, E$_2$)}  &$\equiv$ &PAIR \metafnbb{TE}{E$_1$} \metafnbb{TE}{E$_2$} \\
+        \metafnbb{TE}{(E$_1$, E$_2$, E$_3$)}  &$\equiv$ &TRIPLE \metafnbb{TE}{E$_1$} \metafnbb{TE}{E$_2$} \metafnbb{TE}{E$_3$}\\
+        {\normalfont\normalsize and so on} & & \\
+        \metafnbb{TE}{True}  &$\equiv$ &TRUE \\
+        \metafnbb{TE}{False}  &$\equiv$ &FALSE \\
+    \end{tabular}
+\end{mlcoded}
+        \end{minipage}%
+    }%
+}%
+
+\caption{\textsf Modifications to the TE scheme for lists, tuples and booleans}
+\end{figure}
+
+\noindent(Note: the last example is different from the others, because it describes a type-expression rather than a value-expression.)
+
+We can conveniently perform this translation when translating from Miranda into the enriched lambda calculus; Figure 4.1 gives the required equations.
+
+Notice that the elements of a list of type \ml{(list $*$)} must all be of type \ml{$*$}, but the number of elements in a list is not determined by its type. Thus \ml{(CONS} 2 \ml{NIL)} and \ml{(CONS 3 (CONS 6 NIL)} are both of type \ml{(list num)}, though they are of different lengths.
+
+\subsubsection{Tuples}
+
+Miranda also provides special syntax to denote tuples, and these also can be defined using a structured type. Tuples could be defined as follows:
+
+\begin{mlcoded}
+    \footnotesize
+    \begin{tabular}{llll}
+    pair        & $*\ **$           &\typedecl{} PAIR        & $*\ **$ \\
+    triple      & $*\ **\ ***$       &\typedecl{} TRIPLE      & $*\ **\ ***$ \\
+    quadruple   & $*\ **\ ***\ ***$   &\typedecl{} QUADRUPLE   & $*\ **\ ***\ ***$
+    \end{tabular}
+\end{mlcoded}
+
+Notice the difference between `\ml{pair}' and \ml{PAIR}: the former is a type-forming operator, used only in type-expressions, while the latter is the constructor function of the type, used only in value-expressions.
+
+As with lists, Miranda's special syntax can be translated as follows:
+\begin{quote}
+    \ml{(x,y)} is translated to \ml{(PAIR x y)}\\
+    \ml{(x,y,z)} is translated to \ml{(TRIPLE x y z)}\\
+    and so on.\\
+    \ml{($*$, $**$)} is translated to (pair $*$ $*$ $*$)\\
+    \ml{($*$, $**$, $***$)} is translated to \ml{(triple $*$ $**$ $***$)}
+\end{quote}
+Figure 4.1 gives the required equations.
+
+Notice that a tuple may contain elements of mixed type; for example
+\begin{mlcoded}
+\begin{tabular}{ll}
+    (3, TRUE) &\hastype{} PAIR num bool\\
+    (`a', (3, 2)) &\hastype{} PAIR char (PAIR num num)
+\end{tabular}
+\end{mlcoded}
+However, the type of a tuple completely determines the number and the types
+of its fields. For example, a \ml{pair} always contains exactly two fields, a \ml{triple}
+contains exactly three fields, and so on.
+
+\subsubsection{Enumerated types}
+
+The type declaration
+
+\begin{mlcoded}
+    color \hastype$=$ \ml{VERMILLION} | \ml{PUCE} | \ml{LAVENDER}
+\end{mlcoded}
+in which each constructor has zero fields, is just like an enumerated type in Pascal. Thus, we can define the type of boolean values:
+\begin{mlcoded}
+    bool \hastype$=$ \ml{TRUE} | \ml{FALSE}
+\end{mlcoded}
+
+The usual functions on booleans can then be defined using pattern-matching; for example:
+\begin{mlcoded}
+    \begin{tabular}{ll}
+    if \ml{TRUE} &e1 e2 $=$ e1\\
+    if \ml{FALSE} &e1 e2 $=$ e2
+    \end{tabular}
+\end{mlcoded}
+
+Miranda uses the names `\ml{True}' and `\ml{False}' for its built-in truth-values.
+
+\subsubsection{Summary}
+
+Since it is easy to translate `built-in' types like lists and tuples into equivalent structured types, then any implementation of a functional language that handles structured types will also handle these `built-in' types for free. This can greatly simplify an implementation. Instead of implementing several type mechanisms, one for lists, one for tuples, one for enumerated types, and so on, we need only implement a single mechanism for structured types, and translate other types into structured types. Figure 4.1 gives the required equations.
+
+\subsection{General Structured Types}
+
+In general, the form of a structured type definition is:
+
+\begin{mlcoded}
+    T \hastype$=$ c$_1$ T$_{1,1}$ $\ldots$ T$_{1,r_1}$\\
+    \quad | $\ldots$\\
+    \quad | c$_n$ T$_{n,1}$ $\ldots$ T$_{n,r_n}$\\
+\end{mlcoded}
+where the \ml{T$_{i,j}$} are types and the \ml{c$_i$} are constructors of arity $r_i$. In the `\ml{tree}' example above, \ml{T} was \ml{(tree $*$)}, \ml{c$_1$} was \ml{LEAF}, \ml{T$_{1,1}$} was \ml{num}, \ml{c$_2$} was \ml{BRANCH}, \ml{T$_{2,1}$} was \ml{(tree $*$)}, and \ml{T$_{2,2}$} was \ml{(tree $*$)}.
+
+Readers familiar with the mathematical operations for constructing types will recognize that the general type above can be written as the sum (that is, discriminated union):
+\begin{mlcoded}
+T $=$ T$_1$ $+ \ldots +$ T$_n$
+\end{mlcoded}
+where each \ml{T$_i$}, for $i$ from 1 to $n$, can be written as a product:
+\begin{mlcoded}
+T$_i =$ T$_{i,1} \times$ T$_{i,2} \times \cdots \times$ T$_{i,r_i}$
+\end{mlcoded}
+In other words, a structured type is a \textit{sum-of-products}.
+
+When $n=1$ we say that the type is a \textit{product type}; the types \ml{(pair $*\ **$)}, \ml{(triple $*\ **\ ***$)}$\ldots$ are all product types. When $n>1$ we say that the type is a \textit{sum type}, since it is the sum of more than one domain; the types \ml{(tree $*$)}, \ml{(list $*$)}, \ml{color} and \ml{bool} are all sum types. Thus a product type has exactly one constructor, and a sum type has two or more constructors.
+
+We will often wish to distinguish between the constructors of product types and sum types. Just as we use the names \ml{c$_i$} to stand for constructors of all types, we will use the name \ml{t} to stand for the constructor of a product type, and the names \ml{s} and \ml{s$_i$} to stand for the constructors of a sum type (\ml{t} suggests `tuple' and \ml{s} suggests `sum').
+
+(Note: we use lower-case letters to stand for constructors, to avoid confusion with the constructors themselves, which are written in upper case. Similarly, we use upper-case letters to stand for types, which are themselves written in lower case $-$ see Section 4.1.)
+
+(\textit{Important:} at the time when this chapter was first written the semantics of Miranda provisionally specified that a structured type with only one constructor was a product type, as above. However, an alternative view is that a structured type with only one constructor should behave as a sum type with one component in the sum, and that product types (tuples) be treated as an independent construct. It now seems likely that Research Software Limited will follow this latter course in their definition of Miranda. As a consequence some of the statements made in this chapter about the semantics of structured types in Miranda may be incorrect. We draw the reader's attention to the caveat on page 37.)
+
+\subsection{History}
+
+As mentioned, structured types are a combination of sum types and product types, which have a long history in mathematics.
+
+Landin's Iswim, one of the earliest functional languages, was described using a stylized form of English for defining structured types [Landin, 1966]. Burstall introduced a more formal notation for defining such types in NPL [Burstall, 1977]. Hope and ML have type systems based on separate sum and product types, whereas Miranda and Orwell have type systems based on sum-of-product types.
+
+Iswim also contained a simple form of pattern-matching, where one could write definitions such as
+\begin{mlcoded}
+    addPair (x,y) $=$ x $+$ y
+\end{mlcoded}
+However, the important idea of using pattern-matching for case analysis appears to have been developed independently by Burstall and Turner. Pattern-matching appeared in NPL and SASL, and was used to good effect in proofs by structural induction [Burstall, 1969] and program transformation
+[Burstall and Darlington, 1977]. It was incorporated into many later
+languages such as Hope, KRC, ML, Miranda and Orwell.
+
+\section{Translating Miranda into the Enriched Lambda Calculus}
+
+We must now demonstrate how to translate Miranda function definitions involving pattern-matching into the enriched lambda calculus. In the process of doing so we will introduce \textit{pattern-matching lambda abstractions} and the \fatbar operator, two of the constructs in the enriched lambda calculus whose explanation was postponed.
+
+\subsection{Introduction to Pattern-matching}
+We begin this section by illustrating some further aspects of pattern-matching, which have to be handled by an implementation. (Not all the illustrations should be taken as examples of good programming style. Some are expressly chosen to demonstrate all the possible nasty things that can happen!)  Recall the definition of \ml{reflect}:
+\begin{mlcoded}
+    \begin{tabular}{ll}
+    reflect (LEAF n) &$=$ LEAF n\\
+    reflect (BRANCH t1 12) &$=$ BRANCH (reflect 12) (reflect t1)
+    \end{tabular}
+\end{mlcoded}
+
+The terms \ml{(LEAF n)} and \ml{(BRANCH t1 12)} occurring on the left-hand side of these equations are called \textit{patterns}. When \ml{reflect} is applied to an argument, the argument is first evaluated to see whether it \textit{matches} the pattern \ml{(LEAF n)} or \ml{(BRANCH t1 12)}. It will certainly match one or the other, because the type-checker ensures that \ml{reflect} is only applied to objects of type \ml{(tree $*$)}, for some type \ml{$*$}. For example, if \ml{reflect} is applied to an expression which evaluates to \ml{(BRANCH E$_1$ E$_2$)}, the second equation is selected, with \ml{t1} bound to \ml{E$_1$} and \ml{12} bound to \ml{E$_2$}.
+
+In the preceding example, the order in which the equations were written was immaterial, but this is not always the case. Consider the Miranda function definition
+\begin{mlcoded}
+    factorial 0 $=$ 1\\
+    factorial n $=$ n $*$ factorial (n-1)
+\end{mlcoded}
+
+The order of the equations in this definition is significant. In the evaluation of \ml{(factorial x)}, there are two cases to choose from: either \ml{x} matches \ml{0} (that is, \ml{x} evaluates to \ml{0}), so the first equation is chosen, or it does not, so the second case is chosen with \ml{n} bound to \ml{x}. The equations are tried out one at a time, from top to bottom. If they had been written in the other order then the first equation would always match. In this situation we say that the patterns \textit{overlap}. (As we shall see in Chapter 5, there are good reasons to avoid writing overlapping patterns, but occasionally they prove useful.)
+
+Another point, illustrated by the first \ml{factorial} equation, is that a pattern may consist of a literal constant, such as a number or character.
+
+As another example, consider the Miranda function definition
+\begin{mlcoded}
+    \begin{tabular}{ll}
+    lastElt (x:[]) &$=$ x\\
+    lastElt (x:xs) &$=$ lastElt xs
+    \end{tabular}
+\end{mlcoded}
+The function call \ml{(lastElt xs)} returns the last element of the list \ml{xs}. Again, the order of the equations is significant, since the patterns overlap. Furthermore, the first pattern is an example of a \textit{nested} pattern, in which the pattern \ml{[\,]} is nested inside the pattern \ml{(x:[\,])}. Finally, the equations are not exhaustive, since neither pattern matches the argument \ml{[\,]}. If \ml{lastElt} is applied to \ml{[\,]} some sort of error should be reported.
+
+Pattern-matching can apply to several arguments, as the following Miranda definition shows:
+\begin{mlcoded}
+    \begin{tabular}{lll}
+    xor False &y &$=$ y\\
+    xor True &False &$=$ True\\
+    xor True &True &$=$ False
+    \end{tabular}
+\end{mlcoded}
+
+Another feature of Miranda that is closely connected with pattern-matching is \textit{conditional equations}, which control the selection of \textit{alternatives} by the use of \textit{guards}. We could, for example, rewrite the \ml{factorial} function in the following way:
+\begin{mlalign}
+    factorial n & $=$ 1,\qquad n=0\\
+              n & $=$ n $*$ factorial (n-1)
+\end{mlalign}
+A single left-hand side governs several alternatives, which together constitute the right-hand side. In this case there is only one guard, namely the boolean-valued expression `\ml{n=0}', which appears following a comma. Guards are evaluated one at a time, beginning at the top, and when a guard evaluates to \ml{True}, the corresponding alternative expression is selected. The guard may be omitted in the final right-hand side, giving an `otherwise' case (equivalent to a guard of \ml{True}).
+
+The \ml{factorial} example shows, incidentally, that a constant appearing in a pattern can easily be eliminated by replacing it with a variable and adding a guard to the equation instead.
+
+Conditional equations interact with pattern-matching, as demonstrated in the next example. The function \ml{funnyLastElt} returns the last element of its argument list, except that if a negative element is encountered then it is returned instead:
+\begin{mlcoded}
+    \begin{tabular}{ll}
+        funnyLastElt (x:xs) &$=$ x,\qquad x<0\\
+        funnyLastElt (x:[]) &$=$ x\\
+        funnyLastElt (x:xs) &$=$ funnyLastElt xs
+    \end{tabular}
+\end{mlcoded}
+Pattern-matching proceeds, as usual, from top to bottom; when a left-hand side matches the argument, the guarded alternative(s) are tried, from top to bottom. If none of the guards is \ml{True}, then pattern-matching continues, Starting with the next equation. Applying \ml{funnyLastElt} to the list \ml{[1,2]} would cause this behavior, since the first equation would match, but the guard fails, so the second and then third equations are tried.
+
+Finally, variables may be repeated on the left-hand side of an equation. For example, the function \ml{noDups} eliminates adjacent duplicate elements in a list:
+\begin{mlcoded}
+    \begin{tabular}{ll}
+    noDups [\,] &$=$ [\,]\\
+    noDups [x] &$=$ [x]\\
+    noDups (x:x:xs) &$=$ noDups (x:xs)\\
+    noDups (x:y:ys) &$=$ x : noDups (y:ys)
+    \end{tabular}
+\end{mlcoded}
+The third equation matches only if the first two elements of the argument list are equal; the repeated use of \ml{x} on the left-hand side implies the equality condition.
+
+We may summarize the features that the implementation must support as follows:
+\begin{numbered}
+    \item overlapping patterns;
+    \item constant patterns;
+    \item nested patterns;
+    \item multiple arguments;
+    \item non-exhaustive sets of equations;
+    \item conditional equations;
+    \item repeated variables.
+\end{numbered}
+Given these complications, it is unwise to rely on a purely intuitive understanding of what a function definition using pattern-matching means. The rest of this section and the next is therefore devoted to providing a formal semantics of pattern-matching.
+
+\subsection{Patterns}
+First of all, we will need a precise definition of patterns.
+
+\definitionbox{{\normalfont A pattern \ml{p} is}}{
+\begin{tabular}{ll}
+    either & a variable \ml{v}\\
+    or     & a constant \ml{k}, such as a number, a character, a boolean and so on,\\
+    or &a constructor pattern, of the form \ml{(c p$_1$ \ldots p$_r$)} where \ml{c} is a\\
+    & constructor of arity \ml{r}, and p$_1,\, \ldots,\, $p$_r$ are themselves patterns.
+\end{tabular}
+\vspace{0.25\baselineskip}
+
+All of the variables in a pattern should be distinct.
+
+A pattern of the form \ml{(s p$_1$ \ldots p$_r$)}, where \ml{s} is a sum constructor, is called a \textit{sum-constructor pattern}, or \textit{sum pattern}. A pattern of the form \ml{(t p$_1$ \ldots p$_r$)}, where \ml{t} is a product constructor, is called a \textit{product-constructor pattern}, or \textit{product pattern}.
+\vspace{0.25\baselineskip}
+
+\noindent Note: according to this definition, patterns may not contain repeated variables, although Miranda allows them to do so. This point is discussed in Section 4.2.7.
+}
+
+Here are some examples of patterns:
+
+\begin{tabular}{ll}
+\ml{x} & \\
+\ml{LEAF n} & \\
+\ml{BRANCH (LEAF n) t} & \\
+\ml{CONS x xs} & (written \ml{(x:xs)} in Miranda) \\
+\ml{CONS x (CONS 3 NIL)} & (written \ml{[x,3]} in Miranda) \\
+\ml{PAIR x 4} &(written \ml{(x,4)} in Miranda)
+\end{tabular}
+
+\noindent The term \ml{(PAIR z z)} is not a pattern, because it contains a repeated variable. The term \ml{(CONS x)} is not a pattern, because the \ml{CONS} does not have enough arguments.
+
+Miranda allows patterns with repeated variables, like \ml{(PAIR z z)} but the patterns defined here do not. This is discussed in Section 4.2.7.
+
+A constructor pattern is \textit{simple} if it has the form \ml{(c v$_1$ $\ldots$ v$_r$)}, where \ml{v$_1$, $\ldots$, v$_r$} are distinct variables. If a constructor pattern is not simple it is \textit{nested}.
+
+\subsection{Introducing Pattern-matching Lambda Abstractions}
+
+Up to now we have translated function definitions into the lambda calculus using the following rule:
+\begin{mlcoded}
+	\metafnbb{TD}{f v$_1$ ... v$_n$ $=$ E}   $\equiv$ f $=$ \tl{}v1\ldots\tlb{v$_n$}\metafnbb{TE}{E}
+\end{mlcoded}
+where \ml{v$_1$, $\ldots$, v$_n$} are variables. Temporarily restricting our attention to functions of a single variable, we could derive the less general rule
+\begin{mlcoded}
+	\metafnbb{TD}{f v $=$ E} $\equiv$ f $=$ \tlb{v}\metafnbb{TE}{E}
+\end{mlcoded}
+By analogy, given the function definition
+\begin{mlcoded}
+	\ml{f p $=$ E}
+\end{mlcoded}
+(where \ml{p} is a pattern), it seems plausible to translate it using the rule
+\begin{mlcoded}
+	\metafnbb{TD}{f p $=$ E} $\equiv$ f $=$ \tlb{p}\metafnbb{TE}{E}
+\end{mlcoded}
+
+This is not quite right yet, because we must remember to translate the pattern, so that Miranda's list notation is translated into uses of \ml{CONS} and \ml{NIL} (and likewise for tuples and booleans). Fortunately, the syntax of patterns is a subset of that of expressions, so we can use the \metafn{TE} scheme.
+\begin{mlcoded}
+	\metafnbb{TD}{f p $=$ E} $\equiv$ f $=$ \tlb{\metafnbb{TE}{p}}\metafnbb{TE}{E}
+\end{mlcoded}
+For example, consider the Miranda function definition for \ml{fst}:
+\begin{mlcoded}
+	fst (x, y) $=$ x
+\end{mlcoded}
+Using the rule above gives:
+\begin{mlcoded}
+	\metafnbb{TD}{fst (x, y) $=$ x} $\equiv$ fst $=$ \tlb{(PAIR x y)}x
+\end{mlcoded}
+This introduces a new sort of lambda abstraction, a \textit{pattern-matching lambda abstraction}, which has the form \ml{(\tlb{p}E)} where \ml{p} is a pattern. This leaves us with two questions:
+\begin{numbered}
+	\item How can we translate a general Miranda function definition into pattern-matching lambda abstractions?
+	\item What, exactly, does \ml{(\tlb{p}E)} mean?
+\end{numbered}
+We discuss the first in the remainder of this section, leaving the second for the next section.
+
+\subsection{Multiple Equations and Failure}
+
+Consider first a Miranda function definition of the form
+\begin{mlcoded}
+	f p$_1$ $=$ E$_1$\\
+	f p$_2$ $=$ E$_2$\\
+	$\cdots$\\
+	f p$_n$ $=$ E$_n$
+\end{mlcoded}
+Intuitively, we expect the semantics to be `try the first equation, and if that fails try the second, and so on'. This introduces the idea that a pattern-match might \textit{fail}. Such failure does not necessarily indicate an error, since there might be a subsequent equation which would match. Hence, we introduce a new built-in value \ml{FAIL}, which is returned when a pattern-match fails.
+
+With the aid of this idea, we can translate the definition of \ml{f} into the following enriched lambda calculus expression:
+
+\begin{mlalign}
+	f $=$  \tlb{x}&(  (( \tlb{p$_1'$}E$_1'$) x)\\
+	& \fatbar{} (( \tlb{p$_2'$}E$_2'$)  x)\\
+	& $\cdots$ \\
+	& \fatbar{} (( \tlb{p$_n'$}E$_n'$)  x)\\
+	& \fatbar{} ERROR )
+\end{mlalign}
+
+where \ml{x} is a new variable name that does not occur free in any \ml{E$_i$}, the expressions \ml{E$_i'$} are the result of translating the \ml{E$_i$}, and the patterns \ml{p$_i'$} are the result of translating the \ml{p$_i'$}. The new definition of \ml{f} can be read `try to apply \ml{(\tlb{p$_1'$}E$_1'$)} to \ml{x}, and if that succeeds return its result; otherwise try \ml{(\tlb{p$_2'$}E$_2'$)}, and so on; if they all fail, return \ml{ERROR}'.
+
+Here \ml{ERROR} is meant to be a special value whose evaluation indicates an error, an event which should never occur.
+
+The function \ml{\fatbar{}} is an infix function, whose behavior is described by the semantic equations:
+\begin{mlcoded}
+	\begin{tabular}{ll}
+		a &\fatbar{} b $=$ a \qquad {\normalfont if} a $\neq \bot$ {\normalfont and} a $\neq$ FAIL\\
+	FAIL & \fatbar{} b $=$ b  \\
+	$\bot$ & \fatbar{} b $= \bot$
+	\end{tabular}
+\end{mlcoded}
+
+Operationally, \fatbar{} evaluates its left argument; if the evaluation terminates and yields something other than \ml{FAIL}, then \fatbar{} returns that value (first rule); if it evaluates to \ml{FAIL}, \fatbar{} returns its right argument (second rule); if the evaluation of the left argument fails to terminate, then so does the application of \fatbar{} (third rule).
+
+It is easy to verify that \fatbar{} is an \textit{associative} operator, and has \textit{identity} \ml{FAIL}. Its associativity means that we may write expressions such as \ml{(E$_1$ \fatbar{} E$_2$ \fatbar{} E$_3$)} without ambiguity. It is extremely convenient to write \fatbar{} between its operands (that is, infix) but, since all functions are written prefix in the lambda calculus, we are forced to dignify \fatbar{} by making it one of the new constructs of the enriched lambda calculus. The sole reason for doing so is notational.
+
+As an example of the suggested translation in action, recall the definition of the \ml{reflect} function:
+\begin{mlcoded} \footnotesize
+    \begin{tabular}{ll}
+    reflect (LEAF n) &$=$ LEAF n \\
+    reflect (BRANCH t1 t2) &$=$ BRANCH (reflect t2) (reflect t1)
+    \end{tabular}
+\end{mlcoded}
+This would be translated to:
+\begin{mlalign}\footnotesize
+    \tlb{reflect} $=$ &\tlb{t}( ((\tlb{(LEAF n)}LEAF n) t) \\
+    &\fatbar{} ((\tlb{(BRANCH t1 t2)}BRANCH (reflect t2) (reflect t1)) t)\\
+    &\fatbar{} ERROR )
+\end{mlalign}
+
+In this case, of course, \ml{ERROR} can never be returned, since one of the previous pattern-matches will succeed. This is not always the case, as the following example shows. Consider the Miranda definition of \ml{hd}, which extracts the first element of a list:
+\begin{mlcoded}
+    hd (x:xs) $=$ x
+\end{mlcoded}
+It would be translated to
+\begin{mlcoded}
+    hd $=$ \tlb{xs'}(((\tlb{(CONS x xs)}x) xs') \fatbar{} \ml{ERROR})
+\end{mlcoded}
+If \ml{hd} is applied to \ml{NIL}, then \ml{ERROR} will be the result. (We have used \ml{xs'} as the formal parameter of the lambda abstraction, to avoid confusion with the \ml{xs} in the pattern. Technically, however, there would be no problem with using \ml{xs}, or any other variable, since \ml{hd} has no free variables.)
+
+\subsection{Multiple Arguments}
+
+Functions with multiple arguments are easily handled. As we recalled earlier, the basic approach is to translate a function of several arguments using the rule
+\begin{mlcoded}
+    \metafnbb{TD}{f v$_1$ $\ldots$ v$_n$ $=$ E} $\equiv$ f $=$ \tlb{v$_1$}$\cdots$\tlb{v$_n$}\metafnbb{TE}{E}
+\end{mlcoded}
+Combining this with the approach of the previous section suggests that we should translate the definition
+\begin{mlcoded}
+    \ml{f p$_1$ p$_2$ $\ldots$ p$_m$ $=$ E}
+\end{mlcoded}
+where \ml{p$_1$, $\ldots$, p$_m$} are patterns, into
+\begin{mlcoded}
+    f $=$ \tl{}v$_1\ldots$ \tlb{v$_m$}(((\tl{}p$_{1}'\ldots$\tlb{p$_{m}'$}E$'$) v$_1 \ldots$ v$_m$) \fatbar{} ERROR)
+\end{mlcoded}
+where \ml{v$_1$, $\ldots$, v$_m$} are new variables that do not occur free in \ml{E}, the \ml{p$_{i}'$} are the results of translating the \ml{p$_i$}, and \ml{E$'$} is the result of translating \ml{E}. The only new complication is that we must specify what happens in case of failure. Suppose \ml{f} is applied to \ml{m} arguments, and the first pattern-match fails:
+\begin{mlcoded}
+    (\tl{}p$_{1}' \ldots$\tlb{p$_{m}'$}E$'$) E$_1$ E$_2 \ldots$ E$_m \rightarrow$ FAIL E$_2 \ldots$ E$_m$
+\end{mlcoded}
+
+Then we want the whole expression to fail, so we need to add a reduction rule for \ml{FAIL}:
+\begin{mlcoded}
+    FAIL E $\rightarrow$ FAIL
+\end{mlcoded}
+Now we can continue reduction.
+\begin{mlcoded}
+    \ml{FAIL} E$_2$ E$_3\ldots$ E$_m$ $\rightarrow$ \ml{FAIL} E$_3\ldots$ E$_m$ $\rightarrow \cdots \rightarrow$ FAIL
+\end{mlcoded}
+The translation is readily extended for the case when \ml{f} is defined by several equations. To see an example of this in action, consider the definition of \ml{xor} given above:
+\begin{mlcoded}
+    \begin{tabular}{lll}
+    xor False &y &$=$ y\\
+    xor True &False &$=$ True\\
+    xor True &True &$=$ False
+    \end{tabular}
+\end{mlcoded}
+Combining the rules of this section and the last allows us to transform this to
+\rightline{\footnotesize(Notice that the arguments are matched from left to right)}
+\vspace{-\baselineskip}
+\begin{mlalign}
+    xor $=$ \tlb{x}\tlb{y}&( ((\tlb{FALSE}\tlb{y}y) x y) \\
+    & \fatbar{} ((\tlb{TRUE}\tlb{FALSE}TRUE) x y) \\
+    & \fatbar{} ((\tlb{TRUE}\tlb{TRUE}FALSE) x y) \\
+    & \fatbar{} ERROR)
+\end{mlalign}
+
+
+\subsection{Conditional Equations}
+
+Next, we describe how to translate conditional equations into the enriched lambda calculus. Consider the following Miranda definition:
+\begin{mlcoded}
+    \begin{tabular}{lll}
+        gcd a b &$=$ gcd (a $-$ b) b, &a $>$ b\\
+        &$=$ gcd a (b $-$ a), &a $<$ b\\
+        &$=$ a, &a $=$ b
+    \end{tabular}
+\end{mlcoded}
+It is easy to see that the right-hand side of this definition could be translated to
+\begin{mlcoded}
+    (IF ($>$ a b) (gcd ($-$ a b) b)\\
+    (IF ($<$ a b) (gcd a ($-$ b a))\\
+    (IF ($=$ a b) a FAIL)))
+\end{mlcoded}
+Notice that if all the guards fail, then \ml{FAIL} is returned by the nested \ml{IF} expression. (In the case of \ml{gcd} this can never occur, and a very clever compiler might be able to discover this fact and optimize the last \ml{IF}.) In a more complicated definition, the failure of all the guards would cause the next equation to be tried (see example below).
+
+Regarding all of an equation after the first \ml{$=$} sign as a `right-hand side', we can now give a new translation scheme, \metafn{TR}, which translates right-hand sides:
+
+\plainbox{
+    {\centering
+
+    \metafnbb{TR}{rhs} translates the right-hand side of a definition
+
+    }
+
+    \metafn{TR}\ml{\hspace{-2em}
+        \begin{minipage}{0.3\textwidth}
+        \[
+            \left[\hspace{-4pt}\left[
+            \begin{array}{rl}
+                & \text{A}_1, \text{G}_1\\
+                =& \text{A}_2, \text{G}_2\\
+                & \cdots \\
+                =& \text{A}_n, \text{G}_n
+            \end{array}
+            \right]\hspace{-4pt}\right]
+            \equiv
+        \]
+        \end{minipage}
+    }
+    \begin{minipage}{0.6\textwidth}
+        \vs
+      \begin{mlcoded}
+          (IF \metafnbb{TE}{G$_1$} \metafnbb{TE}{a$_1$} \\
+          (IF \metafnbb{TE}{G$_2$} \metafnbb{TE}{a$_2$} \\
+          (IF \metafnbb{TE}{G$_n$} \metafnbb{TE}{a$_n$} FAIL)$\cdots$ ))
+      \end{mlcoded}
+    \end{minipage}\vs
+
+    where \ml{A$_i$} is an expression and \ml{G$_i$} is a boolean-valued expression.
+}
+
+
+Now we can use \metafn{TR} instead of \metafn{TE} to translate the right-hand sides of function definitions. As an example, recall the definition of \ml{funnyLastElt}:
+\begin{mlcoded}
+    \begin{tabular}{ll}
+    funnyLastElt (x:xs) &$=$ x, x < 0\\
+    funnyLastElt (x:[]) &$=$ x\\
+    funnyLastElt (x:xs) &$=$ funnyLastElt xs
+    \end{tabular}
+\end{mlcoded}
+We can now translate it to
+\begin{mlalign}
+    funnyLastElt $=$ \tlb{v}&( ((\tlb{CONS x xs} . IF (< x 0) x FAIL) v) \\
+    &\fatbar{} ((\tlb{CONS x NIL}x) v)  \\
+    &\fatbar{} ((\tlb{CONS x xs}funnyLastElt xs) v)  \\
+    &\fatbar{} ERROR)
+\end{mlalign}
+If the first equation matches, but the guard fails, then the \ml{IF} returns \ml{FAIL}, and the next equation is tried.
+
+In Miranda, the final guard \ml{G$_n$} may be omitted, which is equivalent to giving a final guard of \ml{True}. In this case, the innermost \ml{IF} is of the form
+\begin{mlcoded}
+    IF TRUE E$_1$ FAIL
+\end{mlcoded}
+which can be optimized to
+\begin{mlcoded}
+    E$_1$
+\end{mlcoded}
+For example, the definition of \ml{factorial}
+\begin{mlalign}
+    factorial n &$=$ 1, \qquad n $=$ 0\\
+    &$=$ n $*$ factorial (n-1)
+\end{mlalign}
+would be translated to
+\begin{mlalign}
+    factorial $=$ \tlb{v}&( ((\tlb{n}IF ($=$ n 0) 1 ($*$ n (factorial ($-$ n 1)))) v)\\
+     &\fatbar{} ERROR)
+\end{mlalign}
+This can be simplified further, since the pattern-match cannot fail, and this special case will be spotted by the transformations of Chapter 5.
+
+\subsection{Repeated Variables}
+
+It appears at first that it is easy to use a conditional equation to eliminate repeated variables, by introducing a new variable name to replace one of the occurrences of the repeated variable, and adding an appropriate equality condition. For example, we could rewrite the definition of \ml{noDups} (given in Section 4.2.1) thus:
+
+\begin{mlcoded}
+\begin{tabular}{ll}
+    noDups [\,] &$=$ [\,]\\
+    noDups [x] &$=$ [x]\\
+    noDups (x:y:ys) &$=$ noDups (y:ys), x $=$ y\\
+    noDups (x:y:ys) &$=$ x : noDups (y:ys)
+\end{tabular}
+\end{mlcoded}
+
+(The last two equations could now be combined into a conditional equation with two alternatives.) Unfortunately, this approach occasionally conflicts with the left-to-right rule originally given for pattern-matching. For example, given the following definition:
+
+\begin{mlcoded}
+\begin{tabular}{ll}
+    nasty x x True &$=$ 1\\
+    nasty x y z &$=$ 2
+\end{tabular}
+\end{mlcoded}
+consider the evaluation of
+\begin{mlcoded}
+    nasty bottom 3 False
+\end{mlcoded}
+where the evaluation of \ml{bottom} fails to terminate (for example, \ml{bottom} could be defined by the degenerate equation: \ml{bottom $=$ bottom}). We might expect that the evaluation \ml{(nasty bottom 3 False)} would not terminate, since we will try to evaluate \ml{bottom} in order to compare it with \ml{3}. However, suppose we transformed the definition of \ml{nasty} to use a conditional equation:
+\begin{mlcoded}
+\begin{tabular}{ll}
+    nasty$'$ x y True &$=$ 1,\qquad x $=$ y\\
+    nasty$'$ x y z &$=$ 2
+\end{tabular}
+\end{mlcoded}
+Now, if we evaluate \ml{(nasty$'$ bottom 3 False)}, \ml{bottom} will match \ml{x} and \ml{3} will match \ml{y}, but the match of \ml{True} against \ml{False} will fail, so the second equation will be tried, and deliver the answer 2. Hence, \ml{nasty} and \ml{nasty$'$} behave differently, and the transformation is invalid. (Note: \ml{nasty} and \ml{nasty$'$} also behave differently for expressions such as \ml{(nasty 1 2 bottom)}.)
+
+There is a further complication raised by repeated variables. Consider the function \ml{multi}:
+\begin{mlcoded}
+\begin{tabular}{ll}
+        multi p q q p $=$ 1\\
+    multi p q r s $=$ 2
+\end{tabular}
+\end{mlcoded}
+
+Should we compare the first and fourth arguments, and then compare the second and third arguments, or the other way around? The order of comparison is important, because it affects termination; consider \ml{(multi bottom 2 3 4)}.
+
+This section has shown that repeated variables in a pattern are not as straightforward as at first appeared (the examples were suggested by Simon Finn of the University of Stirling). To simplify the rest of this chapter we will therefore sidestep these complications, by restricting our attention to a subset of Miranda which does not allow repeated variables in a pattern. We lose no expressive power thereby, though we do lose some notational convenience.
+
+\subsection{Where-clauses}
+Miranda allows the right-hand side of a definition to be qualified with a \ml{where}-clause. For example,
+\begin{mlalign}
+    sumsq x y $=$ xsq $+$ ysq&\\
+    where\qquad{} &\\
+    xsq &$=$ x $*$ x\\
+    ysq &$=$ y $*$ y
+\end{mlalign}
+It is intuitively clear that this could be translated to
+\begin{mlalign}
+    sumsq $=$ \tlb{x}\tlb{y}(let &xsq $=$ $*$ x x\\
+    &ysq $=$ $*$ y y\\
+    in &\\
+    & ($+$ xsq ysq))
+\end{mlalign}
+where we use a \ml{let}-expresion instead of a \ml{where}-clause. In general, the definitions in a \ml{where}-clause may be mutually recursive, so we have to use a \ml{letrec}-expresion instead. This will be optimized in Section 6.2.8.
+
+Finally, the scope of a where-clause may include a set of alternatives and guards in a conditional equation:
+\begin{mlcoded}
+    \begin{tabular}{rll}
+        gcd a b $=$ &gcd diff b, &a $>$ b\\
+        $=$ &gcd a ($-$diff), &a $<$ b\\
+        $=$ &a, & a $=$ b\\
+        &where & \\
+        & \qquad diff $=$ a $-$ b &
+    \end{tabular}
+\end{mlcoded}
+
+% Figure 4.2 has been relocated to be with 4.3 and 4.4.
+
+The scope of the definition of \ml{diff} includes all the alternatives and guards.
+Figure 4.2 gives the final \metafn{TR} translation scheme, which translates right-hand sides, using a \ml{letrec} to translate a \ml{where}-clause.
+
+\subsection{Patterns on the Left-hand Side of Definitions}
+
+So far we have only described how to translate \textit{function} definitions, but Miranda also allows a \textit{pattern} to appear on the left-hand side of a definition. For example, consider the following Miranda definition:
+\begin{mlalign}
+    addPair w $=$ x $+$ y & \\
+    where &(x, y) $=$ w
+\end{mlalign}
+The product pattern \ml{(x, y)} appears on the left-hand side of the definition in the \ml{where}-clause. It implies that \ml{w} evaluates to a pair, and it binds the names \ml{x} and \ml{y} to the components of \ml{w}.
+
+As mentioned in Section 3.2.3, we also allow general patterns to appear on the left-hand side of definitions in a \ml{let(rec)}. This extension allows us to make a simple translation of \ml{addPair} to
+\begin{mlcoded}
+    addPair $=$ \tlb{w}(letrec (PAIR x y) $=$ w in ($+$ x y))
+\end{mlcoded}
+
+The hard work of dealing with patterns on the left-hand side of definitions is now carried out by transforming this \ml{letrec} into the ordinary lambda calculus, which is described in Section 6.2. The modification required to \metafn{TD} is very simple:
+\begin{mlcoded}
+    \metafnbb{TD}{ p $=$ R } $\equiv$ \metafnbb{TE}{p} $=$ \metafnbb{TR}{R}
+\end{mlcoded}
+where \ml{p} is a pattern and \ml{R} is a right-hand side.
+
+\subsection{Summary}
+We have now completed the development of the translation of a significant subset of Miranda into the enriched lambda calculus. The final translation schemes, summarized in Figures 4.2, 4.3 and 4.4, look rather forbidding, but this is because of their generality rather than their complexity.
+
+\section{The Semantics of Pattern-matching Lambda Abstractions}
+Having described how to translate from Miranda into a language involving pattern-matching lambda abstractions, we now give the semantics of pattern-matching lambda abstractions of the form \ml{( \tlb{p}E)}.
+
+We will do so by devoting a subsection to each form of the pattern, \ml{p}: variable, constant, sum-constructor, and product-constructor.
+
+
+\boxedfigure{
+    {\centering
+
+        \metafnbb{TR}{rhs} translates the right-hand side of a definition
+
+    }
+
+    \hspace{-1em}\metafn{TR}\ml{\hspace{-2em}
+        \begin{minipage}{0.3\textwidth}
+            \[
+            \left[\hspace{-4pt}\left[
+            \begin{array}{rl}
+                & \text{A}_1, \text{G}_1\\
+                =& \cdots \\
+                =& \text{A}_n, \text{G}_n\\
+                & \hspace{-1em}\text{\normalfont{where}}\\
+                & \text{D}_1\\
+                & \cdots \\
+                & \text{D}_m\\
+            \end{array}
+            \right]\hspace{-4pt}\right]
+            \equiv
+            \]
+        \end{minipage}
+    }
+    \begin{minipage}{0.6\textwidth}
+        \vs
+        \begin{mlcoded}
+            \begin{tabular}{ll}
+                letrec & \metafnbb{TD}{D$_1$}\\
+                & $\cdots$ \\
+                & \metafnbb{TD}{D$_m$}\\
+                in & \\
+                & (IF \metafnbb{TE}{G$_1$} \metafnbb{TE}{a$_1$} \\
+                & (IF \metafnbb{TE}{G$_2$} \metafnbb{TE}{a$_2$} \\
+                & (IF \metafnbb{TE}{G$_n$} \metafnbb{TE}{a$_n$} FAIL)$\cdots$ ))
+            \end{tabular}
+        \end{mlcoded}
+    \end{minipage}\vs
+
+    \noindent If \ml{G$_n$} is absent, or \ml{True}, then the final \ml{IF}-expression should be replaced by \metafnbb{TE}{A$_n$}.\vs
+
+    \begin{tabular}{rl}
+        where & \ml{A$_i$} is an expression\\
+        & \ml{G$_i$} is a boolean-valued expression\\
+        & \ml{D$_i$} is a definition
+    \end{tabular}
+}{The final \ml{TR} translation scheme}
+
+
+
+\boxedfigure{
+\begin{center}
+    \metafnbb{TE}{Exp} translates the expression \ml{Exp}
+\end{center}
+\vspace{-0.5\baselineskip}
+\begin{tabular}{ll}
+    \metafnbb{TE}{k} &$\equiv$ \ml{k} \quad\quad (assumes no name-changing) \\
+    \metafnbb{TE}{v} &$\equiv$ \ml{v} \\
+    \metafnbb{TE}{ E$_1$ E$_2$ } &$\equiv$ \metafnbb{TE}{ E$_1$ } \metafnbb{TE}{ E$_2$ } \\
+    \metafnbb{TE}{ E$_1$ infix E$_2$ } &$\equiv$ \metafnbb{TE}{ infix } \metafnbb{TE}{ E$_1$ } \metafnbb{TE}{ E$_2$ } \\
+    \metafnbb{TE}{ E$_1$ \$v E$_2$ } &$\equiv$ \metafnbb{TE}{ v } \metafnbb{TE}{ E$_1$ } \metafnbb{TE}{ E$_2$ } \\
+    \metafnbb{TE}{:}  &$\equiv$ CONS \\
+    \metafnbb{TE}{[ ]}  &$\equiv$ NIL \\
+    \metafnbb{TE}{[E$_1$, E$_2$, $\ldots$, E$_n$]}  &$\equiv$ CONS \metafnbb{TE}{E$_1$} \metafnbb{TE}{[E$_2$, $\ldots$, E$_n$]}\\
+    \metafnbb{TE}{(E$_1$, E$_2$)}  &$\equiv$ PAIR \metafnbb{TE}{E$_1$} \metafnbb{TE}{E$_2$} \\
+    \metafnbb{TE}{(E$_1$, E$_2$, E$_3$)}  &$\equiv$ TRIPLE \metafnbb{TE}{E$_1$} \metafnbb{TE}{E$_2$} \metafnbb{TE}{E$_3$}\\
+    {\normalfont\normalsize and so on} & \\
+    \metafnbb{TE}{True}  &$\equiv$ TRUE \\
+    \metafnbb{TE}{False}  &$\equiv$ FALSE \\
+\end{tabular}\\
+\vs
+\begin{tabular}{rll}
+    \hspace{1cm} where & \ml{k} & is a literal constant or built-in operator \\
+    & \ml{v} & is a variable \\
+    & \ml{E$_1$} & is an expression \\
+    & \ml{infix} & is an infix operator
+\end{tabular}
+
+
+}{The final \metafn{TE} translation scheme}
+
+
+\begin{figure}[H]
+\centering
+
+{%
+    \setlength{\fboxrule}{1pt}%
+    \setlength{\fboxsep}{10pt}%
+    \fbox{%
+        \begin{minipage}{\textwidth}
+            \small
+            \setlength{\parindent}{0pt}
+            \setlength{\parskip}{0mm plus 0mm minus 0mm}
+\begin{center}
+    \metafnbb{TD}{Def} translates the definition \ml{Def}
+\end{center}
+\begin{mlcoded}
+    \metafnbb{TD}{p $=$ R} $\equiv$ \metafnbb{TE}{p} $=$ \metafnbb{TR}{R} \\
+    \hspace{-1em}\metafn{TD}\hspace{-0.5em}
+    \begin{minipage}{0.3\textwidth}
+        \[
+        \left[\hspace{-4pt}\left[
+        \begin{array}{rl}
+            \text{f p}_{1,1}  \ldots \text{p}_{1,m} &= \text{R}_1\\
+            \vdots \qquad \vdots & \vdots \\
+            \text{f p}_{n,1}  \ldots \text{p}_{n,m} &= \text{R}_n\\
+        \end{array}
+        \right]\hspace{-4pt}\right]
+        \]
+    \end{minipage}\vs
+
+    \begin{minipage}{0.9\textwidth}
+        \begin{mlalign}
+            \hspace{-1em}$\equiv$ f $=$ (\tl{}v$_1$\ldots\tlb{v$_m$}&( ((\tl{}\metafnbb{TE}{p$_{1,1}$}\ldots\tlb{\metafnbb{TE}{p$_{1,m}$}}\metafnbb{TR}{R$_1$}) v$_1$ \ldots v$_m$)\\
+            & \fatbar{} $\ldots$\\
+            & \fatbar{} ((\tl{}\metafnbb{TE}{p$_{n,1}$}\ldots\tlb{\metafnbb{TE}{p$_{n,m}$}}\metafnbb{TR}{R$_n$}) v$_1$ \ldots v$_m$)\\
+            & \fatbar{} ERROR))
+        \end{mlalign}
+    \end{minipage}
+\end{mlcoded}
+
+\begin{tabular}{rll}
+    \hspace{1cm} where & \ml{f} & is a variable \\
+    & \ml{v$_i$} & is a variable not free in any \ml{R$_j$}\\
+    & \ml{p$_{i,j}$} & is a pattern\\
+    & \ml{R} & is a right-hand side\\
+    & \ml{R$_i$} & is a right-hand side
+\end{tabular}
+        \end{minipage}%
+    }%
+}%
+
+\caption{\textsf The final \metafn{TD} translation scheme}
+\end{figure}
+
+
+
+\subsection{The Semantics of Variable Patterns}
+If the pattern \ml{p} is a variable \ml{v}, then the pattern-matching lambda abstraction \ml{(\tlb{p}.E)} is just an ordinary lambda abstraction \ml{(\tlb{v}E)}, whose semantics have already been discussed in Section 2.5.
+
+\subsection{The Semantics of Constant Patterns}
+To describe the semantics of constant patterns we must specify the value of
+
+\begin{mlcoded}
+    \metafnbb{Eval}{\tlb{k}E}
+\end{mlcoded}
+
+where \ml{k} is a constant. Its value is certainly a function, so we can specify it by giving the value of
+
+\begin{mlcoded}
+    \metafnbb{Eval}{\tlb{k}E} a
+\end{mlcoded}
+
+for any argument \ml{a}. There are three possibilities: either \ml{a} is the same as \ml{k}, or it is \ml{1}, or it is something else. This leads to the following semantic equations:
+
+\begin{mlcoded}
+    \begin{tabular}{lll}
+        \metafnbb{Eval}{\tlb{k}E} a &$=$ \metafnbb{Eval}{E} & \text{if} a $=$ \metafnbb{Eval}{k} \\
+    \metafnbb{Eval}{\tlb{k}E} a &$=$ \text{FAIL} & \text{if} a $\neq$ \metafnbb{Eval}{k} \text{and} a $\neq$ $\bot$ \\
+    \metafnbb{Eval}{\tlb{k}E} $\bot$ &$=$ $\bot$
+    \end{tabular}
+\end{mlcoded}
+
+The first equation says that if \ml{(\tlb{k}E)} is applied to something that evaluates to \ml{k}, then the result comes from evaluating \ml{E}. The second equation says that the result is \ml{FAIL} if the argument evaluates to anything else, and the third equation specifies that, if the evaluation of the argument fails to terminate, then so does the whole application. As usual, these semantic equations specify reduction rules by implication. Thus, for example
+
+\begin{mlalign}
+    (\tlb{1}$+$ 3 4) 1 &$\rightarrow +$ 3 4 \\
+    (\tlb{1}$+$ 3 4) 2 &$\rightarrow$ \text{FAIL}
+\end{mlalign}
+
+It is also possible to regard constants as sum-constructors of arity zero, as outlined in Section 4.1.2.3, in which case the rules of this section become a special case of those of the next.
+
+\subsection{The Semantics of Sum-constructor Patterns}
+Next, we consider the case of constructor patterns, of the form \ml{(s p$_1$ $\ldots$ p$_r$)}. Initially we will only consider sum patterns, since product patterns turn out to require special treatment. Here are the semantic rules for such patterns:
+
+\begin{mlcoded}
+    \footnotesize
+    \begin{tabular}{ll}
+        \metafnbb{Eval}{\tlb{(s p$_1$ $\ldots$ p$_r$)}E} (s a$_1$ $\ldots$ a$_r$) &$=$ \metafnbb{Eval}{\tlb{p$_1$ $\ldots$ p$_r$}E} a$_1$ $\ldots$ a$_r$ \\
+    \metafnbb{Eval}{\tlb{(s p$_1$ $\ldots$ p$_r$)}E} (s$'$ a$_1$ $\ldots$ a$_r$) &$=$ \text{FAIL}  \text{if} \quad s $\neq$ s$'$ \\
+    \metafnbb{Eval}{\tlb{(s p$_1$ $\ldots$ p$_r$)}E} $\bot$ &$=$ $\bot$
+    \end{tabular}
+\end{mlcoded}
+
+Operationally, the rules work as follows. To apply \ml{(\tlb{(s p$_1$ $\ldots$ p$_r$)}E)} to an argument \ml{A} we first evaluate \ml{A} to find out what sort of object it is. This implies that if the evaluation of \ml{A} does not terminate then neither does the application in question (third rule). (Note: to `evaluate \ml{A}' we only evaluate it to constructor form; we do not evaluate its components. They will be evaluated lazily, only if they are extracted and used. This is what it means for constructors to be lazy.)
+
+If \ml{A} evaluates to an object built with a constructor other than \ml{s}, then the pattern-match fails (second rule). To see how this rule works, consider an
+application of the lambda abstraction \ml{(\tlb{(BRANCH t1 t2)}BRANCH t2 t1)} to \ml{(LEAF 0)}:
+\begin{mlalign}
+    (\tlb{(BRANCH t1 t2)}BRANCH t2 t1) (LEAF 0) &$\rightarrow$ \text{FAIL}
+\end{mlalign}
+The application returns \ml{FAIL} because the constructor in the pattern is different from that of the argument.
+
+Finally, if \ml{A} was built with the same constructor as the pattern, then the first rule applies. To see how this rule works, consider an application of the same abstraction to a \ml{BRANCH}:
+\begin{mlcoded}
+    (\tlb{(BRANCH t1 t2)}BRANCH t2 t1) (BRANCH (LEAF 0) (LEAF 1)) \\
+    $\rightarrow$ (\tlb{t1}\tlb{t2}BRANCH t2 t1) (LEAF 0) (LEAF 1) \\
+    $\rightarrow$ (\tlb{t2}BRANCH t2 (LEAF 0)) (LEAF 1) \\
+    $\rightarrow$ 1 \\
+    $\rightarrow$ BRANCH (LEAF 1) (LEAF 0)
+\end{mlcoded}
+In this case the match succeeds, and \ml{t1} and \ml{t2} are bound to the components of the branch with the ordinary $\beta$-reduction rule.
+
+Notice that for constructors of arity zero \ml{(r=0)} the three rules correspond exactly to those of the previous section. For example, using the first case of the \ml{xor} function gives:
+\begin{mlalign}
+    (\tlb{FALSE}\tlb{y}y) FALSE TRUE &$\rightarrow$ (\tlb{y}y) TRUE \\
+    &$\rightarrow$ TRUE
+\end{mlalign}
+Finally, notice that the rules deal correctly with nested patterns. Consider, for example, the following application of the first case of the function \ml{lastElt} to \ml{(CONS 4 (CONS 3 NIL))}:
+\begin{mlcoded}
+    (\tlb{(CONS x NIL)}x) (CONS 4 (CONS 3 NIL))\\
+    $\rightarrow$ (\tlb{x}\tlb{NIL}x) 4 (CONS 3 NIL) (\text{first rule}) \\
+    $\rightarrow$ (\tlb{NIL}4) (CONS 3 NIL) (first rule)\\
+    $\rightarrow$ \text{FAIL} \quad (\text{second rule})
+\end{mlcoded}
+Here, the outer pattern matches but the inner one does not, so the whole expression returns \ml{FAIL}.
+
+\subsection{The Semantics of Product-constructor Patterns}
+Finally we consider the semantics of matching product patterns. This is an area in which a rather subtle issue surfaces.
+
+Consider the Miranda functions
+\begin{mlcoded}
+    \begin{tabular}{ll}
+        zeroAny x &$=$ 0\\
+        zeroList [\,] &$=$ 0\\
+        zeroPair (x,y) &$=$ 0
+    \end{tabular}
+\end{mlcoded}
+The function \ml{zeroAny} takes a single argument and returns \ml{0}. Miranda's lazy semantics clearly means that the argument is not evaluated, so that \ml{0} is
+returned even if the evaluation of the argument is very expensive or non-terminating:
+\begin{mlcoded}
+    \metafnbb{Eval}{zeroAny} $\bot$ $=$ 0
+\end{mlcoded}
+We say that \ml{zeroAny} is \textit{lazy} since it does not evaluate its argument.
+
+The semantics of the function \ml{zeroList} has already been described by the preceding sections. It specifies that \ml{zeroList} evaluates its argument, and checks whether it is \ml{[\,]}. If it is, then \ml{zeroList} returns \ml{0}, otherwise it returns \ml{ERROR}. We say that \ml{zeroList} is \textit{strict} since it does evaluate its argument:
+\begin{mlalign}
+    \metafnbb{Eval}{zeroAny} $\bot$ $=$ $\bot$
+\end{mlalign}
+Should the \ml{zeroPair} function be lazy or strict? Since the argument is a tuple there is no point in evaluating it to check that it really is a tuple, as was required in the case of \ml{zeroList}, because the check would always succeed (assuming that the program is type-checked). It would be more in the spirit of a lazy language to specify that
+\begin{mlcoded}
+    \metafnbb{Eval}{zeroAny} $\bot$ $=$ 0
+\end{mlcoded}
+and the Miranda language specifies this choice. We call this \textit{lazy product-matching}. On the other hand, an alternative choice would be to specify that
+\begin{mlcoded}
+    \metafnbb{Eval}{zeroAny} $\bot$ $=$ $\bot$
+\end{mlcoded}
+and we call this \textit{strict product-matching}.
+
+Notice that there is no `right' or `wrong' answer; it is simply a question of making a clear choice of semantics for product-matching. The only `wrong' approach is not to notice that there is a choice to be made (and hence to risk making different choices in different parts of the implementation, with unpredictable results).
+
+Nevertheless, we contend that there are persuasive arguments in favor of the lazy approach. We discuss this issue in the next section, while in the rest of this section we concentrate on the semantics of lazy product-matching.
+
+We may describe lazy product-matching by the following semantic rule:
+
+\begin{mlalign}
+&\metafnbb{Eval}{\tlb{(t p$_1$ $\ldots$ p$_1$)}E} a \\
+$=$ &\metafnbb{Eval}{\tl{}p$_1$ $\ldots$ \tlb{p$_1$}E} (SEL-t-1 a) $\ldots$ (SEL-t-r a)
+\end{mlalign}
+
+Here \ml{SEL-t-i} is a built-in function which selects the $i^\text{th}$ field from a structured object built with constructor \ml{t}. It may be described by the following semantic equations:
+
+\begin{mlcoded}
+\begin{tabular}{ll}
+    {SEL}-t-i (t a$_1$ $\ldots$ a$_i$ $\ldots$ a$_r$) &$=$ a$_i$ \\
+    {SEL}-t-i $\bot$ &$=$ $\bot$
+\end{tabular}
+\end{mlcoded}
+Suppose that \ml{(\tlb{p}E)}, where \ml{p} is a product pattern, is applied to an expression \ml{A}. The rule for lazy product-matching postpones the evaluation of the argument \ml{A} by binding the names for the components to applications of \ml{SEL-t-i} to \ml{A}, rather than evaluating \ml{A} and extracting its components directly. If

@@ -92,27 +92,42 @@ functional program is the notation of the lambda calculus (Figure~\ref{fig:implf
 lambda calculus is an extremely well-studied language, and we give an introduction
 to it in Chapter 2.
 
-\begin{figure}[h]
-\setlength{\unitlength}{0.14in} % selecting unit length
-\centering % used for centering Figure
-\psscalebox{1.0 1.0} % Change this value to rescale the drawing.
-{
-\begin{pspicture}(0,-2.0)(9.8,2.0)
-\psframe[linecolor=black, linewidth=0.04, dimen=outer](9.8,2.0)(0.0,1.2)
-\rput[bl](1.89,1.4){High - level language program}
-\psline[linecolor=black, linewidth=0.04, arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.0]{<-}(4.9,0.4)(4.9,1.2)(4.9,1.2)(4.9,1.2)(4.9,1.2)
-\psframe[linecolor=black, linewidth=0.04, dimen=outer](9.8,0.4)(0.0,-0.4)
-\rput[bl](0.9,-0.2){Program Expressed in lambda notation}
-\psline[linecolor=black, linewidth=0.04, arrowsize=0.05291667cm 2.0,arrowlength=1.4,arrowinset=0.0]{<-}(4.9,-1.2)(4.9,-0.4)(4.9,-0.4)(4.9,-0.4)(4.9,-0.4)
-\psframe[linecolor=black, linewidth=0.04, dimen=outer](9.8,-1.2)(0.0,-2.0)
-\rput[bl](1.89,-1.755){High - level language program}
-\rput[bl](5.38,0.6){Part I}
-\rput[bl](5.38,-1.0){Part II and III}
-\end{pspicture}
-}
-\caption{Implementing a functional program} % title of the Figure
-\label{fig:implfunctprog} % label to refer figure in text
-\end{figure}
+
+\boxedfigure{
+\centering
+
+\framebox{\
+    \begin{minipage}{6cm}
+        \centering
+
+        High-level language program\
+    \end{minipage}
+}\\
+\hspace{4cm}$\Bigg\downarrow$ \quad
+\begin{minipage}{4cm}
+    {Part I}
+\end{minipage}\\
+\framebox{\
+    \begin{minipage}{6cm}
+        \centering
+
+        Program expressed in lambda notation
+    \end{minipage}
+    \ }\\
+\hspace{4cm}$\Bigg\downarrow$  \quad
+\begin{minipage}{4cm}
+    {Parts II and III}
+\end{minipage}\\
+\framebox{\
+    \begin{minipage}{6cm}
+        \centering
+
+        Concrete implementation
+    \end{minipage}
+    \ }\\
+
+}{Implementing a functional program}
+
 
 
 The lambda calculus is not only simple, it is also sufficiently expressive to
@@ -166,20 +181,38 @@ f\, 4
 \end{mlcoded}
 that is, the function \ml{f} applied to \ml{4}. We can think of the program like this:
 \begin{center}
-\pstree[nodesep=4pt,levelsep=5ex]{ \TR{\ml{@}} }{  \TR{\ml{f}} \TR{\ml{4}} }
+    \begin{forest}
+        [\ml{@}
+            [\ml{f}]
+            [\ml{4}]
+        ]
+    \end{forest}
 \end{center}
 where the \ml{@} stands for function application. Applying \ml{f} to \ml{4} gives
 \begin{center}
-	\pstree[nodesep=4pt,levelsep=5ex]{ \TR{\ml{$*$}} }{
-		\pstree{\TR{\ml{+}}}{ \TR{\ml{4}} \TR{\ml{1}} }
-		\pstree{\TR{\ml{--}}}{ \TR{\ml{4}} \TR{\ml{1}} }
-	}
+    \begin{forest}
+        [\ml{$*$}
+            [$+$
+                [\ml{4}]
+                [\ml{1}]
+            ]
+            [$-$
+                [\ml{4}]
+                [\ml{1}]
+            ]
+        ]
+    \end{forest}
 \end{center}
 (Note: in the main text we will use a slightly different representation for
 applications of \ml{$*$}, \ml{$+$} and \ml{$-$}, but this fact is not significant here.) We may now
 execute the addition and the subtraction (in either order), giving
 \begin{center}
-	\pstree[nodesep=4pt,levelsep=5ex]{\TR{\ml{$*$}}}{ \TR{\ml{5}} \TR{\ml{3}} }
+    \begin{forest}
+    [\ml{$*$}
+        [\ml{5}]
+        [\ml{3}]
+    ]
+\end{forest}
 \end{center}
 Finally we can execute the multiplication, to give the result
 \begin{center}
@@ -188,12 +221,12 @@ Finally we can execute the multiplication, to give the result
 
 From this simple example we can see that:
 \begin{numbered}
-\item Executing a functional program consists of evaluating an expression.
-\item A functional program has a natural representation as a tree (or, more
-generally, a graph).
+\item \textit{Executing} a functional program consists of \textit{evaluating} an expression.
+\item A functional program has a natural representation as a \textit{tree} (or, more
+generally, a \textit{graph}).
 \item Evaluation proceeds by means of a sequence of simple steps, called
-reductions. Each reduction performs a local transformation of the graph
-(hence the term graph reduction).
+\textit{reductions}. Each reduction performs a local transformation of the graph
+(hence the term \textit{graph reduction}).
 \item Reductions may safely take place in a variety of orders, or indeed in
 parallel, since they cannot interfere with each other.
 \item Evaluation is complete when there are no further reducible expressions.

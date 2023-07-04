@@ -1,5 +1,4 @@
-% To compile, you must use latex. In TeXstudio, you must use dvi->* chain.
-\documentclass[12pt, b5paper, oldfontcommands, draft]{memoir}
+\documentclass[12pt, b5paper, oldfontcommands]{memoir}
 % Margins
 \usepackage[b5paper,total={6in, 9in}]{geometry}
 \geometry{margin=2.4cm, top=2.5cm}
@@ -10,11 +9,17 @@
 \bibliographystyle{bib/genbibstyle}
 
 % Required for LaTeXDraw
-\usepackage[usenames,dvipsnames]{pstricks}
-\usepackage{pstricks-add}
-\usepackage{epsfig}
-\usepackage{pst-grad} % For gradients
-\usepackage{pst-plot} % For axes
+%\usepackage[usenames,dvipsnames]{pstricks}
+%\usepackage{pstricks-add}
+%\usepackage{epsfig}
+%\usepackage{pst-grad} % For gradients
+%\usepackage{pst-plot} % For axes
+
+% Switched to tikz ecosystem
+\usepackage{forest}
+\usepackage{graphicx}
+%\usepackage{svg} % For \includesvg
+
 \usepackage[space]{grffile} % For spaces in paths
 \usepackage{etoolbox} % For spaces in paths
 \makeatletter % For spaces in paths
@@ -122,7 +127,7 @@
 
 % This is the mlcoded environment, a math environment in upright Helvetica.
 \newenvironment{mlcoded}{
-	\sffamily\spaceskip=2\fontdimen2\font
+	\sffamily\spaceskip=2\fontdimen2\font\footnotesize
 	\list{}{\rightmargin10pt\leftmargin10pt}\item[] % This line is how the quote environment is defined.
 %	\noindent\par\vspace{0.5\baselineskip}
 %	\begin{quote}
@@ -163,7 +168,7 @@
 
 % Inline Miranda code: "this is \ml{f x} applied to...."
 %\newcommand{\ml}[1]{{\sansmath$#1$}}
-\newcommand{\ml}[1]{{\sffamily #1}}
+\newcommand{\ml}[1]{{\sffamily\footnotesize #1}}
 
 % For Roman Numerals
 %\makeatletter
@@ -260,6 +265,15 @@
 \titlespacing*{\chapter}{ 1.7cm}{ 1cm}{1cm}  %[ right sep ]
 \newcommand{\chapterbreak}{\clearpage\thispagestyle{empty}}
 
+\newcommand{\chapterauthors}[1]{
+{\upshape\large\sffamily
+    \vspace{-1\baselineskip}
+    \hspace{1.7cm}\noindent
+    #1
+}
+}
+
+
 % Part title formatting - identical to chapter formatting
 \titleformat{\part}[display]{\normalfont\fontsize{30}{20}\selectfont\itshape \sffamily}{
 	\makebox[2pt][l]{\hspace{-1.7cm}
@@ -333,12 +347,6 @@
 			}%
 		}%
 
-		% \noindent\fbox{%
-		% 	\parbox{0.9\textwidth}{%
-		% 			#1
-		% 	}%
-		% }
-
 		\caption{\textsf #2}
 	\end{figure}
 }
@@ -404,6 +412,12 @@
 % Infix box operator
 \newcommand{\fatbar}{{\sffamily [\hspace{-1pt}]}}
 
+% The `::=` operator
+\newcommand{\typedecl}{\ml{$::=$}}
+\newcommand{\hastype}{\ml{$::$}}
+
+\newenvironment{parsetree}[1]{\begin{center}\begin{forest}[#1]}{\end{forest}\end{center}}
+
 \begin{document}
 
 \frontmatter
@@ -416,7 +430,7 @@
 	\vspace*{\drop}
 %	\huge
 %	\dedication
-	\dedicationstyle{\dedication}
+%	\dedicationstyle{\dedication}
 \end{flushleft}
 \clearpage
 
@@ -438,6 +452,7 @@
 
 \include{chapters/chap2}
 \include{chapters/chap3}
+\include{chapters/chap4}
 
 %\backmatter
 

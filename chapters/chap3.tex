@@ -329,11 +329,11 @@ Here we see another reason for using \ml{$\equiv$} when writing translation sche
 we generate the following (enriched) lambda expression:
 \begin{mlcoded}
     letrec \\
-    \phantom{ww}\metafnbb{TD}{Definition$_1$} \\
-    \phantom{ww}$\cdots$ \\
-    \phantom{ww}\metafnbb{TD}{Definition$_n$} \\
+    \quad\metafnbb{TD}{Definition$_1$} \\
+    \quad$\cdots$ \\
+    \quad\metafnbb{TD}{Definition$_n$} \\
     in\\
-    \phantom{ww}\metafnbb{TE}{Expression}
+    \quad\metafnbb{TE}{Expression}
 \end{mlcoded}
 In the previous example we used a \ml{let} instead of a \ml{letrec}, but Miranda definitions are all potentially recursive, so we must use a \ml{letrec} in general (later work will optimize this--Section 6.2.8).
 
@@ -341,7 +341,7 @@ What we have now done is to reduce the translation problem to one of defining th
 
 For the moment, we completely avoid the question of declarations of new types and type-checking. The former will be introduced in Chapter 4 and the latter in Chapter 8.
 
-\subsection{The \metafn{TE} Translation Scheme}
+\section{The \metafn{TE} Translation Scheme}
 
 The translation scheme \metafn{TE} is a function, which takes a Miranda expression as its argument, and produces an equivalent lambda expression as its result, thus:
 
@@ -351,3 +351,237 @@ The translation scheme \metafn{TE} is a function, which takes a Miranda expressi
 
 \noindent We will describe \metafn{TE} by case analysis, giving a rule for each possible form of a
 Miranda expression.
+
+
+\subsection{Translating Constants}
+To translate a constant or built-in function is straightforward, assuming that the lambda notation into which we are translating supports the same set of constants. The following rule is all that is required:
+\begin{mlcoded}
+    \metafnbb{TE}{k} $=$ k
+\end{mlcoded}
+\noindent where \ml{k} is a constant or built-in function name (we include all Miranda's operators, and literal constants in this category). Thus, for example,
+
+\begin{mlcoded}
+    \metafnbb{TE}{5} $=$ 5 \\
+    \metafnbb{TE}{$+$} $=$ $+$
+\end{mlcoded}
+
+This translation assumes that all the constants and built-in functions have the same names in the lambda notation. It is straightforward to describe changes of name, however. For example, the following set of rules for \metafn{TE} translates the operators $+$, $-$, etc. in Miranda into \ml{PLUS}, \ml{MINUS}, etc.:
+
+\begin{mlcoded}
+    \metafnbb{TE}{$+$} $=$ \text{PLUS} \\
+    \metafnbb{TE}{$-$} $=$ \text{MINUS}\\
+    \normalfont{etc.}
+\end{mlcoded}
+
+\subsection{Translating Variables}
+An equally simple rule suffices to translate variables:
+
+\begin{mlcoded}
+    \metafnbb{TE}{v} $=$ v
+\end{mlcoded}
+where \ml{v} is a variable (including the names of user-defined functions and constructors).
+
+\subsection{Translating Function Applications}
+Function application in Miranda is denoted by juxtaposition, thus \ml{(f x)}. The same syntax is used in the lambda notation, so the rule for translation is simple:
+\begin{mlcoded}
+    \metafnbb{TE}{E$_1$ E$_2$} $=$ \metafnbb{TE}{E$_1$} \metafnbb{TE}{E$_2$}
+\end{mlcoded}
+where \ml{E$_1$} and \ml{E$_2$} are arbitrary Miranda expressions. In the case of certain common operators (such as $+$, etc.), Miranda provides infix syntax (that is, the operator is written between its operands). The translation rule to deal with these constructs is:
+
+\begin{mlcoded}
+    \metafnbb{TE}{E$_1$ \text{ infix } E$_2$} $=$ \metafnbb{TE}{\text{infix}} \metafnbb{TE}{E$_1$} \metafnbb{TE}{E$_2$}
+\end{mlcoded}
+where `infix' is an infix operator, and \ml{E$_1$} and \ml{E$_2$} are arbitrary Miranda expressions. We must apply \metafn{TE} to `infix' to accomplish any change of name (see above).
+
+Furthermore, Miranda allows user-defined functions to be used as infix operators by prefixing their names with \$. We can treat this case with the rule
+
+\begin{mlcoded}
+    \metafnbb{TE}{E$_1$ \$v E$_2$} $=$ \metafnbb{TE}{v} \metafnbb{TE}{E$_1$} \metafnbb{TE}{E$_2$}
+\end{mlcoded}
+
+\subsection{Translating Other Forms of Expressions}
+We shall consider two other forms of Miranda expression, namely
+
+\begin{numbered}
+\item list expressions such as \ml{[2,5,1]};
+\item ZF expressions.
+
+\end{numbered}
+We will deal with these in Chapters 4 and 7 respectively.
+
+\section{The \metafn{TD} Translation Scheme}
+The \metafn{TD} scheme takes a Miranda definition as its argument and produces a \ml{letrec} definition as its result. We will only give a rather simplified \metafn{TD} scheme here, leaving a more powerful one for later chapters.
+
+There are two cases that we can handle immediately, namely variable definitions and simple function definitions.
+
+\subsection{Variable Definitions}
+
+Consider the Miranda definition
+\begin{mlcoded}
+    v $=$ 5 $*$ 7
+\end{mlcoded}
+It can be translated very easily to
+\begin{mlcoded}
+    v $= *$ 5 7
+\end{mlcoded}
+All that is required is to translate the body of the definition, using the \metafn{TE} scheme. In general:
+\begin{mlcoded}
+    \metafnbb{TD}{v $=$ E} $\equiv$ v $=$ \metafnbb{TE}{E}
+\end{mlcoded}
+where \ml{v} is a variable and \ml{E} is an expression.
+
+\subsection{Simple Function Definitions}
+We have already seen an example of translating a simple function definition, when we translated the Miranda definition
+\begin{mlcoded}
+    \text{square } n $=$ n $*$ n
+\end{mlcoded}
+
+\boxedfigure{
+    \begin{center}
+    \metafnbb{TE}{Exp} translates the expression \ml{Exp}
+    \end{center}
+    \vspace{-0.5\baselineskip}
+    \begin{tabular}{ll}
+        \metafnbb{TE}{k} &$\equiv$ \ml{k} \quad\quad (assumes no name-changing) \\
+        \metafnbb{TE}{v} &$\equiv$ \ml{v} \\
+        \metafnbb{TE}{ E$_1$ E$_2$ } &$\equiv$ \metafnbb{TE}{ E$_1$ } \metafnbb{TE}{ E$_2$ } \\
+        \metafnbb{TE}{ E$_1$ infix E$_2$ } &$\equiv$ \metafnbb{TE}{ infix } \metafnbb{TE}{ E$_1$ } \metafnbb{TE}{ E$_2$ } \\
+        \metafnbb{TE}{ E$_1$ \$v E$_2$ } &$\equiv$ \metafnbb{TE}{ v } \metafnbb{TE}{ E$_1$ } \metafnbb{TE}{ E$_2$ } \\
+    \end{tabular}
+
+\vs
+    \begin{tabular}{rll}
+        \hspace{1cm} where & \ml{k} & is a literal constant or built-in operator \\
+        & \ml{v} & is a variable \\
+        & \ml{E$_1$} & is an expression \\
+        & \ml{infix} & is an infix operator
+    \end{tabular}
+    \begin{center}
+
+    \vspace{-0.5\baselineskip}
+    \hdashsep
+    \vspace{0.25\baselineskip}
+
+    \metafnbb{TD}{Def} translates the definition \ml{Def}
+    \end{center}
+    \vspace{-0.5\baselineskip}
+    \begin{tabular}{ll}
+        \metafnbb{TD}{v $=$ E} &$\equiv$ \ml{v} $=$ \metafnbb{TE}{E} \\
+        \metafnbb{TD}{ f v$_1$ $\ldots$ v$_n$ $=$ E } &$\equiv$ \ml{f $=$ \tlb{v$_1$}$\ldots$\tlb{v$_n$}\metafnbb{TE}{E}}
+    \end{tabular}
+
+\vs
+    \begin{tabular}{rll}
+        \hspace{1cm} where & \ml{v, v$_i$, f} & are variables \\
+        & \ml{E} & is an expression
+    \end{tabular}
+}{Translation schemes \ml{TE} and \ml{TD} (simple versions)}
+
+
+\noindent into the \ml{letrec} definition
+\begin{mlcoded}
+    square $=$ \tlb{n}$*$ n n
+\end{mlcoded}
+
+The body of the definition is translated, and a lambda abstraction is generated around it. We can generalize this as follows:
+\begin{mlcoded}
+    \metafnbb{TD}{f v$_1$ ... v$_n$ $=$ E} $\equiv$ f $=$ \tlb{v$_1$}$\ldots$\tlb{v$_n$}\metafnbb{TE}{E}
+\end{mlcoded}
+where \ml{f}, \ml{v$_1$}, ..., \ml{v$_n$} are variables and \ml{E} is an expression.
+
+\section{An Example}
+We have now shown how to translate a simple subset of Miranda into the enriched lambda notation. Our progress is summarized in Figure 3.3.
+
+To illustrate the translation in action, consider the following Miranda program:
+\begin{mlcoded}
+    \begin{center}
+        %    \setlength{\tabcolsep}{18pt}
+        \setlength{\extrarowheight}{0pt}
+        \renewcommand{\arraystretch}{.6}
+
+        \begin{tabular}{|l|}
+            \hline\\
+            average a b $=$ (a $+$ b)/2\\
+            \\
+            \hdashline \\
+            average 2 (3 $+$ 5)\\
+            \\
+            \hline
+        \end{tabular}
+
+    \end{center}
+\end{mlcoded}
+This will be transformed to:
+\begin{mlcoded}
+    letrec\\
+    \phantom{ww}\metafnbb{TD}{average a b $=$ (a $+$ b)/2}\\
+    in\\
+    \phantom{ww}\metafnbb{TE}{average 2 (3 $+$ 5)}
+\end{mlcoded}
+Application of the rules for \metafn{TE} gives
+\begin{mlcoded}
+    \metafnbb{TE}{average 2 (3 $+$ 5)}\\
+    $\equiv$ \metafnbb{TE}{average} \metafnbb{TE}{2} \metafnbb{TE}{3 $+$ 5}\\
+    $\equiv$ average 2 (\metafnbb{TE}{$+$} \metafnbb{TE}{3} \metafnbb{TE}{5})\\
+    $\equiv$ average 2 ($+$ 3 5)
+\end{mlcoded}
+Similarly, the rules for \metafn{TD} give
+\begin{mlcoded}
+    \metafnbb{TD}{average a b $=$ (a$+$b)$/$2}\\
+    $\equiv$ average $=$ \tlb{a}\tlb{b}\metafnbb{TE}{(a $+$ b)/2}\\
+    $\equiv$ average $=$ \tlb{a}\tlb{b}(\metafnbb{TE}{$/$} \metafnbb{TE}{a $+$ b} \metafnbb{TE}{2})\\
+    $\equiv$ average $=$ \tlb{a}\tlb{b}($/$ (\metafnbb{TE}{$+$} \metafnbb{TE}{a} \metafnbb{TE}{b}) 2 )\\
+    $\equiv$ average $=$ \tlb{a}\tlb{b}($/$ ($+$ a b) 2)
+\end{mlcoded}
+Putting it all together gives the result of the translation:
+\begin{mlcoded}
+    letrec\\
+    \phantom{ww}average $=$ \tlb{a}\tlb{b}($/$ ($+$ a b) 2)\\
+    in\\
+    \phantom{ww}average 2 ($+$ 3 5)
+\end{mlcoded}
+
+To complete the example, let us transform the expression into the ordinary lambda calculus. Let us suppose that we spot that the \ml{letrec} may be replaced with a let, because the definition is non-recursive (the method is described in Chapter 6). Then we can use the semantics of \ml{let}-expresions to produce the ordinary lambda expression
+\begin{mlcoded}
+    (\tlb{average}(average 2 ($+$ 3 5))) (\tlb{a}\tlb{b}($/$ ($+$ a b) 2))
+\end{mlcoded}
+You can see why we prefer to write programs in Miranda!
+
+\section{The Organization of Chapters 4--9}
+
+In the interests of simplicity, the equations for \metafn{TD} and \metafn{TE} given in Figure 3.3 are far from comprehensive. The rest of Part I of the book is devoted to filling in the details.
+
+Chapter 4 introduces structured data objects, pattern-matching and conditional equations, and gives a simple translation into the enriched lambda calculus. This translation is rather inefficient, and Chapter 5 shows how pattern-matching can be compiled far more efficiently. Chapter 6 then shows how to transform all the constructs of the enriched lambda calculus into the ordinary lambda calculus.
+
+Miranda contains constructs called ZF expressions (also known as list comprehensions). We discuss their translation in Chapter 7.
+
+Finally, Miranda is a polymorphically typed language, and we have so far paid no attention to the question of type-checking. This is addressed in Chapters 8 and 9.
+
+The organization of these chapters is depicted in Figure 3.4.
+
+\begin{figure}[H]
+    \centering
+
+    \fbox{%
+            \begin{minipage}{0.9\textwidth}
+                \small
+                \setlength{\parindent}{10pt}
+                \setlength{\parskip}{0mm plus 0mm minus 0mm}
+
+                \includegraphics[width=0.96\textwidth]{chapters/Fig3_4}
+%                    \includesvg{chapters/Fig3_4}
+%                    \input{chapters/Fig3_4.tex}
+
+            \end{minipage}%
+
+    }%
+
+    \caption{\textsf Organization of Chapters 4-8}
+\end{figure}
+
+\section*{References}
+
+\begin{references}
+    \item Gordon, M.J.C. 1979. \textit{The Denotational Description of Programming Languages}. Springer Verlag.
+    \item Turner, D.A. 1985. Miranda -- a non-strict functional language with polymorphic types. In \textit{Conference on Functional Programming Languages and Computer Architecture, Nancy}, pp. 1-16, Jouannaud (editor). LNCS 201. Springer Verlag.
+\end{references}

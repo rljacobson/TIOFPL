@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="Layer_1"
+   data-name="Layer 1"
+   width="184.16774mm"
+   height="140.40556mm"
+   viewBox="0 0 522.05029 398"
+   version="1.1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs11">
+    <style
+       id="style9">.cls-1,.cls-3{fill:none;stroke:#231f20;stroke-miterlimit:10;}.cls-2{fill:#231f20;}.cls-3{stroke-dasharray:10 2;}.cls-4{font-size:17px;}.cls-4,.cls-7{font-family:Times-Roman, Times;}.cls-5{letter-spacing:-0.0698em;}.cls-6{font-family:HelveticaNeue, Helvetica Neue;}.cls-8{letter-spacing:-0.01798em;}.cls-9{letter-spacing:-0.02002em;}.cls-10{letter-spacing:-0.06985em;}</style>
+  </defs>
+  <title
+     id="title13">Fig3_4</title>
+  <rect
+     class="cls-1"
+     x="45.54736"
+     y="0.5"
+     width="435"
+     height="50"
+     id="rect15" />
+  <rect
+     class="cls-1"
+     x="108.54736"
+     y="120.5"
+     width="306"
+     height="139"
+     id="rect17" />
+  <rect
+     class="cls-1"
+     x="45.54736"
+     y="316.5"
+     width="142"
+     height="51"
+     id="rect19" />
+  <rect
+     class="cls-1"
+     x="263.04736"
+     y="316.5"
+     width="131.5"
+     height="81"
+     id="rect21" />
+  <line
+     class="cls-1"
+     x1="367.11867"
+     y1="0.5"
+     x2="367.11867"
+     y2="50.5"
+     id="line23" />
+  <line
+     class="cls-1"
+     x1="475.70496"
+     y1="50.5"
+     x2="475.70496"
+     y2="330.58673"
+     id="line25" />
+  <path
+     class="cls-2"
+     d="M475.705,328.07382l5.04425-3.068.11419.17227-3.2669,8.225Q476.651,337.70168,475.705,342q-.94538-4.29849-1.89148-8.59686l-3.26688-8.225.08612-.17227Z"
+     id="path27" />
+  <line
+     class="cls-1"
+     x1="144.39957"
+     y1="262.8028"
+     x2="144.39957"
+     y2="305.08673"
+     id="line29" />
+  <path
+     class="cls-2"
+     d="M144.39957,302.57382l5.04425-3.068.11415.17227-3.26689,8.225q-.94542,4.29853-1.89151,8.59686-.94541-4.29849-1.89151-8.59686l-3.26688-8.225.08612-.17227Z"
+     id="path31" />
+  <line
+     class="cls-1"
+     x1="324.99255"
+     y1="262.8028"
+     x2="324.99255"
+     y2="305.08673"
+     id="line33" />
+  <path
+     class="cls-2"
+     d="M324.99255,302.57382l5.04425-3.068.11414.17227-3.26691,8.225q-.94537,4.29853-1.89148,8.59686-.94542-4.29849-1.89151-8.59686l-3.2669-8.225.08615-.17227Z"
+     id="path35" />
+  <line
+     class="cls-1"
+     x1="255.20837"
+     y1="54.76697"
+     x2="255.20837"
+     y2="109.08673"
+     id="line37" />
+  <path
+     class="cls-2"
+     d="M255.20837,106.57379l5.04425-3.06793.11414.1723-3.26688,8.225q-.94542,4.29849-1.89151,8.59686-.94542-4.29849-1.89151-8.59686l-3.26687-8.225.08612-.1723Z"
+     id="path39" />
+  <line
+     class="cls-1"
+     x1="383.55167"
+     y1="54.76697"
+     x2="383.55167"
+     y2="109.08673"
+     id="line41" />
+  <path
+     class="cls-2"
+     d="M383.55167,106.57379l5.04425-3.06793.11413.1723-3.26687,8.225q-.94542,4.29849-1.89151,8.59686-.94542-4.29849-1.89151-8.59686l-3.26688-8.225.08612-.1723Z"
+     id="path43" />
+  <line
+     class="cls-1"
+     x1="144.39957"
+     y1="54.76697"
+     x2="144.39957"
+     y2="109.08673"
+     id="line45" />
+  <path
+     class="cls-2"
+     d="M144.39957,106.57379l5.04425-3.06793.11415.1723-3.26689,8.225q-.94542,4.29849-1.89151,8.59686-.94541-4.29849-1.89151-8.59686l-3.26688-8.225.08612-.1723Z"
+     id="path47" />
+  <path
+     class="cls-1"
+     d="M108.54736,151.97522H.5v89.2551H97.13409"
+     id="path49" />
+  <path
+     class="cls-2"
+     d="M94.62119,241.23032l-3.068-5.04422.17227-.11417,8.225,3.26691q4.29852.94537,8.59686,1.89148-4.29849.94542-8.59686,1.89151l-8.225,3.2669-.17227-.08612Z"
+     id="path51" />
+  <line
+     class="cls-1"
+     x1="398.01993"
+     y1="358.66095"
+     x2="408.87354"
+     y2="358.66095"
+     id="line53" />
+  <path
+     class="cls-2"
+     d="M406.36066,358.661l-3.068-5.04422.17228-.11417,8.225,3.26691q4.29849.94537,8.59686,1.89148-4.29849.94542-8.59686,1.89151l-8.225,3.26691-.17228-.08615Z"
+     id="path55" />
+  <line
+     class="cls-3"
+     x1="119.79899"
+     y1="207.22966"
+     x2="210.19913"
+     y2="207.22966"
+     id="line57" />
+  <text
+     class="cls-4"
+     transform="translate(120.71059 139.31032)"
+     id="text63">Pattern-matching<tspan
+   x="0"
+   y="18"
+   id="tspan59">lambda</tspan><tspan
+   x="0"
+   y="36"
+   id="tspan61">abstractions</tspan></text>
+  <text
+     class="cls-4"
+     transform="translate(300.72315 174.70583)"
+     id="text69">Enriched<tspan
+   x="0"
+   y="18"
+   id="tspan65">lambda</tspan><tspan
+   x="0"
+   y="36"
+   id="tspan67">calculus</tspan></text>
+  <text
+     class="cls-4"
+     transform="translate(261.69971 64.99236)"
+     id="text75">Pattern-<tspan
+   x="0"
+   y="18"
+   id="tspan71">matching</tspan><tspan
+   x="0"
+   y="36"
+   id="tspan73">(Chapter 4)</tspan></text>
+  <text
+     class="cls-4"
+     transform="translate(10.19003 174.706)"
+     id="text83">Pattern-<tspan
+   x="0"
+   y="18"
+   id="tspan77">matching</tspan><tspan
+   x="0"
+   y="36"
+   id="tspan79">compiler</tspan><tspan
+   x="0"
+   y="54"
+   id="tspan81">(Chapter 5)</tspan></text>
+  <text
+     class="cls-4"
+     transform="translate(152.77783 64.99187)"
+     id="text89">Simple<tspan
+   x="0"
+   y="18"
+   id="tspan85">constructs</tspan><tspan
+   x="0"
+   y="36"
+   id="tspan87">(Chapter 3)</tspan></text>
+  <text
+     class="cls-4"
+     transform="translate(138.3623 29.39055)"
+     id="text91">Miranda program</text>
+  <text
+     class="cls-4"
+     transform="translate(383.55167 19.63264)"
+     id="text99"><tspan
+       class="cls-5"
+       id="tspan93">T</tspan><tspan
+       x="9.19727"
+       y="0"
+       id="tspan95">ype</tspan><tspan
+       x="0"
+       y="18"
+       id="tspan97">declarations</tspan></text>
+  <text
+     class="cls-4"
+     transform="translate(388.71124 64.99187)"
+     id="text105">ZF<tspan
+   x="0"
+   y="18"
+   id="tspan101">expressions</tspan><tspan
+   x="0"
+   y="36"
+   id="tspan103">(Chapter 7)</tspan></text>
+  <text
+     class="cls-4"
+     transform="translate(120.71059 247.68391)"
+     id="text107">Case-expressions</text>
+  <text
+     class="cls-4"
+     transform="translate(152.6748 290.49414)"
+     id="text109">Chapter 6</text>
+  <text
+     class="cls-4"
+     transform="translate(333.24008 290.49414)"
+     id="text111">Chapter 6</text>
+  <text
+     class="cls-4"
+     transform="translate(64.27893 338.30957)"
+     id="text115">Ordinary<tspan
+   x="0"
+   y="18"
+   id="tspan113">lambda calculus</tspan></text>
+  <text
+     class="cls-4"
+     transform="translate(276.64525 335.07557)"
+     id="text135">Ordinary<tspan
+   x="0"
+   y="18"
+   id="tspan117">lambda calculus</tspan><tspan
+   x="0"
+   y="36"
+   id="tspan119">augmented with</tspan><tspan
+   class="cls-6"
+   id="tspan133"><tspan
+     x="0"
+     y="54"
+     id="tspan121">let</tspan><tspan
+     class="cls-7"
+     x="18.25732"
+     y="54"
+     xml:space="preserve"
+     id="tspan123"> and </tspan><tspan
+     x="51.30273"
+     y="54"
+     id="tspan125">let</tspan><tspan
+     class="cls-8"
+     x="69.56006"
+     y="54"
+     id="tspan127">r</tspan><tspan
+     x="74.91504"
+     y="54"
+     id="tspan129">e</tspan><tspan
+     class="cls-9"
+     x="84.04395"
+     y="54"
+     id="tspan131">c</tspan></tspan></text>
+  <text
+     class="cls-4"
+     transform="translate(421.28683 354.60644)"
+     id="text143"><tspan
+       class="cls-10"
+       id="tspan137">T</tspan><tspan
+       x="9.19727"
+       y="0"
+       id="tspan139">ype-checking</tspan><tspan
+       x="0"
+       y="18"
+       id="tspan141">(Chapter 8)</tspan></text>
+  <metadata
+     id="metadata1122">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Fig3_4</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>
