@@ -325,7 +325,7 @@
 	\vs
 }
 
-\newenvironment{references}{\begin{description}\itemsep -5pt \footnotesize
+\newenvironment{references}{\begin{description}\itemsep -5pt \small
 }{\end{description}}
 
 % Boxed asides.
@@ -372,6 +372,20 @@
 
     }
 }
+
+
+\newcommand{\simpletitledbox}[2]{%
+	\plainbox{%
+		{\centering
+			
+			#1
+			
+		}
+		\vspace{0.4\baselineskip}
+		
+		\noindent #2
+	}%
+}%
 
 
 \newcommand{\titledbox}[3]{%
@@ -453,6 +467,8 @@
 \include{chapters/chap2}
 \include{chapters/chap3}
 \include{chapters/chap4}
+\include{chapters/chap5}
+\include{chapters/chap6}
 
 %\backmatter
 

@@ -1,0 +1,1209 @@
+\chapter[Efficient Compilation of Pattern-Matching][Efficient Compilation of Pattern-Matching]{Efficient Compilation of\\Pattern-Matching}
+\chapterauthors{Philip Wadler}
+\vspace{3cm}
+
+ This chapter shows how to compile function definitions with pattern-matching into \ml{case}-expressions that can be efficiently evaluated. Previously, pattern-matching has been formally defined, and we have seen some examples of function definitions with pattern-matching.
+
+\section{Introduction and Examples}
+We begin by reviewing two examples.
+
+The first example shows pattern-matching on more than one pattern. The function call \ml{(mappairs f xs ys)} applies the function \ml{f} to corresponding pairs from the lists \ml{xs} and \ml{ys}.
+\begin{letalign}
+    \ml{mappairs f [\,] ys} &$=$ \ml{[\,]} \\
+    \ml{mappairs f (x:xs) [\,]} &$=$ \ml{[\,]} \\
+    \ml{mappairs f (x:xs) (y:ys)} &$=$ \ml{f x y : mappairs f xs ys}
+\end{letalign}
+For example, \ml{(mappairs ($+$) [1,2] [3,4])} returns \ml{[4,6]}. The definition given here specifies that if the argument lists are not the same length, then the result will be as long as the shorter of the two lists. For example, \ml{(mappairs ($+$) [1,2] [3,4,5])} also returns \ml{[4,6]}.
+
+The simplest way to think of pattern-matching is as trying to match each equation in turn. Within each equation, patterns are matched from left to right. For example, evaluating \ml{(mappairs ($+$) [1,2] [3,4])} first matches \ml{($+$)} against \ml{f} in the first equation, which succeeds, and then matches \ml{[1,2]} against
+\ml{[\,]}, which fails. Then the second equation is tried. Matching \ml{($+$)} against \ml{f} and \ml{[1,2]} against \ml{(x:xs)} both succeed, but matching \ml{[3,4]} against \ml{[\,]} fails. Finally, matching in the third equation succeeds, binding \ml{f} to \ml{($+$)}, \ml{x} to \ml{1}, \ml{xs} to \ml{[2]}, \ml{y} to \ml{3}, and \ml{ys} to \ml{[4]}. This corresponds exactly to the way pattern-matching was defined in Chapter 4.
+
+Performing pattern-matching in this way can require a lot of work. The example above had to examine the list \ml{[1,2]} three times and the list \ml{[3,4]} twice. It seems clear that it should be possible to evaluate this function application in a more efficient manner that examines each list only once, but still gives the result prescribed by the semantics. This can be done by transforming the above definition into an equivalent one using \ml{case}-expressions:
+
+\begin{mlcoded}
+    \setlength{\tabcolsep}{2pt}
+    mappairs\\
+    \begin{tabular}{lllll}
+    $=$ \tlb{f} &\tlb{xs$'$} \tlb{ys$'$} & & & \\
+    & \ml{case xs$'$ of} & & & \\
+    & \ml{NIL} &$\Rightarrow$ &\ml{NIL} & \\
+    & \ml{CONS x xs} &$\Rightarrow$ &\ml{case ys$'$ of} & \\
+    & & &\ml{NIL} &$\Rightarrow$ \ml{NIL} \\
+    & & &\ml{CONS y ys} &$\Rightarrow$ \ml{CONS (f x y)\! (mappairs\! f\! xs\! ys)}
+    \end{tabular}
+\end{mlcoded}
+(\ml{Case}-expressions were introduced in Section 4.4.) This chapter describes an algorithm that can automatically translate the first definition into the second. This algorithm is called the pattern-matching compiler.
+
+The second example shows pattern-matching on a nested pattern. The function call \ml{(nodups xs)} removes adjacent duplicate elements from a list \ml{xs}. It can be defined as follows:
+
+\begin{mlcoded}
+\begin{tabular}{lll}
+    nodups [\,] &$=$ [\,] &\\
+    nodups [x] &$=$ [x] & \\
+    nodups (y:x:xs) &$=$ \ml{nodups (x:xs)}, &\ml{y $=$ x} \\
+     &$=$ y : \ml{nodups (x:xs)}, &\normalfont{otherwise}
+\end{tabular}
+\end{mlcoded}
+
+(As you would expect, the guard `otherwise' applies if no other guard does. See Appendix) For example, \ml{(nodups [3,3,1,2,2,2,3])} returns \ml{[3,1,2,3]}. Note that the naming need not be consistent: \ml{x} stands for the first element of the list equation in the second equation, and for the second element of the list in the third.
+
+Again, one can apply this definition by matching each equation in turn. For example, evaluation of \ml{(nodups [1,2,3])} will first try to match \ml{[1,2,3]} against \ml{[\,]}, which fails. Next, it will try to match \ml{[1,2,3]} against \ml{[x]}, which also fails. Finally, it will succeed in matching \ml{[1,2,3]} against \ml{(y:x:xs)}, binding \ml{y} to \ml{1}, \ml{x} to \ml{2}
+and \ml{xs} to \ml{[3]}. Again, this corresponds exactly to the semantics in Chapter 4.
+
+As before, this is not very efficient. The list \ml{[1,2,3]} is examined three times,
+and the sublist \ml{[2,3]} is examined twice (once in the second equation, where it
+fails to match \ml{[\,]}, and once in the third equation, where it succeeds in matching
+\ml{(x:xs)}). The pattern-matching compiler can transform this into a form that
+examines the list and the sublist only once:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{2pt}
+    \begin{tabular}{llllll}
+    \tlb{nodups}&&&&& \\
+    $=$ \tlb{xs$''$} &case xs$''$ & of &&&\\
+    &NIL     &  &$\Rightarrow$ NIL && \\
+    &CONS x$'$ &xs$'$  &$\Rightarrow$ && \\
+    & &case &xs$'$ of && \\
+    & &NIL & &$\Rightarrow$ & CONS x$'$ NIL \\
+    & &CONS &x xs & $\Rightarrow$ & IF ($=$ x$'$ x)\\
+    &&&&& \quad (nodups (CONS x xs)) \\
+    &&&&& \quad (CONS x$'$ (nodups (CONS x xs))
+    \end{tabular}
+\end{mlcoded}
+(Here \ml{x$'$} is the variable that was called \ml{x} in the second equation and \ml{y} in the third.)
+
+The two kinds of pattern-matching, nested patterns and multiple patterns, are closely related to one another. The pattern-matching compiler discussed below works uniformly for both.
+
+In the examples above, the patterns on the left-hand sides of the equations do not overlap. Many people would rewrite the first definition in the form:
+\begin{letalign}
+    mappairs$'$ f [\,] ys &$=$ \ml{NIL} \\
+    mappairs$'$ f xs [\,] &$=$ \ml{NIL} \\
+    mappairs$'$ f (x:xs) (y:ys) &$=$ f x y : mappairs$'$ f xs ys
+\end{letalign}
+In this case, the patterns overlap because both the first and the second equation match against \ml{(mappairs$'$ f [\,] [\,])}.
+
+One reason for preferring \ml{mappairs$'$} to \ml{mappairs} is that it is considered to be more efficient. Indeed, if the simplest implementation of pattern-matching is used, matching each equation in turn, then it is slightly less work to match against \ml{xs} than to match against \ml{(x:xs)}. However, as we shall see, this definition may actually be \textit{less} efficient when the pattern-matching compiler is used. Some other problems with definitions like \ml{mappairs$'$} will be discussed in Section 5.5.
+
+The remainder of this chapter is organized as follows. Section 5.2 explains the pattern-matching compiler algorithm. Section 5.3 presents a Miranda program that implements the algorithm. Section 5.4 describes some optimizations to the pattern-matching compiler. Section 5.5 discusses a restricted class of definitions, called uniform definitions, which have useful properties.
+
+Credit for the first published description of a pattern-matching compiler goes to Augustsson, who used it in the LML compiler [Augustsson, 1985]. Techniques similar to Augustsson's have been discovered independently by several researchers, including the authors of the Hope compiler [Burstall \textit{et al.}, 1980]. The material presented here is derived partly from Augustsson's paper and partly from original work by the author (Wadler).
+
+It is also possible to derive the pattern-matching compiler from its specification using program transformation techniques; see Barrett and Wadler [1986].
+
+\section{The Pattern-matching Compiler Algorithm}
+A Miranda function definition of the form
+\begin{mlcoded}
+    f p$_{1,1}\ldots$ p$_{1,n} =$ E$_1$\\
+    $\ldots$\\
+    f p$_{m,1}\ldots$ p$_{m,n} =$ E$_m$
+\end{mlcoded}
+can be translated into the enriched lambda calculus definition
+\begin{mlalign}
+    f $=$ \tl{}u$_1 \ldots$ \tlb{u$_n$}&((\tlb{p$_{1,1'}$} $\ldots$\tlb{p$_{1,n'}$} E$_{1'}$) u$_1 \ldots$ u$_n$)\\
+    \fatbar{} &$\ldots$\\
+    \fatbar{} &((\tlb{p$_{m,1'}$} $\ldots$\tlb{p$_{m,n'}$} E$_{m'}$) u$_1 \ldots$ u$_n$)\\
+    \fatbar{} &ERROR
+\end{mlalign}
+where the \ml{u$_i$} are new variables which do not occur free in any \ml{E$_i$}, and the \ml{E$_i'$} and \ml{p$_{i,j'}$} are the result of translating the \ml{E$_i$} and \ml{p$_{i,j}$}, respectively. It was shown how to do this translation in Chapter 4, using the \metafn{TD} translation scheme.
+
+This section shows how to transform the definition of \ml{f} into a form which uses \ml{case}-expressions, removing all use of pattern-matching lambda abstractions. The transformation applies to the entire body of the \ml{\tl{}u$_1 \ldots$ \tl{}u$_n$} abstraction, except that we generalize slightly to allow an arbitrary expression instead of \ml{ERROR}.
+
+For the sake of simplicity, we assume that constant patterns have been replaced by conditional equations, as described in Section 4.2.1.
+
+\subsection{The Function match}
+
+Our goal, then, is to transform an expression of the form
+\begin{mlnumbered}
+    \begin{tabular}{rl}
+        &((\tlb{p$_{1,1}$} $\ldots$\tlb{p$_{1,n}$} E$_{1}$) u$_1 \ldots$ u$_n$)\\
+    \fatbar{} &$\ldots$\\
+    \fatbar{} &((\tlb{p$_{m,1}$} $\ldots$\tlb{p$_{m,n}$} E$_{m}$) u$_1 \ldots$ u$_n$)\\
+    \fatbar{} &E
+    \end{tabular}
+\end{mlnumbered}
+into an equivalent expression which uses \ml{case}-expressions rather than pattern-matching lambda abstractions.
+
+The transformation is a bit complicated, and so we will use some new notation to describe it. Specifically, we will use a function \metafn{match}, which takes as its arguments the various parts of the input expression, namely the \ml{p$_{i,j}$}, \ml{E$_i$}, and \ml{u$_j$}, and produces as its output the transformed expression. The function \metafn{match} is similar to the \metafn{TD} and \metafn{TE} translation schemes introduced in Chapter 3, except that both its input and its result are enriched lambda calculus expressions. Furthermore, the double square bracket syntax becomes somewhat cumbersome, so we use a syntax like Miranda instead.
+
+Here, then, is the call to \metafn{match} which we will use to compile the expression
+(5.1) given above:
+\begin{mlalign}
+    \metafn{meta} &[u$_1$, $\ldots$, u$_n$]\\
+    &[( [p$_{1,1}$, $\ldots$, p$_{1,n}$], E$_1$ )\\
+    & $\ldots$\\
+    &( [p$_{m,1}$, $\ldots$, p$_{m,n}$], E$_m$ )]\\
+    &E
+\end{mlalign}
+This call should return an expression equivalent to the expression (5.1), and we take (5.1) as the \textit{definition} of \metafn{match} from a semantic point of view. A call of \metafn{match} takes three arguments: a list of variables, a list of equations, and a default expression. Each equation is a pair, consisting of a list of patterns (representing the left-hand side of the equation) and an expression (representing the right-hand side). Notice that the list of variables and each list of patterns have the same length.
+
+We will also sometimes write calls of \metafn{match} in the form
+\begin{mlcoded}
+    \metafn{match} us qs E
+\end{mlcoded}
+Here \ml{us} is the list of argument variables (of length \ml{n}), and \ml{qs} is a list of equations (of length \ml{m}). Each equation \ml{q$_i$} in \ml{qs} has the form \ml{(ps$_i$, E$_i$)}, where \ml{ps$_i$} is the list of patterns on the left-hand side (of length \ml{n}) and \ml{E$_i$} is the expression on the right-hand side.
+
+As a running example, we will use the following Miranda function:
+\begin{letalign}
+    demo f [\,] ys &$=$ A f ys\\
+    demo f (x:xs) [\,] &$=$ B f x xs\\
+    demo f (x:xs) (y:ys) &$=$ C f x xs y ys
+\end{letalign}
+This function is similar in structure to \ml{mappairs}, but it has been changed slightly in order to simplify and clarify the following examples. The right-hand sides use three unspecified expressions \ml{A}, \ml{B}, and \ml{C}.
+
+Translating this into the enriched lambda calculus using \metafn{TD} gives:
+\begin{letalign}
+        \ml{demo}& \\
+    $=$ \tlb{u$_1$}\tlb{u$_2$}\tlb{u$_3$}\!\! &((\tlb{f}\tlb{NIL}\tlb{ys}A f ys) u$_1$ u$_2$ u$_3$) \\
+    \hfill\fatbar{} &((\tlb{f}\tlb{(CONS\! x\! xs)}\tlb{NIL}B\! f\! x\! xs) u$_1$ u$_2$ u$_3$) \\
+    \hfill\fatbar{} &((\tlb{f}\tlb{(CONS\! x\! xs)}\tlb{(CONS\! y\! ys)}C\! f\! x\! xs\! y\! ys)\! u$_1$\! u$_2$\! u$_3$) \\
+    \hfill\fatbar{} &ERROR
+\end{letalign}
+where \ml{u$_1$}, \ml{u$_2$}, \ml{u$_3$} are new variable names which do not occur free in \ml{A}, \ml{B}, or \ml{C}.
+Now, we transform the definition of \ml{demo}, by replacing its body with a call of \metafn{match}:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{lllll}
+        \ml{demo}&&&& \\
+        $=$ \tlb{u$_1$}\tlb{u$_2$}\tlb{u$_3$}\metafn{match} &[u$_1$, u$_2$, u$_3$] &&&\\
+        &[\,(\,[f,\! NIL, &ys &],\! (A\! f\! ys) &),\! \\
+        &[\,(\,[f,\! CONS\! x\! xs,\! &NIL &],\! (B\! f\! x\! xs)&), \\
+        &[\,(\,[f,\! CONS\! x\! xs,\! &CONS\! y\! ys\! &],\! (C\! f\! x\! xs\! y\! ys)&)] \\
+        &ERROR &&&
+    \end{tabular}
+\end{mlcoded}
+
+The following sections give rules to transform any call of \metafn{match} to an
+equivalent \ml{case}-expression. We begin with rules for simple cases and proceed to more general cases.
+
+\subsection{The Variable Rule}
+
+In the example above, we have the following call on match:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{lllll}
+        \metafn{match} &[u$_1$, u$_2$, u$_3$] &&&\\
+        &[\,(\,[f,\! NIL, &ys &],\! (A\! f\! ys) &),\! \\
+        &[\,(\,[f,\! CONS\! x\! xs,\! &NIL &],\! (B\! f\! x\! xs)&), \\
+        &[\,(\,[f,\! CONS\! x\! xs,\! &CONS\! y\! ys\! &],\! (C\! f\! x\! xs\! y\! ys)&)] \\
+        &ERROR &&&
+    \end{tabular}
+\end{mlcoded}
+In this case, the list of patterns in every equation begins with a variable. This may be reduced to the equivalent call:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{lllll}
+        \metafn{match} &[u$_2$, u$_3$] &&&\\
+        &[\,(\,[NIL, &ys &],\! (A\! u$_1$\! ys) &),\! \\
+        &[\,(\,[CONS\! x\! xs,\! &NIL &],\! (B\! u$_1$\! x\! xs)&), \\
+        &[\,(\,[CONS\! x\! xs,\! &CONS\! y\! ys\! &],\! (C\! u$_1$\! x\! xs\! y\! ys)&)] \\
+        &ERROR &&&
+    \end{tabular}
+\end{mlcoded}
+This is derived by removing the first variable, \ml{u$_1$}, and in each equation removing the corresponding formal variable, \ml{f}, and replacing \ml{f} by \ml{u}, in the right-hand side of each equation.
+
+The same method works whenever each equation begins with a variable, even if each equation begins with a different variable. For example,
+\begin{mlcoded}
+        \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{lll}
+        \metafn{match} &[u$_2$, u$_3$]& \\
+    &[ ( [x, NIL], &(B x) ),\\
+    &\phantom{[ }( [y, CONS x xs], &(C y x xs) ) ]\\
+    &ERROR
+    \end{tabular}
+\end{mlcoded}
+reduces to the call,
+\begin{mlcoded}
+        \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{lll}
+        \metafn{match} &[u$_3$] &\\
+    &[ ( [NIL], &(B u$_2$) ),\\
+    &\phantom{[ }( [CONS x xs], &(C u$_2$ x xs) ) ]\\
+    &ERROR
+    \end{tabular}
+\end{mlcoded}
+(This particular example arises when compiling the definition of \ml{nodups}.)
+
+In general, if every equation begins with a variable pattern, then the call of match will have the form:
+\begin{letalign}
+    \metafn{match} (u:us) &[ ( (v$_1$:ps$_1$), E$_1$ ), \\
+    &\phantom{[ }\ldots \\
+    &\phantom{[ }( (V$_m$:ps$_m$), E$_m$ ) ] \\
+    &E
+\end{letalign}
+This can be reduced to the equivalent call:
+\begin{letalign}
+    \metafn{match} &us \\
+    &[ ( ps$_1$, E$_1$[u$/$v$_1$] ), \\
+    &\phantom{[ }( ps$_m$, E$_m$[u$/$v$_m$] ) ] \\
+    &E
+\end{letalign}
+where, as usual, \ml{E[M$/$x]} means `\ml{E} with \ml{M} substituted for \ml{x}'. In order to avoid too many subscripts, a Miranda-like notation has been used here; for example, we write \ml{(u:us)} instead of \ml{[u$_1$,$\ldots$, u$_n$]}. The general case corresponds to the first example above, where \ml{u} is \ml{u$_1$}, \ml{us} is \ml{[u$_2$, u$_3$]}, \ml{v$_1$} is \ml{f}, \ml{ps$_1$} is \ml{[NIL, ys]}, and so on.
+
+It is not hard to show that the rule is correct, that is, that the two \metafn{match} expressions are equivalent. This follows from the definition of \metafn{match} and the semantics of pattern-matching.
+
+\subsection{The Constructor Rule}
+The above step has left us with the following call of \metafn{match}:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{llll}
+        \metafn{match} &[u$_2$, u$_3$]  && \\
+    &[ ( [NIL, ys&], (A u$_1$ ys) &), \\
+    &\phantom{[ }( [CONS x xs, NIL&], (B u$_1$ x xs) &), \\
+    &\phantom{[ }( [CONS x xs, CONS y ys&], (C u$_1$ x xs y ys) &) ] \\
+    &ERROR
+    \end{tabular}
+\end{mlcoded}
+In this case, the list of patterns in every equation begins with a constructor. This call is equivalent to the following \ml{case}-expression:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{llllll}
+        case u$_2$ of &&&&& \\
+    \quad NIL &$\Rightarrow$ &\metafn{match} &[u$_3$] && \\
+    &&&[\,(\,[ys], &(A u$_1$ ys) &)\,] \\
+    &&&ERROR &&\\
+    \quad CONS\! u$_4$\! u$_5$ &$\Rightarrow$ &\metafn{match} &[u$_4$, u$_5$, u$_3$] &&\\
+    &&&[\,(\,[x, xs, NIL], &(B u$_1$ x xs) &), \\
+    &&&\phantom{[\,}(\,[x, xs, CONS y ys], &(C u$_1$ x xs y ys) &)\,] \\
+    &&&ERROR
+    \end{tabular}
+\end{mlcoded}
+This call is derived by grouping together all equations that begin with the same constructor. Within each group, new variables are introduced corresponding to each field of the constructor. Thus \ml{NIL}, which has no fields, requires no new variables, while \ml{CONS}, which has two fields, introduces the variables \ml{u$_4$} and \ml{u$_5$}. These new variables are matched against the corresponding subpatterns of the original patterns.
+
+It may be useful here to look at a second example. In compiling the definition of a function like \ml{nodups}, one would encounter the following call of \metafn{match}:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{llll}
+        \metafn{match} &[u$_1$]  && \\
+        &[ ( [NIL&], A &), \\
+        &\phantom{[ }( [CONS x NIL&], (B x) &), \\
+        &\phantom{[ }( [CONS y (CONS x xs)&], (C y x xs) &) ] \\
+        &ERROR
+    \end{tabular}
+\end{mlcoded}
+This can be reduced to the equivalent expression:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{llllll}
+        case u$_2$ of &&&&& \\
+        \quad NIL &$\Rightarrow$ &\metafn{match} &[\,] && \\
+        &&&[\,(\,[\,], &A &)\,] \\
+        &&&ERROR &&\\
+        \quad CONS\! u$_2$\! u$_3$ &$\Rightarrow$ &\metafn{match} &[u$_2$, u$_3$] &&\\
+        &&&[\,(\,[x, NIL], &(B x) &), \\
+        &&&\phantom{[\,}(\,[y, CONS x xs], &(C y x xs) &)\,] \\
+        &&&ERROR
+    \end{tabular}
+\end{mlcoded}
+Again, \ml{NIL} introduces no new variables (leaving a call of \metafn{match} with an empty list of variables), and \ml{CONS} introduces two new variables, \ml{u$_2$} and \ml{u$_3$}.
+
+More generally, it may be the case that not all equations beginning with the same constructor appear next to each other. For example, one might have a call of \metafn{match} such as:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{llll}
+        \metafn{match} &[u$_1$]  && \\
+        &\phantom{[ }( [CONS x NIL&], (B x) &), \\
+        &[ ( [NIL&], A &), \\
+        &\phantom{[ }( [CONS y (CONS x xs)&], (C y x xs) &) ] \\
+        &ERROR
+    \end{tabular}
+\end{mlcoded}
+It is always safe to exchange two equations that begin with a different constructor, so we may rearrange the above to the equivalent call:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{llll}
+        \metafn{match} &[u$_1$]  && \\
+        &[ ( [NIL&], A &), \\
+        &\phantom{[ }( [CONS x NIL&], (B x) &), \\
+        &\phantom{[ }( [CONS y (CONS x xs)&], (C y x xs) &) ] \\
+        &ERROR
+    \end{tabular}
+\end{mlcoded}
+which may be transformed as before.
+
+It may also be the case that not all constructors appear in the original list of equations. For example, a function definition such as:
+\begin{letalign}
+        last [x] &$=$ x \\
+        last (y:(x:xs)) &$=$ last (x:xs)
+\end{letalign}
+will result in the following call of \metafn{match}:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{llll}
+        \metafn{match} &[u$_1$]  && \\
+        &[ ( [CONS x NIL&], x &), \\
+        &\phantom{[ }( [CONS y (CONS x xs)&], (last (CONS x xs)) &) ] \\
+        &ERROR
+    \end{tabular}
+\end{mlcoded}
+This can be reduced to the equivalent expression:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{llllll}
+        case u$_1$ of &&&&& \\
+        \quad NIL &$\Rightarrow$ &\metafn{match} &[\,] [\,] ERROR && \\
+        \quad CONS\! u$_2$\! u$_3$ &$\Rightarrow$ &\metafn{match} &[u$_2$, u$_3$] &&\\
+        &&&[\,(\,[x, NIL], &x &), \\
+        &&&\phantom{[\,}(\,[y, CONS x xs], &(last (CONS x xs)) &)\,] \\
+        &&&ERROR
+    \end{tabular}
+\end{mlcoded}
+The \ml{case}-expression must still contain a clause for the missing constructor, and the call of \metafn{match} in this clause will have an empty list of equations. (From the definition of \metafn{match}, we know that \ml{(\metafn{match} [\,] [\,] ERROR)} is equivalent to \ml{ERROR}.)
+
+We now discuss the general rule for reducing a call of \metafn{match} where every equation begins with a constructor pattern. Say that the constructors are from a type which has constructors \ml{c$_1$,$\ldots$, c$_1$}. Then the equations can be rearranged into groups of equations \ml{qs$_1$,$\ldots$, qs$_1$}, such that every equation in group \ml{qs$_i$}, begins with constructor \ml{c$_i$}. (If there is some constructor \ml{c} that begins no equation, like \ml{NIL} in the last example above, then the corresponding group \ml{qs$_i$} will be empty.) The call of \metafn{match} will then have the form:
+\begin{mlcoded}
+    \metafn{match} (u:us) (qs$_1$ $++ \ldots ++$ qs$_k$) E
+\end{mlcoded}
+where each \ml{qs$_i$}, has the form:
+\begin{mlalign}
+    [ &( ((c$_i$ ps$'_{i,1}$):ps$_{i,1}$), E$_{i,1}$ )\\
+    & $\ldots$\\
+    &( ((c$_i$ ps$'_{i,m_i}$):ps$_{i,m_i}$), E$_{i,m_i}$ ) ]
+\end{mlalign}
+($++$ is list append.) In this expression we have abbreviated the constructor pattern \ml{(c p$_1 \ldots$ p$_r$)} to the form \ml{(c ps)}, where \ml{ps} stands for the list of patterns \ml{[p$_1$, p$_2$,$\ldots$, p$_r$]}. This call to \metafn{match} is reduced to the \ml{case}-expression:
+\begin{mlalign}
+    case u of&\\
+    \qquad c$_1$ us$'_1$ &$\Rightarrow$ \metafn{match} (us$'_1$, $++$ us) qs$'_1$ E\\
+    \qquad$\ldots$ &\\
+    \qquad c$_k$ us$'_k$ &$\Rightarrow$ \metafn{match} (us$'_k$, $++$ us) qs$'_k$ E\\
+\end{mlalign}
+where each \ml{qs$'_i$} has the form:
+\begin{mlalign}
+    [ &( (ps$'_{i,1}$ $++$ ps$_{i,1}$), E$_{i,1}$ ),\\
+    & $\ldots$\\
+    &( (ps$'_{i,m_i}$ $++$ ps$_{i,m_i}$), E$_{i,m_i}$ ) ]
+\end{mlalign}
+Here each \ml{us$'_i$} is a list of new variables, containing one variable for each field in \ml{c$_i$}.
+
+For instance, in the example at the beginning of this section, \ml{qs$_2$} is
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.1em}
+    \begin{tabular}{rlll}
+        [ &( [CONS x xs, NIL&], (B u$_1$ x xs) &)\\
+    &( [CONS x xs, CONS y ys&], (C u$_1$ x xs y ys) &)\,]
+    \end{tabular}
+\end{mlcoded}
+and \ml{c$_2$} is \ml{CONS}, \ml{ps$'_{2,1}$} is \ml{[x, xs]}, \ml{ps$_{i,1}$} is \ml{[NIL]}, \ml{E$_{2,1}$} is \ml{(B u$_1$ x xs)}, \ml{ps$'_{2,2}$} is \ml{[x, xs]}, \ml{ps$_{2,2}$} is \ml{[CONS y ys]}, and \ml{E$_{2,2}$} is \ml{(C u$_1$ x xs y ys)}. The corresponding \ml{qs$'_2$} is
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.1em}
+    \begin{tabular}{rlll}
+        [ &( [x xs, NIL&], (B u$_1$ x xs) &)\\
+        &( [x xs, CONS y ys&], (C u$_1$ x xs y ys) &)\,]
+    \end{tabular}
+\end{mlcoded}
+The corresponding list of new variables, \ml{us$'_2$}, is \ml{[u$_4$,u$_5$]}.
+
+This notation is, of necessity, rather clumsy. The reader will be pleased to discover, in Section 5.3, that this transformation can be written as a functional program which is more concise and (with experience) easier to read.
+
+Again, the correctness of this rule can be proved using the definition of \metafn{match} and the semantics of pattern-matching.
+
+\subsection{The Empty Rule}
+
+After repeated application of the rules above, one eventually arrives at a call of \metafn{match} where the variable list is empty, such as the following:
+\begin{mlalign}
+    \metafn{match} &[\,] \\
+    &[ ( [\,], (A u$_1$ u$_3$) ) ] \\
+    &ERROR
+\end{mlalign}
+This reduces to:
+\begin{mlcoded}
+    (A u$_1$ u$_3$)
+\end{mlcoded}
+The correctness of this follows immediately from the definition of \metafn{match}, since \ml{A} cannot return \ml{FAIL}.
+
+In general, the call of \metafn{match} may involve zero, one or more equations. Zero equations may result if the constructor rule is applied and some constructor of the type appears in no equations, as in \ml{last} above. More than one equation can result if some of the original equations overlap.
+
+Thus, the general form of a call of \metafn{match} with an empty variable list is:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.1em}
+    \begin{tabular}{rll}
+        match &[\,]& \\
+    &[ &( [\,], E$_1$ ), \\
+    && $\ldots$\\
+    &&( [\,], E$_m$ ) ]\\
+    &E
+    \end{tabular}
+\end{mlcoded}
+where \ml{m $\geq$ 0}. From the definition of \metafn{match}, this reduces to
+\begin{mlcoded}
+    E$_1$ \fatbar{} $\ldots$ \fatbar{} E$_m$ \fatbar{} E
+\end{mlcoded}
+Further, we can often guarantee that none of \ml{E$_1$},$\ldots$, \ml{E$_m$} can be equal to \ml{FAIL}. In this case, the above \metafn{match} expression reduces to \ml{E$_1$} if \ml{m > 0} and to \ml{E} if \ml{m $=$ 0}. Section 5.4.2 discusses this optimization further.
+
+\subsection{An Example}
+
+The rules given so far are sufficient to translate the definitions of \ml{mappairs} and \ml{nodups} to the corresponding \ml{case}-expressions given in the introduction. Notice that the variable names used in the introduction were chosen for readability. In practice, the translation algorithm will usually pick new names. The reader may wish to verify that the rules given above are indeed sufficient to translate the definition
+\begin{letalign}
+    mappairs f [\,] ys & $=$ [\,]\\
+    mappairs f (x:xs) [\,]  & $=$ [\,]\\
+    mappairs f (x:xs) (y:ys) & $=$ f x y : mappairs f xs ys
+\end{letalign}
+to the equivalent:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{llllll}
+        mappairs &&&&&\\
+        $=$ \tlb{u$_1$}\tlb{u$_2$}\tlb{u$_3$} &&&&&\\
+        \quad case u$_2$ of &&&&& \\
+        \quad NIL &$\Rightarrow$ &NIL &&& \\
+        \quad CONS\! u$_4$\! u$_5$ &$\Rightarrow$ &case u$_3$ of &&&\\
+        &&NIL &$\Rightarrow$ &NIL & \\
+        &&CONS\! u$_6$\! u$_7$ &$\Rightarrow$ & CONS\! &(u$_1$\! u$_4$\! u$_6$) \\
+        &&&&&(mappairs u$_1$\! u$_5$\! u$_7$) \\
+    \end{tabular}
+\end{mlcoded}
+The reader may also wish to check that the function \ml{nodups} transforms to the \ml{case}-expression given in the introduction.
+
+\subsection{The Mixture Rule}
+The above rules are sufficient for compiling most function definitions into \ml{case}-expressions. However, there is still one case which has not been covered. This arises when not all equations begin with a variable, and not all equations begin with a constructor; that is, when there is a mixture of both kinds of equation. For example, here is an alternative definition of \ml{demo} (similar in structure to the alternative definition of \ml{mappairs}):
+\begin{letalign}
+    demo$'$ f [\,] ys &$=$ A f ys \\
+    demo$'$ f xs [\,] &$=$ B f xs \\
+    demo$'$ f (x:xs) (y:ys) &$=$ C f x xs y ys
+\end{letalign}
+Converting this to a \metafn{match} expression and applying the variable rule to eliminate \ml{f} results in the following:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{lllll}
+        \metafn{match} &[u$_2$, u$_3$]  &&& \\
+        &[ ( [NIL, &ys&], (A u$_1$ ys) &), \\
+        &\phantom{[ }( [xs, &NIL&], (B u$_1$ xs) &), \\
+        &\phantom{[ }( [CONS x xs, &CONS y ys&], (C u$_1$ x xs y ys) &) ] \\
+        &ERROR
+    \end{tabular}
+\end{mlcoded}
+Neither the variable rule nor the constructor rule applies to this expression, because some equations begin with constructors and others with variables.
+
+This is where the third argument to the \metafn{match} function is useful. The above expression is equivalent to:
+\begin{mlcoded}
+    match [U2, U3]
+    ([NIL, ys], (\tlb{(A u: ys)})) \\
+    ( match [U2, U3]
+    [([xs, NIL], (\tlb{(B u: xs)}))] \\
+    ( match [U2, U3]
+    [([CONS x xs, CONS y ys], (\tlb{(C uf x xs y ys)}))] \\
+    ERROR ))
+\end{mlcoded}
+
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{lllll}
+        \metafn{match} &[u$_2$, u$_3$]  &&& \\
+        &[ ( [NIL, &ys&], (A u$_1$ ys) &), \\
+        &\phantom{[ }( [xs, &NIL&], (B u$_1$ xs) &), \\
+        &\phantom{[ }( [CONS x xs, &CONS y ys&], (C u$_1$ x xs y ys) &) ] \\
+        &ERROR
+    \end{tabular}
+\end{mlcoded}
+
+That is, the equations are broken into groups; first an equation beginning with a constructor, then one beginning with a variable, and then one beginning with a constructor again. If the equation in the first call of \metafn{match} fails to match the arguments then the value of the second call of \metafn{match} is returned. Similarly, if the equation in the second call does not match then the third call is returned, and if the equation in the third call does not match then \ml{ERROR} is returned.
+
+The reader may verify that reducing the three calls of \metafn{match} using the variable, constructor and base case rules results in the following definition of \ml{mappairs$'$}:
+\begin{mlcoded}
+        \setlength{\tabcolsep}{0.25em}
+demo$'$\\
+$=$ \tlb{u$_1$}\tlb{u$_2$}\tlb{u$_3$} \\
+\hspace{3em}
+\begin{minipage}{1.5in}
+    \begin{letalign}
+case u$_2$ of & \\
+NIL & $\Rightarrow$ (A u$_1$ u$_3$)\\
+CONS u$_4$ u$_5$ & $\Rightarrow$ \\
+\end{letalign}
+\end{minipage}\\
+\phantom{.\hspace{3em}.}
+\begin{minipage}{1.5in}
+    \begin{letalign}
+        case u$_3$ of & \\
+        NIL & $\Rightarrow$ (B u$_1$ u$_2$)\\
+        CONS u$_6$ u$_7$ & $\Rightarrow$ \\
+    \end{letalign}
+\end{minipage}\\
+\phantom{.\hspace{8em}.}
+\begin{minipage}{1.5in}
+    \begin{letalign}
+        case u$_2$ of & \\
+        NIL & $\Rightarrow$ ERROR\\
+        CONS u$_4$ u$_5$ & $\Rightarrow$ \\
+    \end{letalign}
+\end{minipage}\\
+\phantom{.\hspace{13em}.}
+\begin{minipage}{1.5in}
+    \begin{letalign}
+        case u$_3$ of & \\
+        NIL & $\Rightarrow$ ERROR\\
+        CONS u$_6$ u$_7$ & $\Rightarrow$ (C u$_1$ u$_4$ u$_5$ u$_6$ u$_7$)\\
+    \end{letalign}
+\end{minipage}
+\end{mlcoded}
+This involves four \ml{case}-expressions. When the second and third arguments are both non-empty lists then each list is examined twice, as compared with once for the definition of demo. This confirms the claim made in the introduction that `optimizing' the definition of \ml{mappairs} by transforming it into \ml{mappairs$'$} can actually result in worse code.
+
+It may be possible to devise a compilation algorithm that would produce better code for this case. This could be done by simplifying a \ml{case}-expression that appears inside another \ml{case}-expression for the same variable. This sort of optimization is straightforward, although it requires considerably more book-keeping. In this case, \ml{mappairs$'$} would compile to the same \ml{case}-expression as \ml{mappairs}, although the compilation process would be rather more complicated.
+
+
+In general, a call of \metafn{match} where some equations begin with variables and some with constructors may be transformed as follows. Say we are given a call of \metafn{match} of the form
+\begin{mlcoded}
+    \metafn{match} us qs E
+\end{mlcoded}
+The equation list \ml{qs} may be partitioned into $k$ lists \ml{qs$_1$,$\ldots$, qs$_k$} such that
+\begin{mlcoded}
+    qs $=$ qs$_1 ++ \ldots ++$ qs$_k$
+\end{mlcoded}
+The partition should be chosen so that each \ml{qs$_i$} either has every equation beginning with a variable or every equation beginning with a constructor. (In the example above, each \ml{qs$_i$} had length 1, but in general this need not be the case.) Then the call of \metafn{match} can be reduced to:
+\begin{mlcoded}
+    \metafn{match} us qs$_1$ (\metafn{match} us qs$_2$ ($\ldots$ (\metafn{match} us qs$_k$ E)$\ldots$))
+\end{mlcoded}
+It is easy to use the definition of \metafn{match} to show that this rule is correct.
+
+\subsection{Completeness}
+With the addition of the mixture rule, it is now possible to reduce any possible call of \metafn{match} to a \ml{case}-expression. This can be seen by a simple analysis. Given a call \ml{(\metafn{match} us qs E)} then \ml{us} will be either empty, so the empty rule applies, or non-empty. If \ml{us} is non-empty then each equation must have a non-empty pattern list, which must begin with either a variable or a constructor. If all equations begin with a variable then the variable rule applies; if all begin with a constructor then the constructor rule applies; and if some begin with variables and some with constructors then the mixture rule applies.
+
+Further, define the `size' of an equation list as the sum of the sizes of all the patterns in the equation list. It can be seen that all four of the rules result in calls of \metafn{match} with smaller equation lists. This guarantees that the algorithm must eventually terminate.
+
+\section{The Pattern-matching Compiler in Miranda}
+This section presents the transformation algorithm as a functional program in Miranda.
+
+\subsection{Patterns}
+First, it is necessary to give a data type for representing patterns.
+\begin{letalign}
+    pattern &\hastype$=$ VAR variable\\
+    &\quad \quad $\mid$ CON constructor [pattern]\\
+    variable &$==$ [char]\\
+    constructor &$==$ [char]
+\end{letalign}
+For example, \ml{(x:xs)} is represented by \ml{(CON ``CONS'' [VAR ``x'', VAR ``xs''])}.
+
+We need two functions on constructor names. The function \ml{arity} given a constructor returns its arity, and the function \ml{constructors} given a constructor returns a list of all constructors of its type:
+\begin{letalign}
+    arity &\hastype{} constructor $\rightarrow$ num \\
+    constructors &\hastype{} constructor $\rightarrow$ [constructor]
+\end{letalign}
+For example, \ml{(arity ``NIL'')} returns \ml{0}, and \ml{(arity ``CONS'')} returns \ml{2}. Both \ml{(constructors ``NIL'')} and \ml{(constructors ``CONS'')} return the list \ml{[``NIL'', ``CONS'']}.
+
+\subsection{Expressions}
+Next, we need a data type for representing expressions:
+\begin{letalign}
+    expression &\hastype$=$ CASE variable [clause] \\
+    &\quad \quad $\mid$ FATBAR expression expression \\
+    &\quad \quad $\mid$ $\ldots$ \\
+    clause &\hastype$=$ CLAUSE constructor [variable] expression
+\end{letalign}
+For example, the \ml{case}-expression:
+\begin{letalign}
+    case xs of &\\
+    \quad NIL & $\Rightarrow$ E$_1$\\
+    \quad CONS y ys & $\Rightarrow$ E$_2$\\
+\end{letalign}
+would be represented by
+{    \setlength{\tabcolsep}{0.25em}
+\begin{letalign}
+    CASE & ``xs'' \\
+ \hfill       [ & CLAUSE ``NIL'' [\,] E$_1'$, \\
+         & CLAUSE ``CONS'' [``y'', ``ys''] E$'_2$]
+\end{letalign}
+}
+\noindent where \ml{E$_1'$}, \ml{E$_2'$} are the representations of the expressions \ml{E$_1$}, \ml{E$_2$}. Similarly,
+\begin{mlcoded}
+    E$_1$ \fatbar{} E$_2$
+\end{mlcoded}
+would be represented by
+\begin{mlcoded}
+    FATBAR E$_1'$ E$_2'$
+\end{mlcoded}
+
+The \ml{$\ldots$} in the definition of the type expression stands for other constructors used to represent other expressions, such as variables, applications and lambda abstractions. We do not need to know anything about these other expressions, except that there is a substitution function defined for them.
+\begin{mlcoded}
+    subst \hastype{} expression $\rightarrow$ variable $\rightarrow$ variable $\rightarrow$ expression
+\end{mlcoded}
+For example, if \ml{E} represents the expression \ml{(f x y)}, then \ml{(subst E\, ``\_u1'' ``x'')} represents the expression \ml{(f\, \_u1 y)}.
+
+
+\subsection{Equations}
+
+An equation is a list of patterns paired with an expression:
+\begin{mlcoded}
+    equation $==$ ([pattern], expression)
+\end{mlcoded}
+We will use the letter \ml{q} to denote equations, or else write \ml{(ps,e)}.
+
+We need functions to determine if an equation begins with a variable or a constructor. If it begins with a constructor, we also need a function to return that constructor.
+\begin{mlcoded}
+\setlength{\tabcolsep}{0.25em}
+\begin{tabular}{lll}
+        isVar &&\hastype{} equation $\rightarrow$ bool \\
+    isVar (VAR v &: ps, e) &$=$ True \\
+    isVar (CON c ps$'$ &: ps, e) &$=$ False\\
+
+    isCon &&\hastype{} equation $\rightarrow$ bool \\
+    isCon q &&$=$ $\sim$ (isVar q)\\
+
+    getCon &&\hastype{} equation $\rightarrow$ constructor \\
+    getCon (CON c ps$'$ &: ps, e) &$=$ c\\
+\end{tabular}
+\end{mlcoded}
+
+\subsection{Variable Names}
+
+We need some way of generating the new variable names, \ml{u1}, \ml{u2}, and so on. To do this we introduce a function \ml{makeVar} that, given a number, returns a variable name.
+\begin{letalign}
+    makeVar &\hastype{} num $\rightarrow$ variable \\
+    makeVar k &$=$ ``\_u'' $++$ show k
+\end{letalign}
+For example, \ml{(makeVar 3)} returns `\ml{\_u3}'. Here we preface each new variable name with `\ml{\_}' to avoid it being confused with any variable already in the program.
+
+\subsection{The Functions \ml{partition} and \ml{foldr}}
+
+The implementation of the mixture rule uses a function called \ml{partition}. The call \ml{(partition f xs)} returns a list \ml{[xs$_1$,$\ldots$, xs$_n$]} such that \ml{xs $=$ xs$_1$ $++$$\ldots$ $++$ xs$_n$}, and such that \ml{f x $=$ f x$'$} for any elements \ml{x} and \ml{x$'$} in \ml{xs$_i$}, \ml{i} from \ml{1} to \ml{n}, and such that \ml{f x $\neq$ f x$'$} for any elements \ml{x} in \ml{xs$_i$} and \ml{x$'$} in \ml{xs$_{i+1}$}, \ml{i} from \ml{1} to \ml{n-1}. For example,
+
+\begin{mlcoded}
+    \ml{partition odd [1,3,2,4,1] $=$ [ [1,3], [2,4], [1] ]}
+\end{mlcoded}
+
+The function \ml{partition} is defined as follows:
+\begin{letalign}
+    partition &\hastype{} ($*$ $\rightarrow$ $**$) $\rightarrow$ [$*$] $\rightarrow$ [ [$*$] ] \\
+    partition f [\,] &$=$ [\,] \\
+    partition f [x] &$=$ [ [x] ] \\
+    partition f (x:x$'$:xs) &$=$ tack x (partition f (x$'$:xs)), f x $=$ f x$'$ \\
+     &$=$ [x] : partition f (x$'$:xs),\qquad otherwise\\
+     \\
+    tack x xss &$=$ (x : hd xss) : t xss
+\end{letalign}
+
+Incidentally, the following definition of tack is not equivalent to the above
+\begin{mlcoded}
+    tack x (xs:xss) $=$ (x : xs) : xss
+\end{mlcoded}
+The difference between the two is closely related to the question of strict and
+lazy pattern-matching, mentioned in Section 4.3.5 in connection with the
+function \ml{firsts}.
+
+The pattern-matching compiler also uses the standard function \ml{foldr}. The
+function \ml{foldr} is defined so that
+\begin{mlcoded}
+    foldr f a [x$_1$, x$_2$, $\cdots$, x$_n$] $=$ f x$_1$ (f x$_2$ ( $\cdots$ (f x$_n$ a) $\cdots$ ))
+\end{mlcoded}
+For example, \ml{(foldr ($+$) 0 xs)} returns the sum of the list of numbers \ml{xs}. The
+function \ml{foldr} is defined by:
+\begin{letalign}
+    foldr &\hastype{} $(* \rightarrow ** \rightarrow **) \rightarrow ** \rightarrow [*] \rightarrow **$\\
+    foldr f a [\,] &$=$ a\\
+    foldr f a (x:xs) &$=$ f x (foldr f a xs)
+\end{letalign}
+
+\subsection{The Function \metafn{match}}
+
+We are now ready to define the function \metafn{match}. Calls of \metafn{match} have the form
+\ml{(\metafn{match} k us qs def)}. Here, as in Section 5.2, \ml{us} represents a list of variables,
+\ml{qs} represents a list of equations and \ml{def} is a default expression. The argument
+\ml{k} is added to help in generating new variable names; it should be chosen so
+that for every \ml{i>k}, \ml{(makeVar i)} is a new variable not in \ml{us}, \ml{qs} or \ml{def}.
+
+For example, the initial call to \metafn{match} to compile the definitions of \ml{mappairs} would be:
+\begin{mlcoded}
+    \setlength{\tabcolsep}{0.25em}
+    \begin{tabular}{lllll}
+        \metafn{match} &3 &&&\\
+    &[``\_u1'', ``\_u2'', &``\_u3''] && \\
+    &[ ( [VAR ``f'', &CON ``NIL'' &[\,], &\\
+    && VAR ``ys''&&], E$_1$ ), \\
+    &\phantom{[ }( [VAR ``f'', &CON ``CONS'' &[VAR ``x'', VAR ``xs''], &\\
+    && CON ``NIL'' &[\,] &], E$_2$ ), \\
+    &\phantom{[ }( [VAR ``f'', &CON ``CONS'' &[VAR ``x'', VAR ``xs''], &\\
+    && CON ``CONS'' &[VAR ``y'', VAR ``ys''] &], E$_3$ ) ] \\
+     &error
+    \end{tabular}
+\end{mlcoded}
+where \ml{E$_1$}, \ml{E$_2$} and \ml{E$_3$} represent the three expressions on the right-hand sides of the equation, and \ml{error} represents the expression \ml{ERROR}.
+
+The definition of \metafn{match} can now be derived in a fairly straightforward way from the description given in Section 5.2. The type of \metafn{match} is:
+\begin{mlcoded}
+    \metafn{match} \hastype{} num $\rightarrow$ [variable] $\rightarrow$ [equation] $\rightarrow$ expression $\rightarrow$ expression
+\end{mlcoded}
+The equations for the top-level of \metafn{match} come from the empty rule and the mixture rule.
+\begin{letalign}
+    \metafn{match} k [\,] &qs def $=$ def\\
+    \metafn{match} k (u:us) &qs def $=$ foldr FATBAR def [e $\mid$ ([\,], e) $\leftarrow$ qs ]\\
+    \hfill $=$ foldr &(matchVarCon k (u:us)) def (partition isVar qs)
+\end{letalign}
+
+The function \ml{matchVarCon} is given a list of equations that either all begin with a variable or all begin with a constructor. It calls \ml{matchVar} or \ml{matchCon}, as appropriate.
+\begin{letalign}
+    matchVarCon k us qs def \\
+    \quad $=$ matchVar k us qs def, &\qquad if isVar (hd qs) \\
+    \quad $=$ matchCon k us qs def, &\qquad if isCon (hd qs)
+\end{letalign}
+
+The function \ml{matchVar} implements the variable rule.
+\begin{mlcoded}
+    matchVar k (u:us) qs def \\
+    \quad $=$ match k us [(ps, subst e u v) $\mid$ (VAR v : ps, e) $\leftarrow$ qs] def
+\end{mlcoded}
+
+The functions \ml{matchCon} and \ml{matchClause} implement the constructor rule. The call \ml{(choose c qs)} returns all equations that begin with constructor \ml{c}.
+\begin{mlcoded}
+    matchCon k (u:us) qs def \\
+    \phantom{.\quad.} $=$ CASE u [matchClause c k (u:us) (choose c qs) def $\mid$ c $\leftarrow$ cs] \\
+    \phantom{.\quad\quad.} where\\
+    \phantom{.\quad\quad.} cs = constructors (getCon (hd qs))
+\end{mlcoded}
+\begin{letalign}
+    matchClause c k (u:us) qs &def \\
+    \phantom{.\quad.} $=$ CLAUSE c us$'$ (match &(k$'$ + k) \\
+    &(us$'+\!+$us)\\
+    &[(ps$'+\!+$ps, e)\! $\mid$\! (CON c ps$'$\! :\! ps, e)\,$\leftarrow$\,qs] \\
+    &def)
+\end{letalign}
+\vspace{-\baselineskip}
+\begin{letalign}
+    \phantom{.\quad\quad.} where\\
+    \phantom{.\quad\quad.} k$'$ &$=$ arity c \\
+    \phantom{.\quad\quad.} us$'$ &$=$ [makeVar (i+k) $\mid$ i $\leftarrow$ [1..k$'$] ]
+\end{letalign}
+\begin{mlcoded}
+choose c qs $=$ [q $\mid$ q $\leftarrow$ qs; getCon q $=$ c]
+\end{mlcoded}
+
+This completes the Miranda program for the pattern-matching compiler.
+
+\section{Optimizations}
+This section discusses some optimizations to the pattern-matching compiler. Section 5.4.1 describes an optimization which gives greater efficiency when
+compiling overlapping equations. This involves further uses of \fatbar{} and \ml{FAIL}, and
+Section 5.4.2 describes how these may often be eliminated.
+
+\subsection{Case-expressions with Default Clauses}
+If overlapping equations are allowed, then sometimes the pattern-matching compiler described above may transform a small set of equations into a \ml{case}-expression that is much larger. For example, consider the function
+\begin{mlcoded}
+\begin{tabular}{ll}
+    unwieldy [\,] [\,] &$=$ A \\
+    unwieldy xs ys &$=$ B xs ys
+\end{tabular}
+\end{mlcoded}
+The pattern-matching compiler transforms this into:
+\begin{mlcoded}
+\setlength{\tabcolsep}{0.2em}
+\begin{tabular}{lllll}
+    unwieldy $=$ \tlb{xs}\tlb{ys}&case xs of &&& \\
+    &NIL &$\Rightarrow$ case& ys of & \\
+    &&&NIL &$\Rightarrow$ A \\
+    &&&CONS y$'$ ys$'$ &$\Rightarrow$ B xs ys\\
+    &CONS x' xs' &$\Rightarrow$ B xs& ys
+\end{tabular}
+\end{mlcoded}
+Here the expression \ml{(B xs ys)} appears twice. If \ml{(B xs ys)} were replaced by
+a very large expression, the increase in size caused by the compilation process
+could be very significant.
+
+The problem can be avoided by modifying the rules given in Section 5.2 so
+that right-hand sides are never duplicated during the compilation process. In
+fact, only one rule can cause right-hand sides to be duplicated, the constructor
+rule. This rule is modified as follows.
+
+Recall that the constructor rule transforms a call of \metafn{match} of the form:
+\begin{mlcoded}
+    \metafn{match} (u:us) (qs$_1$ $++$$ \ldots$ $++$ qs$_k$) E
+\end{mlcoded}
+to a \ml{case}-expression of the form:
+\begin{letalign}
+    case u of\\
+    \phantom{.\quad.}c$_1$ us$'_1$ &$\Rightarrow$ \metafn{match} (us$'_1$ $++$ us) qs$'_1$ E \\
+    \phantom{.\quad.}$\cdots$\\
+    \phantom{.\quad.}c$_k$ us$'_k$ &$\Rightarrow$ \metafn{match} (us$'_k$ $++$ us) qs$'_k$ E \\
+\end{letalign}
+where \ml{qs$_1$, $\ldots$, qs$_k$} and \ml{qs$'_1$, $\ldots$, qs$'_k$} are as described in Section 5.2.3.
+
+Normally \ml{E} will be \ml{ERROR}, but if the mixture rule is used then \ml{E} may itself
+be a \metafn{match} expression containing right-hand sides; it is in this case that
+duplication may occur. The modified rule prevents this by using \fatbar{} and \ml{FAIL} to
+avoid duplicating \ml{E}.
+
+
+This is done by replacing the \ml{case}-expression above with the equivalent expression:
+\begin{letalign}
+    case u of\\
+    \phantom{.\quad.}c$_1$ us$'_1$ &$\Rightarrow$ \metafn{match} (us$'_1$ $++$ us) qs$'_1$ E \\
+    \phantom{.\quad.}$\cdots$\\
+    \phantom{.\quad.}c$_k$ us$'_k$ &$\Rightarrow$ \metafn{match} (us$'_k$ $++$ us) qs$'_k$ E \\
+    \fatbar{} E
+\end{letalign}
+If we call the old \ml{case}-expression \ml{C}, then the new expression is \ml{(C$'$ \fatbar{} E)},
+where \ml{C$'$} is formed by replacing each \ml{E} in \ml{C} by \ml{FAIL}. It is clear that the new
+expression is equivalent to the old expression and, as desired, \ml{E} is not
+duplicated by the new rule.
+
+For example, using the new rule, the definition of \ml{unwieldy} will now  transform to:
+\begin{mlcoded}
+\setlength{\tabcolsep}{0.15em}
+\begin{tabular}{llllllr}
+unwieldy &$=$ \tlb{xs&}\tlb{ys} &&&&\\
+    &(case &xs of&&&& \\
+        &&NIL  & $\Rightarrow$ (case& ys of &&\\
+        &&&&NIL & $\Rightarrow$ A & \\
+        &&&&CONS y$'$ ys$'$  &$\Rightarrow$ FAIL) &(a) \\
+    &&& \phantom{$\Rightarrow$ }\fatbar{} FAIL&& &(b) \\
+    &&CONS x$'$ xs$'$ &$\Rightarrow$ FAIL)&&& \\
+    &\fatbar{} B xs &ys &&&&(c) \\
+\end{tabular}
+\end{mlcoded}
+This expression is a little larger than the previous version of \ml{unwieldy}, but now \ml{(B xs ys)} appears only once. If \ml{(B xs ys)} stands for a large expression, then this new expression may be much smaller than the previous one.
+
+As an example of how this sort of expression is evaluated, consider the call \ml{(unwieldy NIL (CONS 1 NIL))}. This is evaluated as follows. First, the outer \ml{case}-expression is evaluated. Since \ml{xs} is \ml{NIL}, this causes the inner \ml{case} to be evaluated. Since \ml{ys} is \ml{(CONS 1 NIL)}, the inner \ml{case}-expression returns \ml{FAIL} see line (a). So the expression after the inner \ml{\fatbar{}} is returned, which is also \ml{FAIL} see line (b). Thus, the outer \ml{case}-expression returns \ml{FAIL}. So the expression after the outer \ml{\fatbar{}} is returned; see line (c). This is \ml{(B NIL (CONS 1 NIL))}, which is the value returned by the call of \ml{unwieldy}.
+
+\subsection{Optimizing Expressions Containing \ml{\fatbar{}} and \ml{FAIL}}
+It is often the case that all occurrences of \ml{FAIL}, and its companion, \ml{\fatbar{}}, can be eliminated. Most of these optimizations depend on reasoning that \ml{FAIL} can never be returned by an expression, because in this case an occurrence of \ml{\fatbar{}} can be eliminated.
+
+Suppose that \ml{FAIL} is returned by an expression \ml{E}. Then it is necessary (though not sufficient) that one of the following conditions must hold:
+\begin{numbered}
+    \item \ml{FAIL} is mentioned explicitly in \ml{E};
+    \item \ml{E} contains a pattern-matching lambda abstraction, whose application may fail;
+    \item \ml{FAIL} is the value of one of the free variables of \ml{E}.
+\end{numbered}
+
+If the pattern-matching compiler described in this chapter is applied throughout, then no pattern-matching lambda abstractions will remain in the transformed program, and hence (ii) cannot occur. Since the programmer presumably cannot write \ml{FAIL} explicitly in his program, it is not hard (although perhaps tedious) to verify that (iii) cannot occur either.
+
+These observations focus our attention on all the places where \ml{FAIL} can be introduced explicitly by the compiler. There are only two such places:
+\begin{numbered}
+	\item In the translation of conditional equations (Section 4.2.6). Fortunately, we can easily transform conditional equations to avoid the use of \ml{\fatbar{}} and \ml{FAIL}, and we show how to do so below.
+	\item In the variant of the pattern-matching compiler described in the last
+	section, where the introduction of \ml{\fatbar{}} and \ml{FAIL}, seems unavoidable. This
+	problem motivates the discussion in Section 5.5, in which we describe a
+	restricted class of function definitions that can always be compiled
+	without using \ml{\fatbar{}} and \ml{FAIL}.
+\end{numbered}
+
+\subsubsection{Rules for transforming \ml{\fatbar{}} and \ml{FAIL}}
+We now give some rules for transforming expressions involving \ml{\fatbar{}} and FAIL to a
+simpler form. In all cases their correctness follows directly from the semantics
+of \ml{\fatbar{}}.
+
+First, we may eliminate \ml{\fatbar{}} if FAIL cannot occur on the left:
+\begin{mlcoded}
+E$_1$ \fatbar{} E$_2$ $\equiv$ E$_1$\\
+{\normalfont provided that} E$_1$ {\normalfont cannot return} FAIL.
+\end{mlcoded}
+For example, this rule is used to derive the optimized version of the empty
+rule in Section 5.2.4.
+
+Second, we may eliminate \ml{\fatbar{}} if \ml{FAIL} definitely occurs on the right or left:
+\begin{mlcoded}
+E \ml{\fatbar{}} FAIL $\equiv$ E {\normalfont and}
+FAIL \ml{\fatbar{}} E $\equiv$ E
+\end{mlcoded}
+For example, these rules can be used to simplify the final definition of unwieldy in
+Section 5.4.1.
+
+Third, there is the following useful transformation involving \ml{IF}:
+\begin{mlcoded}
+(IF E$_1$ E$_2$ E$_3$) \fatbar{} E $\equiv$ IF E$_1$ E$_2$ (E$_3$ \fatbar{} E)\\
+{\normalfont provided that neither} E$_1$ {\normalfont nor} E$_2$ {\normalfont can return} FAIL.
+\end{mlcoded}
+This rule will be useful in simplifying conditional equations, which we now
+attend to.
+
+\subsubsection{Eliminating \ml{\fatbar{}} and \ml{FAIL} from conditional equations}
+
+The empty rule for \ml{match}, which was described in Section 5.2.4, resulted in an
+expression of the form
+\begin{mlcoded}
+E$_1$ \fatbar{} \ldots{} \fatbar{} E$_m$ \fatbar{} E
+\end{mlcoded}
+
+Now, the \ml{E$_i$} are just the right-hand sides of the original equations. If a
+right-hand side consisted of a set of guarded alternatives without a final
+`otherwise' case, then it will have been translated to the form:
+\begin{mlcoded}
+IF G$_1$ A$_1$ (IF \ldots{}\,(IF G$_g$ A$_g$ FAIL) \ldots )
+\end{mlcoded}
+where $g$ is the number of alternatives (see Section 4.2.6). If there was a final
+`otherwise' case (that is, a final alternative with no guard, so that the right-
+hand side never fails), then it would have been translated to the form:
+\begin{mlcoded}
+	IF G$_1$ A$_1$ (IF \ldots{}\,(IF G$_{g-1}$ A$_{g-1}$ A$_{g}$) \ldots )
+\end{mlcoded}
+Notice that \ml{G$_i$} and \ml{A$_r$} cannot be equal to \ml{FAIL}, because they are only the
+transformed versions of expressions written by the programmer.
+
+If the right-hand side is of the first form, we can use the third rule of the
+previous section repeatedly, followed by the second, to give:
+\begin{mlcoded}
+(IF G$_1$ A$_1$ (IF \ldots{}\,(IF G$_g$ A$_g$ FAIL) \ldots )) \fatbar{} E\\
+\phantom{.}\qquad \qquad \qquad \qquad $\equiv$\\
+IF G$_1$ A$_1$ (IF \ldots{}\,(IF G$_g$ A$_g$ E) \ldots )
+\end{mlcoded}
+If the right-hand side is of the second form, it cannot return \ml{FAIL}, and so we
+can use the first rule of the previous section.
+
+Application of these three rules will eliminate all occurrences of \ml{\fatbar{}} and \ml{FAIL}
+in the expression generated by the empty rule, and incidentally thereby give a
+worthwhile improvement in efficiency.
+
+\subsubsection{Clever compilation}
+
+Using these rules, many of the instances of \ml{\fatbar{}} and \ml{FAIL} remaining in a function
+definition can be eliminated. Later we will consider compiling an expression
+into low-level machine code. When we do this, we will see that it is possible to
+compile the remaining expressions involving \ml{\fatbar{}} and \ml{FAIL} in a surprisingly
+efficient way, so that \ml{\fatbar{}} requires no code at all, and the \ml{FAIL} simply compiles to
+a jump instruction. This is discussed in Section 20.4.
+
+\section{Uniform Definitions}
+
+This section introduces a restricted class of function definitions, called
+\textit{uniform definitions}. There are two motivations for studying this class. First,
+uniform definitions avoid certain problems with reasoning about function
+definitions that involve pattern-matching. Second, uniform definitions are
+easier to compile, and are guaranteed to avoid certain kinds of inefficient
+code.
+
+We begin by discussing some problems with reasoning about function
+definitions containing pattern-matching. Consider again the alternate
+definition of \ml{mappairs}:
+\begin{letalign}
+mappairs$'$ f [] ys &= [] \\
+mappairs$'$ f xs [] &= [] \\
+mappairs$'$ f (x:xs) (y:ys) &= f x y : mappairs$'$ f xs ys
+\end{letalign}
+Now, consider evaluation of the expression:
+\begin{mlcoded}
+mappairs$'$ (+) bottom []
+\end{mlcoded}
+where the evaluation of \ml{bottom} would fail to terminate (for example, \ml{bottom} 
+could be defined by the degenerate equation \ml{bottom = bottom}). Matching
+against the first equation binds \ml{f} to \ml{(+)} and then attempts to match \ml{[]} against
+bottom. In order to perform this match it is necessary to evaluate bottom, and
+this of course causes the entire expression to fail to terminate.
+
+On the other hand, consider evaluation of:
+\begin{mlcoded}
+mappairs$'$ (+) [] bottom
+\end{mlcoded}
+Now matching against the first equation binds \ml{f} to \ml{(+)}, matching \ml{[]} against \ml{[]}
+succeeds, and then \ml{ys} is bound to \ml{bottom} (without evaluating \ml{bottom}). So the
+expression returns \ml{[]} instead of failing to terminate. This means that the
+definition of \ml{mappairs$'$} is not as symmetric as it appears.
+
+Further, if the first two equations of \ml{mappairs$'$} were written in the opposite
+order, the two expressions above would change their meaning: now the first
+would return \ml{[]} and the second would fail to terminate. So even though the
+first and second equations have the same right-hand side, the order in which
+they are written is important.
+
+The original definition of \ml{mappairs} has none of these problems:
+\begin{letalign}
+mappairs f [] ys &= []\\
+mappairs f (x:xs) [] &= [] \\
+mappairs f (x:xs) (y:ys) &= f x y : mappairs f xs ys
+\end{letalign}
+Now the asymmetry between
+\ml{(mappairs (+) [] bottom)} and
+\ml{(mappairs (+) bottom [])} is apparent from the equations. Further, changing
+the order of the equations does not change the meaning of the function.
+
+In general, one might expect that whenever the equations do not overlap,
+the order in which they are written does not matter. In fact, this is not true.
+Consider the definition:
+\begin{mlcoded}
+\begin{tabular}{llll}
+diagonal x &True &False &= 1 \\
+diagonal False &y &True &= 2 \\
+diagonal True &False &z &= 3
+\end{tabular}
+\end{mlcoded}
+The three equations of this definition are non-overlapping, that is, at most one
+equation can apply. However, by this definition, the evaluation of:
+\begin{mlcoded}
+diagonal bottom True False
+\end{mlcoded}
+would return \ml{1}. On the other hand, if the order of equations in the definition
+were reversed, so the third equation came first, then the above expression
+would fail to terminate. So even though the equations do not overlap, the
+order in which they are written is important.
+
+Clearly, it would be useful to have a test that guarantees that the order of
+the equations does not matter. We now define the class of \textit{uniform} definitions,
+which have this property. The definition of `uniformity' is designed so that it is
+easy to test whether a definition is uniform while applying the pattern-matching compiler to it.
+
+\simpletitledbox{DEFINITION}{
+A set of equations is {\it uniform} if one of the following three conditions holds:
+\vspace{-\baselineskip}
+\begin{numbered}
+	\item either, all equations begin with a variable pattern, and applying the
+	variable rule (of Section 5.2.2) yields a new set of equations that is
+	also uniform;
+	\item or, all equations begin with a constructor pattern, and applying the
+	constructor rule (of Section 5.2.3) yields new sets of equations that
+	are all also uniform;
+	\item or, all equations have an empty list of patterns, so the empty rule (of
+	Section 5.2.4) applies, and there is at most one equation in the set.
+\end{numbered}
+}
+
+That is, a set of equations is uniform if it can be compiled without using the
+mixture rule (of Section 5.2.6), and if the empty rule is only applied to sets
+containing zero or one equations. (It is easy for the reader to check that when
+the empty rule is applied to more than one equation, the order is relevant.)
+
+Such equation sets are called `uniform' because all equations must begin the
+same way, either with a variable pattern or a constructor pattern, whereas the
+mixture rule applies when some equations begin with variable patterns and
+some with constructor patterns.
+
+It is not difficult to prove the following:
+
+\simpletitledbox{THEOREM}{
+If a definition is uniform, changing the order of the equations does not
+change the meaning of the definition.
+}
+
+The proof is a straightforward induction, and is similar in structure to the
+proof of correctness of the pattern-matching compiler that was outlined
+(along with its definition) in Section 5.2.
+
+This shows that being uniform is a sufficient condition for the order of the
+equations not to matter. It is not a necessary condition, as is shown by the
+function \ml{dummy}:
+\begin{letalign}
+dummy [] &= 1\\
+dummy xs &= 1, xs = []
+\end{letalign}
+Clearly, \ml{dummy} is not uniform, but the order of the equations does not matter.
+However, the following result shows that being uniform is indeed necessary if
+one considers only the left-hand sides:
+
+\simpletitledbox{THEOREM}{
+If the left-hand sides of a definition are such that the order of the equations
+does not matter (regardless of the right-hand sides or condition parts of
+the equations), the definition is uniform.
+}
+
+For example, the order of the equations would matter in \ml{dummy} if the \ml{1} in the
+second equation were changed to a \ml{2}. Again, the proof of the theorem is a
+straightforward induction. These two theorems give us a simpler way of
+characterizing uniform equations, without referring to the pattern-matching
+compiler. Namely, a definition is uniform if and only if its left-hand sides are
+such that the order of the equations does not matter.
+
+It is also possible to show that every uniform definition is non-overlapping.
+The converse is not true: the function diagonal is non-overlapping but is not
+uniform. Researchers have often referred to `lack of overlapping' as an
+important property, but perhaps they should refer to `uniformity' instead,
+since this is the property that guarantees that the order of equations does not
+matter.
+
+Uniform equations are related to \textit{strongly left-sequential equations} as
+defined by Hoffman and O'Donnell [1983], which are in turn related to
+\textit{sequential equations} as defined by Huet and Levy [1979].
+
+Notice that although uniform equations are independent of `top-to-bottom'
+order, they still have a `left-to-right' bias. For example, although the
+following definition is uniform:
+\begin{mlcoded}
+	\begin{tabular}{llll}
+		xor &False &x &= x \\
+		xor &True &False &= True \\
+		xor &True &True &= False
+	\end{tabular}
+\end{mlcoded}
+the same definition with the arguments interchanged is not:
+\begin{mlcoded}
+	\begin{tabular}{llll}
+		xor$'$ &x &False &= x \\
+		xor$'$ &False &True &= True \\
+		xor$'$ &True &True &= False
+	\end{tabular}
+\end{mlcoded}
+Of course, we can always get around this bias by using extra definitions to
+rearrange the arguments. For example, we can define
+\begin{mlcoded}
+xor$''$ x y = xor y x
+\end{mlcoded}
+and then \ml{xor$"$} is equivalent to \ml{xor$'$}, and both \ml{xor$"$} and \ml{xor} have uniform
+definitions.
+
+The existence of left-to-right bias is due to the semantics of pattern-
+matching that we have chosen. A different definition of pattern-matching that
+avoids left-to-right bias is possible; see Huet and Levy [1979].
+
+There is a second reason why uniform equations are important: they
+are easier to implement. The problems with implementing non-uniform
+definitions have been referred to implicitly in previous sections. In summary,
+they are as follows:
+\begin{numbered}
+\item The resulting case-expressions may examine some variables more than once (see Section 5.2.6).
+\item The compiler must use a modified constructor rule to avoid duplicating
+the right-hand side of equations (see Section 5.4.1).
+\item The resulting expressions may contain \fatbar{} and \ml{FAIL}. Implementing such
+expressions efficiently requires additional simplification rules and/or a
+special way of implementing \ml{FAIL} using jump instructions (see Section
+5.4.2).
+\end{numbered}
+The result is that the pattern-matching compiler must be significantly more
+complicated if it is to deal with non-uniform expressions. Further, the first
+point above means that it may be difficult to know how efficient the code
+compiled for a non-uniform definition will be.
+
+An issue related to uniformity is the way conditionals are handled. In
+languages such as SASL, conditional expressions and \ml{where} expressions may
+appear anywhere in an expression, and the semantics of each is defined
+independently. In Miranda, conditions and where clauses are not separate
+expressions, but rather must be associated with the right-hand side of
+definitions. This increases the power of Miranda, in some ways, but only when
+non-uniform definitions are used. Hence, a restriction to uniform equations
+would also allow this part of the language to be simplified.
+
+On the other hand, it should be pointed out that non-uniform definitions
+are sometimes very convenient. For example, the following definition
+reverses lists of length two, and leaves all other lists the same:
+\begin{letalign}
+reverseTwo [x,y] &= [y,x]\\
+reverseTwo xs &= xs
+\end{letalign}
+The most straightforward way of rewriting this as a uniform definition is much
+more long-winded:
+\begin{letalign}
+reverseTwo [] &= []\\
+reverseTwo [x] &= [x]\\
+reverseTwo [x,y] &= [y,x]\\
+reverseTwo (x:y:z:ws) &= x:y:z:ws
+\end{letalign}
+
+In this case, it is easy to see another way of rewriting \ml{reverseTwo}, but, in
+general, rewriting may not be so easy.
+
+Functional language designers have long debated whether or not
+definitions with overlapping equations should be allowed in functional
+languages. As has been shown, it may be more appropriate to debate the
+merits of uniform -- as opposed to non-overlapping -- equations. Several
+arguments in favor of restricting definitions to uniform equations have been
+raised here; but it is also true that non-uniform definitions are on occasion
+quite convenient. No doubt the debate will continue to be a lively one.
+
+{\footnotesize
+\vspace{\baselineskip}
+	
+{\centering%
+	
+* \hspace{2cm} * \hspace{2cm} *
+
+}%
+
+\vspace{0.5\baselineskip}
+
+\noindent Acknowledgements: For help with my work on chapters 4, 5 and 7 I would like to
+thank the following. Simon Finn made valuable comments, both detailed and deep.
+Simon Peyton Jones and I are listed as co-authors only on Chapter 4, but he has
+provided as much thoughtful help as a co-author on the other chapters as well. For help
+of a very different nature, I thank Catherine Lyons.
+
+This work was performed while on a research fellowship supported by ICL.
+}
+
+\section*{References}
+
+\begin{references}
+	\item Augustsson, L. 1985. Compiling pattern matching. In \textit{Conference on Functional Programming Languages and Computer Architecture}, Nancy, pp. 368-81.
+	\item Jouannaud (editor), LNCS 201. Springer Verlag.
+	\item Barrett, G., and Wadler, P. 1986. \textit{Derivation of a Pattern-matching Compiler.} Programming Research Group, Oxford.
+	\item Burstall, R.M., MacQueen, D.B., and Sanella, D.T. 1980. HOPE: an experimental applicative language. In \textit{Proceedings of the ACM Lisp Conference}, August.
+	\item Hoffmann, C.M., and O'Donnell, M.J. 1983. Implementation of an interpreter for abstract equations. In \textit{10th ACM Symposium on Principles of Programming Languages}, pp. 111-21. ACM.
+	\item Huet, G., and Levy, J.J. 1979. \textit{Computations in Non-ambiguous Linear Term Rewriting Systems.} INRIA technical report 359.
+\end{references}

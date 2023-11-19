@@ -251,7 +251,7 @@ languages such as Hope, KRC, ML, Miranda and Orwell.
 
 \section{Translating Miranda into the Enriched Lambda Calculus}
 
-We must now demonstrate how to translate Miranda function definitions involving pattern-matching into the enriched lambda calculus. In the process of doing so we will introduce \textit{pattern-matching lambda abstractions} and the \fatbar operator, two of the constructs in the enriched lambda calculus whose explanation was postponed.
+We must now demonstrate how to translate Miranda function definitions involving pattern-matching into the enriched lambda calculus. In the process of doing so we will introduce \textit{pattern-matching lambda abstractions} and the \fatbar{} operator, two of the constructs in the enriched lambda calculus whose explanation was postponed.
 
 \subsection{Introduction to Pattern-matching}
 We begin this section by illustrating some further aspects of pattern-matching, which have to be handled by an implementation. (Not all the illustrations should be taken as examples of good programming style. Some are expressly chosen to demonstrate all the possible nasty things that can happen!)  Recall the definition of \ml{reflect}:
@@ -974,8 +974,10 @@ Nevertheless, we contend that there are persuasive arguments in favor of the laz
 We may describe lazy product-matching by the following semantic rule:
 
 \begin{mlalign}
-&\metafnbb{Eval}{\tlb{(t p$_1$ $\ldots$ p$_1$)}E} a \\
-$=$ &\metafnbb{Eval}{\tl{}p$_1$ $\ldots$ \tlb{p$_1$}E} (SEL-t-1 a) $\ldots$ (SEL-t-r a)
+\metafnbb{Eval}{\tlb{(t p$_1$ $\ldots$ p$_r$)}E} a
+$=$ \metafnbb{Eval}{\tl{}p$_1$ $\ldots$ \tlb{p$_r$}E} &(SEL-t-1 a)\\
+& \qquad$\ldots$ \\
+&(SEL-t-r \,a)
 \end{mlalign}
 
 Here \ml{SEL-t-i} is a built-in function which selects the $i^\text{th}$ field from a structured object built with constructor \ml{t}. It may be described by the following semantic equations:
@@ -986,4 +988,287 @@ Here \ml{SEL-t-i} is a built-in function which selects the $i^\text{th}$ field f
     {SEL}-t-i $\bot$ &$=$ $\bot$
 \end{tabular}
 \end{mlcoded}
-Suppose that \ml{(\tlb{p}E)}, where \ml{p} is a product pattern, is applied to an expression \ml{A}. The rule for lazy product-matching postpones the evaluation of the argument \ml{A} by binding the names for the components to applications of \ml{SEL-t-i} to \ml{A}, rather than evaluating \ml{A} and extracting its components directly. If
+Suppose that \ml{(\tlb{p}E)}, where \ml{p} is a product pattern, is applied to an expression \ml{A}. The rule for lazy product-matching postpones the evaluation of the argument \ml{A} by binding the names for the components to applications of \ml{SEL-t-i} to \ml{A}, rather than evaluating \ml{A} and extracting its components directly. If none of the components of \ml{A} is evaluated, then \ml{A} will not be evaluated either, which is the effect we wanted to achieve.
+Let us see how this works on \ml{zeroPair}:
+\begin{mlcoded}
+zeroPair = \tlb{(PAIR x y)}0
+\end{mlcoded}
+Hence,
+\begin{mlalign}
+  &\metafnbb{Eval}{zeroPair} $\bot$\\
+ = &\metafnbb{Eval}{\tlb{(PAIR x y)}0} $\bot$\\
+ = &\metafnbb{Eval}{\tlb{x}\tlb{y}0} (SEL-PAIR-1 $\bot$) (SEL-PAIR-2 $\bot$)\\
+ = &\metafnbb{Eval}{\tlb{y}0} (SEL-PAIR-2 $\bot$)\\
+ = &0
+\end{mlalign}
+as required.
+
+\subsection{A Defense of Lazy Product-matching}
+
+Consider the Miranda function \ml{firsts}, which takes a list of numbers, and
+returns a pair consisting of the first odd and first even elements of the list:
+\begin{mlcoded}
+\begin{tabular}{ll}
+firsts [\,] &= (0,0)\\
+firsts (x:xs) &= combine x (firsts xs)
+\end{tabular}
+
+\begin{tabular}{llll}
+combine x (od, ev) &= (x, ev),\qquad &odd &x\\
+  &= (od, x), &even &x
+\end{tabular}
+\end{mlcoded}
+Suppose that we were to use strict product-matching, so that when evaluating
+an application \ml{(combine A$_1$ A$_2$)} we would first evaluate \ml{A$_2$}. Now consider
+evaluating \ml{(firsts [1..])}, where \ml{[1..]} is the infinite list of integers starting at \ml{1}:
+\begin{mlalign}
+firsts [1..] &$\rightarrow$ combine 1 (firsts [2..])\\
+ &$\rightarrow$ combine 1 (combine 2 (firsts [3..]))
+\end{mlalign}
+and so on.
+The evaluation of \ml{(firsts [1..])} will never terminate. This is hardly satisfactory, because it is clear that the value of \ml{(firsts [1..])} should be \ml{(1,2)}.
+
+All is well, however, if we use lazy product-matching. Then, in effect, the
+evaluation goes like this:
+\begin{mlalign}
+firsts [1..] &$\rightarrow$ combine 1 (firsts [2..])\\
+ &$\rightarrow$ (1, SEL-PAIR-2 (firsts [2..]))\\
+ &$\rightarrow$ (1, SEL-PAIR-2 (combine 2 (firsts [3..])))\\
+ &$\rightarrow$ (1, SEL-PAIR-2 (SEL-PAIR-1 (firsts [3..]), 2))\\
+ &$\rightarrow$ (1, 2)
+\end{mlalign}
+Under lazy product-matching, combine does not evaluate its second
+argument. Instead it binds \ml{od} to \ml{(SEL-PAIR-1 A)} and \ml{ev} to \ml{(SEL-PAIR-2 A)},
+where \ml{A} is the argument.
+
+We conclude that lazy product-matching gives significant benefits to the
+programmer. The effect is quite subtle: strict product-matching caused the
+entire argument list to be scanned even though all the operations on lists are
+lazy. One purpose of this section is to point out that it is easy for a subtle
+difference in evaluation strategy (strict versus lazy product-matching) to
+cause a gross difference in the operational behavior of the program (scanning
+the whole of an infinite list versus looking at the first element only). The
+example is derived from a paper by Wadler [1985].
+
+A further reason for advocating lazy product-matching is that it allows us to
+describe mutual recursion correctly. For an explanation of this point, see
+Section 6.2.6.
+
+There is another interesting mathematical way of looking at the differences
+between strict and lazy product-matching. In domain theory there is more
+than one way of forming the product of two domains $A$ and $B$, that vary in their
+treatment of $\bot$. The \textit{ordinary product}, $A\times B$, is defined like this:
+\[
+A \times B = \{ (a,b) \mid a\in A \text{ and } b\in B\}
+\]
+All the elements of this domain are pairs, and the bottom element of $A\times B$ is $(\bot, \bot)$.
+
+The \textit{lifted product}, $(A \times B)_\bot$, is defined like this:
+\[
+(A \times B)_\bot = (A \times B) \cup \{\bot\}
+\]
+In this product the element $\bot$ is distinct from $(\bot, \bot)$. This corresponds closely to
+our operational ideas of how tuples (or any other data structure) are formed: $\bot$
+stands for a non-terminating computation, while $(\bot, \bot)$ is a pair, both of whose
+elements are non-terminating computations.
+
+The key insight is that lazy product-matching corresponds to ordinary
+product, and strict product-matching corresponds to lifted product. To
+implement the ordinary product domain $(A \times B)$ we have to make $(\bot, \bot)$
+indistinguishable from non-termination. Since they clearly differ operation-
+ally, the only way to conceal their differences is to use values in an ordinary
+product domain in a way that makes them indistinguishable. This is precisely
+what the lazy product-matching rule does:
+\begin{mlalign}
+&\metafnbb{Eval}{\tlb{(PAIR p$_1$ p$_2$)}E} $\bot$ \\
+= &\metafnbb{Eval}{\tlb{p$_1$}\tlb{p$_2$}E} (SEL-PAIR-1 $\bot$) (SEL-PAIR-2 $\bot$)\\
+= &\metafnbb{Eval}{\tlb{p$_1$}\tlb{p$_2$}E} $\bot$ $\bot$\\
+\\
+&\metafnbb{Eval}{\tlb{(PAIR p$_1$ p$_2$)}E} (PAIR $\bot$ $\bot$) \\
+= &\metafnbb{Eval}{\tlb{p$_1$}\tlb{p$_2$}E} (SEL-PAIR-1 (PAIR $\bot$ $\bot$)) (SEL-PAIR-2 (PAIR $\bot$ $\bot$))\\
+= &\metafnbb{Eval}{\tlb{p$_1$}\tlb{p$_2$}E} $\bot$ $\bot$
+\end{mlalign}
+In other words, the abstraction \ml{(\tlb{PAIR p$_1$ p$_2$}E)} is indifferent to whether its
+argument is $\bot$ or $(\bot, \bot)$; it returns the same result in either case. So lazy
+product-matching can be regarded as a way of implementing ordinary product
+domains $(A \times B)$ by using the values in the lifted product domain $(A \times B)_\bot$ in
+such a way that $(\bot, \bot)$ is indistinguishable from $\bot$.
+
+Finally, it is worth noting that the use of lazy product-matching carries an
+implementation cost. Consider a function \ml{addPair}, which adds together the
+elements of a pair:
+\begin{mlcoded}
+addPair = \tlb{PAIR x y}+ x y
+\end{mlcoded}
+
+Now, using lazy product-matching, the reduction of \ml{(addPair (PAIR 3 4))} goes as follows:
+\begin{mlalign}
+    & addPair (PAIR 3 4) \\
+    $=$ & (\tlb{(PAIR x y)}+ x y) (PAIR 3 4) \\
+    $\rightarrow$ & (\tlb{x}\tlb{y}+ x y) (SEL-PAIR-1 (PAIR 3 4)) (SEL-PAIR-2 (PAIR 3 4)) \\
+    $\rightarrow$ & (\tlb{y}+ (SEL-PAIR-1 (PAIR 3 4)) y) (SEL-PAIR-2 (PAIR 3 4)) \\
+    $\rightarrow$ & + (SEL-PAIR-1 (PAIR 3 4)) (SEL-PAIR-2 (PAIR 3 4)) \\
+    $\rightarrow$ & + 3 (SEL-PAIR-2 (PAIR 3 4)) \\
+    $\rightarrow$ & + 3 4\\
+    $\rightarrow$ & 7
+\end{mlalign}
+
+This takes one reduction to apply the \ml{addPair} lambda abstraction, and then two further reductions (subsequently) to reduce the two applications of \ml{SEL-PAIR}. Contrast this with the effect of using strict product-matching:
+\begin{mlalign}
+    & addPair (PAIR 3 4) \\
+    $=$ & (\tlb{(PAIR x y)}+ x y) (PAIR 3 4) \\
+    $\rightarrow$ & (\tlb{x}\tlb{y}+ x y) 3 4 \\
+    $\rightarrow$ & (\tlb{y}+ 3 y) 4 \\
+    $\rightarrow$ & + 3 4 \\
+    $\rightarrow$ & 7
+\end{mlalign}
+This uses fewer reductions, since the application of the \ml{addPair} lambda abstraction also takes the argument apart. Furthermore, it uses less store since no temporary applications of \ml{SEL-PAIR} are constructed. This suggests that we should use strict product-matching instead of lazy product-matching wherever this does not affect the semantics.
+
+In the case of \ml{addPair}, it is clear that the argument will certainly be evaluated in the end, so it would do no harm to evaluate it at the time of function application (that is, to use strict product-matching). In general, whenever a function is strict in an argument (see Section 2.5.4) it is safe to use strict product-matching for that argument. The process of working out which functions are strict is called \textit{strictness analysis}, and is discussed in Chapter 22.
+
+\subsection{Summary}
+This section has examined the semantics of pattern-matching in some detail, because much confusion has surrounded this area in the past. Figure 4.5 summarizes the results of the section. The distinction between strict and lazy product-matching, and the use of \ml{\fatbar} and \ml{FAIL}, are both first described in Turner's thesis [Turner, 1981], but the present formulation based on structured types is due to the authors.
+
+\section{Introducing \ml{case}-expressions}
+The transformations in the last section produce remarkably inefficient programs! The main reason for this is that pattern-matches are attempted, testing for \ml{FAIL} each time, as each equation in the function definition is tried in turn.
+
+Frequently, however, a single test would suffice to select the appropriate equation. For example, recall again the \ml{reflect} function:
+\begin{mlcoded}
+    \begin{tabular}{ll}
+    reflect (LEAF n) &$=$ LEAF n \\
+    reflect (BRANCH t1 t2) &$=$ BRANCH (reflect t2) (reflect t1)
+    \end{tabular}
+\end{mlcoded}
+To apply \ml{reflect}, it would suffice to test the argument, and select the first or second right-hand side according to whether it was a \ml{LEAF} or a \ml{BRANCH}.
+
+In this section, therefore, we introduce \ml{case}-expressions, a convenient construct for describing a particularly simple form of pattern-matching which has this single-test property. Chapter 5 will then demonstrate how to translate Miranda function definitions into \ml{case}-expressions, and Chapter 6 will show how \ml{case}-expressions can be transformed into the ordinary lambda calculus. The net effect will be a significant improvement in the efficiency of the resulting program.
+
+\ml{Case}-expressions are a notation for describing a simple form of pattern-matching. To begin with an example, we may translate the definition of \ml{reflect}, using a \ml{case}-expression, in the following way:
+\begin{mlcoded}
+    \begin{tabular}{llll}
+    reflect $=$ \tlb{t} &case t of \\
+    &LEAF n  &$\Rightarrow$  &LEAF n \\
+    &BRANCH t1 t2 &$\Rightarrow$ &BRANCH (reflect t2) (reflect t1)
+    \end{tabular}
+\end{mlcoded}
+The important points about a \ml{case}-expression are that the patterns are \textit{simple} (that is, not nested) and \textit{exhaustive} (that is, they cover all constructors of the type). This makes them particularly simple to implement.
+
+The general form of a \ml{case}-expression is
+\begin{mlcoded}
+    \begin{tabular}{llll}
+    case &v of \\
+    &c$_1$ v$_{1, 1} \ldots $ v$_{1, r_1}$ &$\Rightarrow$ &E$_1$\\
+    &$\ldots$ \\
+    &c$_n$ v$_{n, 1} \ldots $ v$_{n, r_n}$ &$\Rightarrow$ &E$_n$\\
+    \end{tabular}
+\end{mlcoded}
+where \ml{v} is a variable, \ml{E$_1\ldots$ E$_n$} are expressions, the \ml{v$_{i, j}$} are distinct variables, and the \ml{c$_1, \ldots,$ c$_n$} are a \textit{complete family} of constructors from a structured type declaration. The syntax of \ml{case}-expressions was defined in Figure 3.2.
+
+Operationally, to evaluate this \ml{case}-expression, \ml{v} is first evaluated. Then, according to what constructor \ml{v} was built with, the appropriate \ml{E$_i$} is selected and evaluated, with the \ml{v$_{i, j}$} bound to the components of \ml{v}.
+
+Formally, the construct is defined to be equivalent to
+\begin{mlalign}
+ & ((\tlb{c$_1$ v$_{1, 1} \ldots $ v$_{1, r_1}$}E$_1$) v) \\
+ \fatbar{} & $\ldots$\\
+ \fatbar{} & ((\tlb{c$_n$ v$_{n, 1} \ldots $ v$_{n, r_n}$}E$_n$) v)
+\end{mlalign}
+but a \ml{case}-expression is far more readable!
+
+Intuitively, \ml{case}-expressions correspond to a multiway jump, whereas the equivalent expression using \ml{\fatbar} corresponds to a sequential `\ml{if$\ldots$then$\ldots$elseif$\ldots$}'
+
+
+\begin{figure}[H]
+    \centering
+
+    {%
+        \setlength{\fboxrule}{1pt}%
+        \setlength{\fboxsep}{10pt}%
+        \fbox{%
+            \begin{minipage}{\textwidth}
+                \small
+                \setlength{\parindent}{10pt}
+                \setlength{\parskip}{0mm plus 0mm minus 0mm}
+                \setlength{\tabcolsep}{0.25em}
+The semantic equations of \ml{(\tlb{p}E)} are:
+\begin{mlcoded}
+    \hspace{-2em}
+    \begin{tabular}{lll}
+        \metafnbb{Eval}{\tlb{k}E} & a $=$ \metafnbb{Eval}{E} & \normalfont{\qquad if} a $=$ \metafnbb{Eval}{k}\\
+        \metafnbb{Eval}{\tlb{k}E} & a $=$ FAIL & \normalfont{\qquad if} a $\neq$ \metafnbb{Eval}{k} \normalfont{and} a $\neq \bot$  \\
+        \metafnbb{Eval}{\tlb{k}E} & $\bot = \bot$
+    \end{tabular}
+\end{mlcoded}
+
+\begin{mlcoded}
+    \hspace{-2em}
+    \begin{tabular}{ll}
+        \metafnbb{Eval}{\tlb{(s p$_1$ $\ldots$ p$_{r_s}$)}E} (s a$_1$ $\ldots$ a$_{r_s}$ )
+        &$=$ \metafnbb{Eval}{\tl{}p$_1$ $\ldots$ \tlb{p$_{r_s}$}E} a$_1$\!$\ldots$\! a$_{r_s}$\\
+        \metafnbb{Eval}{\tlb{(s p$_1$ $\ldots$ p$_{r_s}$)}E} (s' a$_1$ $\ldots$ a$_{r_s}$ )
+        &$=$ FAIL \quad \normalfont{if} s $\neq$ s' \\
+        \metafnbb{Eval}{\tlb{(s p$_1$ $\ldots$ p$_{r_s}$)}E} $\bot$ & $= \bot$
+    \end{tabular}
+\end{mlcoded}
+
+\begin{mlalign}
+    \hspace{-1.5em}
+    \metafnbb{Eval}{\tlb{(t p$_1$ $\ldots$ p$_r$)}E} a
+    $=$ \metafnbb{Eval}{\tl{}p$_1$ $\ldots$ \tlb{p$_r$}E} &(SEL-t-1 a)\\
+    & \qquad$\ldots$ \\
+    &(SEL-t-r \,a)
+\end{mlalign}
+
+\hspace{-1.5em}
+\begin{tabular}{rl}
+    where & \ml{k} is a constant\\
+    & \ml{s} is a sum constructor of arity \ml{r$s$}\\
+    & \ml{t} is a product constructor of arity \ml{r$_t$}\\
+    & \ml{P$_i$} is a pattern\\
+    & \ml{E} is an expression\\
+    & \ml{a$_i$}, \ml{a} are values
+\end{tabular}
+\vs
+
+The \ml{SEL-t-i} functions are defined as follows:
+\begin{mlcoded}
+\begin{tabular}{ll}
+SEL-t-i (t a$_1$ $\ldots$ a$_j$ $\ldots$ a$_r$) &$=$ a$_i$\\
+SEL-t-i $\bot$ &$= \bot$
+\end{tabular}
+\end{mlcoded}
+where \ml{t} is a product constructor of arity \ml{r}.
+\vs
+
+The \fatbar{} operator is defined as follows:
+\begin{mlcoded}
+\begin{tabular}{lll}
+a & \fatbar{} b = a \qquad \qquad & \normalfont{if} a $\neq \bot$ \normalfont{and} a $\neq$ FAIL\\
+FAIL & \fatbar{} b = b  \\
+$\bot$ & \fatbar{} b = $\bot$
+\end{tabular}
+\end{mlcoded}
+
+            \end{minipage}%
+        }%
+    }%
+
+    \caption{\textsf Semantics of pattern-matching lambda abstractions \\and \fatbar{}}
+\end{figure}
+
+\section{Summary}
+Structured data types have proved more complicated than at first appeared! We have discussed the background and semantics of pattern-matching, showing how to translate a Miranda function definition involving pattern-matching into the enriched lambda calculus. This required us to define two new constructs, pattern-matching lambda abstractions and the \fatbar{} operator, whose semantics we then defined. To clear the way for a more efficient translation, we then introduced \ml{case}-expressions, describing their semantics in terms of a transformation into the constructs previously described.
+
+The next two chapters complete the pattern-matching story. Chapter 5 gives a more efficient translation of Miranda function definitions into \ml{case}-expressions, and Chapter 6 shows how to transform the new constructs into the ordinary lambda calculus.
+
+
+\section*{References}
+
+\begin{references}
+    \item Burstall, R.M. 1969. Proving properties of programs by structural induction. \textit{The Computer Journal}. Vol. 12, No. 1, pp. 41-8.
+    \item Burstall, R.M. 1977. Design considerations for a functional programming language. In \textit{Proceedings Infotech State of the Art Conference}, Copenhagen, pp. 54-7.
+    \item Burstall, R.M., and Darlington, J. 1977. A transformation system for developing recursive programs. \textit{Journal of the ACM}. Vol. 24, No. 1, pp. 44-67.
+    \item Burstall, R.M., and Goguen, J.A. 1982. \textit{Algebras, Theories, and Freeness: An Introduction for Computer Scientists}. Report CSR-101-82, Dept of Computer Science, University of Edinburgh. February.
+    \item Landin, P.J. 1966. The next 700 programming languages. \textit{Communications of the ACM}. Vol. 9, No. 3, pp. 157-64.
+    \item Turner, D.A., 1981. Aspects of the implementation of programming languages. D.Phil. thesis, University of Oxford. February.
+    \item Wadler, P. 1985. \textit{A Splitting Headache -- and Its Cure}. Programming Research Group, Oxford. January.
+\end{references}
