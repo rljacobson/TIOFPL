@@ -177,9 +177,9 @@ an example of a lambda abstraction:
 \begin{mlcoded}
 	(\tlb{x}$+$ x 1)
 \end{mlcoded}
-The \tl says `here comes a function', and is immediately followed by a variable,
+The \tl{} says `here comes a function', and is immediately followed by a variable,
 \ml{x} in this case; then comes a . followed by the \textit{body} of the function, \ml{($+$ x 1)} in
-this case. The variable is called the \textit{formal parameter}, and we say that the \tl
+this case. The variable is called the \textit{formal parameter}, and we say that the \tl{}
 binds it. You can think of it like this:
 \begin{quote}\setlength{\tabcolsep}{3pt}
 \begin{tabular}{llllll}
@@ -222,7 +222,7 @@ brackets:
 
 \subsection{Summary}
 We define a \textit{lambda expression} to be an expression in the lambda calculus, and
-Figure 2. 1 summarizes the forms which a lambda expression may take. Notice
+Figure 2.1 summarizes the forms which a lambda expression may take. Notice
 that a lambda \textit{abstraction} is not the same as a lambda \textit{expression}; in fact the
 former is a particular instance of the latter.
 
@@ -599,7 +599,6 @@ Suppose we define a lambda abstraction TWICE thus:
     TWICE $=$ (\tlb{f}\tlb{x}f (f x))
 \end{mlcoded}
 Now consider reducing the expression \ml{(TWICE TWICE)} using \tb{}-reductions:
-\vspace{-\baselineskip}
 \begin{mlalign}
     & TWICE TWICE \\
     $=$ & (\tlb{f}\tlb{x}f (f x)) TWICE \\
@@ -771,20 +770,19 @@ E$_1$ $\rightarrow$ E \normalfont{and} E$_2$ $\rightarrow$ E
 \begin{pcorollary}
 No expression can be converted to two distinct normal forms (that is, normal forms that are not \ta{}-convertible).
 \end{pcorollary}
-\vspace{-23pt}
 \begin{pproof}
 Suppose that \ml{E $\leftrightarrow$ E$_2$} and \ml{E $\leftrightarrow$ E$_2$}, where \ml{E$_1$} and \ml{E$_2$} are in normal form. Then, \ml{E$_1$  $\leftrightarrow$ E$_2$} and, by CRT I, there must exist an expression \ml{F}, such that \ml{E$_1$ $\rightarrow$ F} and \ml{E$_2$ $\rightarrow$ F}. But \ml{E$_1$} and \ml{E$_2$} have no redexes, so \ml{E$_1$ = F = E$_2$}.
 \end{pproof}
 \noindent Informally, the corollary says that all reduction sequences which terminate will reach the same result. The second Church-Rosser Theorem concerns a particular reduction order, called \textit{normal order}.
 
 \theorembox{Church-Rosser Theorem II \normalfont{(CRT II)}}{
-    If \ml{E$_1$ $\leftrightarrow$ E$_2$}, and \ml{E$_2$} is in normal form, then there exists a \textit{normal order} reduction sequence from \ml{E$_1$} to \ml{E$_2$}.
+If \ml{E$_1$ $\leftrightarrow$ E$_2$}, and \ml{E$_2$} is in normal form, then there exists a \textit{normal order} reduction sequence from \ml{E$_1$} to \ml{E$_2$}.
 }
 
 \noindent This is as much as we can hope for; there is at most one possible result, and normal order reduction will find it if it exists. Notice that no reduction sequence can give the `wrong' answer -- the worst that can happen is non-termination.
 
 \plainbox{
-Normal order reduction specifies that the \textit{leftmost outermost redex} should be reduced first.
+\noindent Normal order reduction specifies that the \textit{leftmost outermost redex} should be reduced first.
 }
 
 \noindent Thus, in our example above \ml{((\tlb{x}3) (D D))}, we would choose the \ml{\tl{}x}-redex first, not the \ml{(D D)}. This rule embodies the intuition that \textit{arguments to functions may be discarded}, so we should apply the function \ml{(\tlb{x}3)} first, rather than first evaluating the argument \ml{(D D)}.

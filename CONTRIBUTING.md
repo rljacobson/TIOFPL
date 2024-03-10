@@ -43,5 +43,4 @@ But if you are a LaTeX guru, here are some ideas:
 * Use BibTeX for the bibliography sections. This has the added benefit of a nice .bib file of references. (Hard)
 * Modify the TOC to look like the book. (Hard)
 * Add a facility for the "automatic" production of the index. (Medium)
-* Make theorem, definition, and 'generic' environments to reproduce those of the book. (Easy)
 * Reproduce a challenging figure. (Easy-Medium)

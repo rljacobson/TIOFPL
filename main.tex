@@ -16,9 +16,11 @@
 %\usepackage{pst-plot} % For axes
 
 % Switched to tikz ecosystem
-\usepackage{forest}
+\usepackage{forest} % PGF/TikZ-based mechanism for drawing linguistic trees.
 \usepackage{graphicx}
 %\usepackage{svg} % For \includesvg
+% Required for grammar trees
+\usepackage{pst-node,pst-tree}
 
 \usepackage[space]{grffile} % For spaces in paths
 \usepackage{etoolbox} % For spaces in paths
@@ -26,16 +28,7 @@
 \patchcmd\Gread@eps{\@inputcheck#1 }{\@inputcheck"#1"\relax}{}{}
 \makeatother
 
-% Required for grammar trees
-\usepackage{pst-node,pst-tree}
 
-%\usepackage{createspace}
-%\usepackage{geometry}
-%\usepackage{graphicx}
-%\usepackage{tikz}
-
-%\usepackage[utf8]{inputenc}
-%\usepackage{fix-cm}
 
 \usepackage{tgheros} % "TEX Gyre Heros", Helvetica, code: qhv
 %\usepackage{tgbonum} % "TEX Gyre Bonum", ITCBookman, code: qbk
@@ -46,7 +39,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
 \usepackage{anyfontsize}
-%\usepackage{microtype}
+\usepackage{microtype}
 \usepackage{sfmath} % Sans Serif math fonts
 \renewcommand{\rmdefault}{ptm} % Times
 \renewcommand{\sfdefault}{qhv} % Helvetica
@@ -125,17 +118,22 @@
 %\SetMathAlphabet\mathit{sfmath}{OT1}{qhv}{m}{sl}
 %\SetMathAlphabet\mathrm{sfmath}{OT1}{qhv}{m}{n}
 
-% This is the mlcoded environment, a math environment in upright Helvetica.
+% This is the mlcoded environment, an environment in upright Helvetica.
 \newenvironment{mlcoded}{
-	\sffamily\spaceskip=2\fontdimen2\font\footnotesize
+	% The following newline is necessary for some reason!
+
+	\sffamily
+	\footnotesize
+	\spaceskip=2
+	\fontdimen2
+	\font
 	\list{}{\rightmargin10pt\leftmargin10pt}\item[] % This line is how the quote environment is defined.
 %	\noindent\par\vspace{0.5\baselineskip}
-%	\begin{quote}
 }{
 	\endlist
-%	\end{quote}
 %	\vspace{0.5\baselineskip}\noindent\\
 }
+
 \newenvironment{mlalign}{
 	\begin{mlcoded}\setlength{\tabcolsep}{2pt}
 %    \vspace{-.3cm}
@@ -377,12 +375,12 @@
 \newcommand{\simpletitledbox}[2]{%
 	\plainbox{%
 		{\centering
-			
+
 			#1
-			
+
 		}
 		\vspace{0.4\baselineskip}
-		
+
 		\noindent #2
 	}%
 }%
@@ -429,6 +427,8 @@
 % The `::=` operator
 \newcommand{\typedecl}{\ml{$::=$}}
 \newcommand{\hastype}{\ml{$::$}}
+% The equivalence operator with spacing for use in ml mode
+\newcommand{\equivalent}{\quad $\equiv$\quad}
 
 \newenvironment{parsetree}[1]{\begin{center}\begin{forest}[#1]}{\end{forest}\end{center}}
 

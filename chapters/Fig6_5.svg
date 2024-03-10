@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="65.209976mm"
+   height="42.438442mm"
+   viewBox="0 0 65.209976 42.438442"
+   version="1.1"
+   id="svg1"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showguides="true">
+    <sodipodi:guide
+       position="30.889804,294.00243"
+       orientation="1,0"
+       id="guide1"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="2.8848741,275.10072"
+       orientation="0,-1"
+       id="guide2"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="2.8848751,280.05179"
+       orientation="0,-1"
+       id="guide3"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="2.8848741,272.70244"
+       orientation="0,-1"
+       id="guide4"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="27.810484,294.00243"
+       orientation="1,0"
+       id="guide5"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="33.923817,294.00243"
+       orientation="1,0"
+       id="guide6"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="DartArrow"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Dart arrow"
+       markerWidth="2"
+       markerHeight="2"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         transform="scale(-0.5)"
+         id="path6" />
+    </marker>
+    <linearGradient
+       id="swatch1"
+       inkscape:swatch="solid">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop1" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#swatch1"
+       id="linearGradient1"
+       x1="48.990139"
+       y1="44.746899"
+       x2="105"
+       y2="44.746899"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(46.105264,22.84761)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#swatch1"
+       id="linearGradient2"
+       gradientUnits="userSpaceOnUse"
+       x1="48.990139"
+       y1="44.746899"
+       x2="105"
+       y2="44.746899"
+       gradientTransform="translate(46.105264,22.84761)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#swatch1"
+       id="linearGradient3"
+       gradientUnits="userSpaceOnUse"
+       x1="48.990139"
+       y1="44.746899"
+       x2="105"
+       y2="44.746899"
+       gradientTransform="translate(46.105264,22.84761)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#swatch1"
+       id="linearGradient4"
+       gradientUnits="userSpaceOnUse"
+       x1="48.990139"
+       y1="44.746899"
+       x2="105"
+       y2="44.746899"
+       gradientTransform="translate(46.105264,22.84761)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#swatch1"
+       id="linearGradient5"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(46.105267,22.84761)"
+       x1="16.036362"
+       y1="25.34565"
+       x2="99.376358"
+       y2="25.34565" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#swatch1"
+       id="linearGradient6"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(46.105267,22.84761)"
+       x1="16.036362"
+       y1="25.34565"
+       x2="99.376358"
+       y2="25.34565" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#swatch1"
+       id="linearGradient7"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(46.105267,22.84761)"
+       x1="16.036362"
+       y1="25.34565"
+       x2="99.376358"
+       y2="25.34565" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#swatch1"
+       id="linearGradient8"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(46.105267,22.84761)"
+       x1="16.036362"
+       y1="25.34565"
+       x2="99.376358"
+       y2="25.34565" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-46.105264,-22.84761)">
+    <g
+       id="g33"
+       inkscape:export-filename="Fig6_5.svg"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
+      <path
+         style="fill:none;stroke:url(#linearGradient2);stroke-width:0.264999;marker-start:url(#DartArrow);paint-order:markers fill stroke"
+         d="M 48.990139,37.825692 V 25.84519 h 22.616726"
+         id="path32"
+         sodipodi:nodetypes="ccc" />
+      <path
+         style="fill:none;stroke:url(#linearGradient3);stroke-width:0.264999;marker-start:url(#DartArrow);paint-order:markers fill stroke"
+         d="M 70.633511,63.648603 H 48.990139 v -16.50343"
+         id="path31"
+         sodipodi:nodetypes="ccc" />
+      <path
+         style="fill:none;stroke:url(#linearGradient4);stroke-width:0.264999;marker-end:url(#DartArrow);paint-order:markers fill stroke"
+         d="M 105,47.145171 V 63.648603 H 83.522382"
+         id="path30"
+         sodipodi:nodetypes="ccc" />
+      <path
+         style="fill:none;stroke:url(#linearGradient1);stroke-width:0.264999;marker-end:url(#DartArrow);paint-order:markers fill stroke"
+         d="M 82.265815,25.84519 H 105 v 11.958843"
+         id="rect1"
+         sodipodi:nodetypes="ccc" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;letter-spacing:0px;text-anchor:middle;fill:url(#linearGradient5);stroke-width:0.264999;paint-order:markers fill stroke"
+         x="76.995636"
+         y="26.443256"
+         id="text6"><tspan
+           sodipodi:role="line"
+           id="tspan6"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:url(#linearGradient5);stroke-width:0.265001"
+           x="76.995636"
+           y="26.443256">{c,d}</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;letter-spacing:0px;text-anchor:middle;fill:url(#linearGradient6);stroke-width:0.264999;paint-order:markers fill stroke"
+         x="105.00056"
+         y="45.344963"
+         id="text14"><tspan
+           sodipodi:role="line"
+           id="tspan14"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:url(#linearGradient6);stroke-width:0.265001"
+           x="105.00056"
+           y="45.344963">{f,g,h}</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;letter-spacing:0px;text-anchor:middle;fill:url(#linearGradient7);stroke-width:0.264999;paint-order:markers fill stroke"
+         x="76.995636"
+         y="64.246666"
+         id="text18"><tspan
+           sodipodi:role="line"
+           id="tspan18"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:url(#linearGradient7);stroke-width:0.265001"
+           x="76.995636"
+           y="64.246666">{a}</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;letter-spacing:0px;text-anchor:middle;fill:url(#linearGradient8);stroke-width:0.264999;paint-order:markers fill stroke"
+         x="48.990704"
+         y="45.344963"
+         id="text22"><tspan
+           sodipodi:role="line"
+           id="tspan22"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:url(#linearGradient8);stroke-width:0.265001"
+           x="48.990704"
+           y="45.344963">{b}</tspan></text>
+    </g>
+  </g>
+</svg>
