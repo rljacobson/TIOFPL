@@ -80,7 +80,7 @@ Leaves of any particular tree must all contain values of the same type, but diff
 
     \end{tabular}
 \end{mlcoded}
-(The symbol \hastype is pronounced `has type'.) Here, `tree' is called a \textit{type-forming operator}, since it takes a type (such as \ml{num} or \ml{char}) as an `argument' and produces a type (respectively, \ml{(tree num)} or \ml{(tree char)}).
+(The symbol \hastype{} is pronounced `has type'.) Here, `tree' is called a \textit{type-forming operator}, since it takes a type (such as \ml{num} or \ml{char}) as an `argument' and produces a type (respectively, \ml{(tree num)} or \ml{(tree char)}).
 
 The repeated use of $*$ on the right-hand side of the type declaration specifies that the two branches of a tree must be of uniform type. For example,
 \begin{mlcoded}
@@ -209,12 +209,12 @@ Since it is easy to translate `built-in' types like lists and tuples into equiva
 \subsection{General Structured Types}
 
 In general, the form of a structured type definition is:
-
-\begin{mlcoded}
-    T \hastype$=$ c$_1$ T$_{1,1}$ $\ldots$ T$_{1,r_1}$\\
-    \quad | $\ldots$\\
-    \quad | c$_n$ T$_{n,1}$ $\ldots$ T$_{n,r_n}$\\
-\end{mlcoded}
+\begin{letalign}
+    T \hastype$=$ &c$_1$ T$_{1,1}$ $\ldots$ T$_{1,r_1}$\\
+    & | $\dots$\\
+    & | c$_n$ T$_{n,1}$ $\ldots$ T$_{n,r_n}$
+\end{letalign}
+\noindent
 where the \ml{T$_{i,j}$} are types and the \ml{c$_i$} are constructors of arity $r_i$. In the `\ml{tree}' example above, \ml{T} was \ml{(tree $*$)}, \ml{c$_1$} was \ml{LEAF}, \ml{T$_{1,1}$} was \ml{num}, \ml{c$_2$} was \ml{BRANCH}, \ml{T$_{2,1}$} was \ml{(tree $*$)}, and \ml{T$_{2,2}$} was \ml{(tree $*$)}.
 
 Readers familiar with the mathematical operations for constructing types will recognize that the general type above can be written as the sum (that is, discriminated union):
@@ -358,6 +358,7 @@ Here are some examples of patterns:
 
 \begin{tabular}{ll}
 \ml{x} & \\
+\ml{3} &\\
 \ml{LEAF n} & \\
 \ml{BRANCH (LEAF n) t} & \\
 \ml{CONS x xs} & (written \ml{(x:xs)} in Miranda) \\
@@ -448,19 +449,19 @@ Operationally, \fatbar{} evaluates its left argument; if the evaluation terminat
 It is easy to verify that \fatbar{} is an \textit{associative} operator, and has \textit{identity} \ml{FAIL}. Its associativity means that we may write expressions such as \ml{(E$_1$ \fatbar{} E$_2$ \fatbar{} E$_3$)} without ambiguity. It is extremely convenient to write \fatbar{} between its operands (that is, infix) but, since all functions are written prefix in the lambda calculus, we are forced to dignify \fatbar{} by making it one of the new constructs of the enriched lambda calculus. The sole reason for doing so is notational.
 
 As an example of the suggested translation in action, recall the definition of the \ml{reflect} function:
-\begin{mlcoded} \footnotesize
+\begin{mlcoded}
     \begin{tabular}{ll}
     reflect (LEAF n) &$=$ LEAF n \\
     reflect (BRANCH t1 t2) &$=$ BRANCH (reflect t2) (reflect t1)
     \end{tabular}
 \end{mlcoded}
 This would be translated to:
-\begin{mlalign}\footnotesize
-    \tlb{reflect} $=$ &\tlb{t}( ((\tlb{(LEAF n)}LEAF n) t) \\
+\begin{mlalign}
+    reflect $=$ \tlb{t}&( ((\tlb{(LEAF n)}LEAF n) t) \\
     &\fatbar{} ((\tlb{(BRANCH t1 t2)}BRANCH (reflect t2) (reflect t1)) t)\\
     &\fatbar{} ERROR )
 \end{mlalign}
-
+\noindent
 In this case, of course, \ml{ERROR} can never be returned, since one of the previous pattern-matches will succeed. This is not always the case, as the following example shows. Consider the Miranda definition of \ml{hd}, which extracts the first element of a list:
 \begin{mlcoded}
     hd (x:xs) $=$ x
@@ -575,7 +576,7 @@ Regarding all of an equation after the first \ml{$=$} sign as a `right-hand side
 Now we can use \metafn{TR} instead of \metafn{TE} to translate the right-hand sides of function definitions. As an example, recall the definition of \ml{funnyLastElt}:
 \begin{mlcoded}
     \begin{tabular}{ll}
-    funnyLastElt (x:xs) &$=$ x, x < 0\\
+    funnyLastElt (x:xs) &$=$ x, \qquad x < 0\\
     funnyLastElt (x:[]) &$=$ x\\
     funnyLastElt (x:xs) &$=$ funnyLastElt xs
     \end{tabular}
@@ -644,12 +645,10 @@ where the evaluation of \ml{bottom} fails to terminate (for example, \ml{bottom}
 Now, if we evaluate \ml{(nasty$'$ bottom 3 False)}, \ml{bottom} will match \ml{x} and \ml{3} will match \ml{y}, but the match of \ml{True} against \ml{False} will fail, so the second equation will be tried, and deliver the answer 2. Hence, \ml{nasty} and \ml{nasty$'$} behave differently, and the transformation is invalid. (Note: \ml{nasty} and \ml{nasty$'$} also behave differently for expressions such as \ml{(nasty 1 2 bottom)}.)
 
 There is a further complication raised by repeated variables. Consider the function \ml{multi}:
-\begin{mlcoded}
-\begin{tabular}{ll}
-        multi p q q p $=$ 1\\
-    multi p q r s $=$ 2
-\end{tabular}
-\end{mlcoded}
+\begin{letalign}
+        multi p q q p &$=$ 1\\
+    multi p q r s &$=$ 2
+\end{letalign}
 
 Should we compare the first and fourth arguments, and then compare the second and third arguments, or the other way around? The order of comparison is important, because it affects termination; consider \ml{(multi bottom 2 3 4)}.
 
@@ -684,8 +683,9 @@ Finally, the scope of a where-clause may include a set of alternatives and guard
 \end{mlcoded}
 
 % Figure 4.2 has been relocated to be with 4.3 and 4.4.
-
+\noindent
 The scope of the definition of \ml{diff} includes all the alternatives and guards.
+
 Figure 4.2 gives the final \metafn{TR} translation scheme, which translates right-hand sides, using a \ml{letrec} to translate a \ml{where}-clause.
 
 \subsection{Patterns on the Left-hand Side of Definitions}
@@ -912,13 +912,13 @@ application of the lambda abstraction \ml{(\tlb{(BRANCH t1 t2)}BRANCH t2 t1)} to
 The application returns \ml{FAIL} because the constructor in the pattern is different from that of the argument.
 
 Finally, if \ml{A} was built with the same constructor as the pattern, then the first rule applies. To see how this rule works, consider an application of the same abstraction to a \ml{BRANCH}:
-\begin{mlcoded}
-    (\tlb{(BRANCH t1 t2)}BRANCH t2 t1) (BRANCH (LEAF 0) (LEAF 1)) \\
-    $\rightarrow$ (\tlb{t1}\tlb{t2}BRANCH t2 t1) (LEAF 0) (LEAF 1) \\
-    $\rightarrow$ (\tlb{t2}BRANCH t2 (LEAF 0)) (LEAF 1) \\
-    $\rightarrow$ 1 \\
-    $\rightarrow$ BRANCH (LEAF 1) (LEAF 0)
-\end{mlcoded}
+\begin{letalign}
+    (\tlb{&(BRANCH t1 t2)}BRANCH t2 t1) (BRANCH (LEAF 0) (LEAF 1)) \\
+    &$\rightarrow$ (\tlb{t1}\tlb{t2}BRANCH t2 t1) (LEAF 0) (LEAF 1) \\
+    &$\rightarrow$ (\tlb{t2}BRANCH t2 (LEAF 0)) (LEAF 1) \\
+    &$\rightarrow$ 1 \\
+    &$\rightarrow$ BRANCH (LEAF 1) (LEAF 0)
+\end{letalign}
 In this case the match succeeds, and \ml{t1} and \ml{t2} are bound to the components of the branch with the ordinary $\beta$-reduction rule.
 
 Notice that for constructors of arity zero \ml{(r=0)} the three rules correspond exactly to those of the previous section. For example, using the first case of the \ml{xor} function gives:
@@ -928,10 +928,12 @@ Notice that for constructors of arity zero \ml{(r=0)} the three rules correspond
 \end{mlalign}
 Finally, notice that the rules deal correctly with nested patterns. Consider, for example, the following application of the first case of the function \ml{lastElt} to \ml{(CONS 4 (CONS 3 NIL))}:
 \begin{mlcoded}
-    (\tlb{(CONS x NIL)}x) (CONS 4 (CONS 3 NIL))\\
-    $\rightarrow$ (\tlb{x}\tlb{NIL}x) 4 (CONS 3 NIL) (\text{first rule}) \\
-    $\rightarrow$ (\tlb{NIL}4) (CONS 3 NIL) (first rule)\\
-    $\rightarrow$ \text{FAIL} \quad (\text{second rule})
+    \begin{tabular}{lll}
+    (\tlb{&(CONS x NIL)}x) (CONS 4 (CONS &3 NIL))\\
+    &$\rightarrow$ (\tlb{x}\tlb{NIL}x) 4 (CONS 3 NIL) &(\text{first rule}) \\
+    &$\rightarrow$ (\tlb{NIL}4) (CONS 3 NIL) &(\text{normal $\beta$-rule})\\
+    &$\rightarrow$ FAIL  &(\text{second rule})
+    \end{tabular}
 \end{mlcoded}
 Here, the outer pattern matches but the inner one does not, so the whole expression returns \ml{FAIL}.
 
@@ -1026,6 +1028,7 @@ firsts [1..] &$\rightarrow$ combine 1 (firsts [2..])\\
  &$\rightarrow$ combine 1 (combine 2 (firsts [3..]))
 \end{mlalign}
 and so on.
+
 The evaluation of \ml{(firsts [1..])} will never terminate. This is hardly satisfactory, because it is clear that the value of \ml{(firsts [1..])} should be \ml{(1,2)}.
 
 All is well, however, if we use lazy product-matching. Then, in effect, the
@@ -1146,9 +1149,9 @@ In this section, therefore, we introduce \ml{case}-expressions, a convenient con
 \ml{Case}-expressions are a notation for describing a simple form of pattern-matching. To begin with an example, we may translate the definition of \ml{reflect}, using a \ml{case}-expression, in the following way:
 \begin{mlcoded}
     \begin{tabular}{llll}
-    reflect $=$ \tlb{t} &case t of \\
-    &LEAF n  &$\Rightarrow$  &LEAF n \\
-    &BRANCH t1 t2 &$\Rightarrow$ &BRANCH (reflect t2) (reflect t1)
+    reflect $=$ \tlb{t}case &t of \\
+    &LEAF n  &$\rightarrow$  &LEAF n \\
+    &BRANCH t1 t2 &$\rightarrow$ &BRANCH (reflect t2) (reflect t1)
     \end{tabular}
 \end{mlcoded}
 The important points about a \ml{case}-expression are that the patterns are \textit{simple} (that is, not nested) and \textit{exhaustive} (that is, they cover all constructors of the type). This makes them particularly simple to implement.
@@ -1175,7 +1178,8 @@ Formally, the construct is defined to be equivalent to
 but a \ml{case}-expression is far more readable!
 
 Intuitively, \ml{case}-expressions correspond to a multiway jump, whereas the equivalent expression using \ml{\fatbar} corresponds to a sequential `\ml{if$\ldots$then$\ldots$elseif$\ldots$}'
-
+%\vfill
+\pg
 
 \begin{figure}[H]
     \centering

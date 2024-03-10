@@ -7,7 +7,7 @@ Want to help? It's easy enough. Just use the first couple of chapters as a guide
 Use the existing macros rather than "manually" typesetting code and other recurring text. The following utilities are provided:
 
 * Inline (`\ml{...}`) and displayed code (`\begin{mlcoded}
-  ... \end{mlcoded}`) environments
+  ... \end{mlcoded}`) environments. There are variants `letalign` (left, left aligned) and `mlalign` (right, left aligned) tabular variants. For aligning more than two columns, just put a `tabular` environment inside `mlcoded`.
 * Parse tree diagrams:
 
 ```latex
@@ -28,7 +28,23 @@ Use the existing macros rather than "manually" typesetting code and other recurr
 \end{numbered}
 ```
 
+* References environment:
+
+  ```latex
+  \section*{References}
+  \begin{references}
+  \item ...
+  ⋮
+  \end{references}
+  ```
+
 * Macros for lambda expressions that apply the correct space: `\tlb{x}+ x 1` for an entire lambda expression and `\tl` for just a raw lambda. 
+
+* Boxed commands `plainbox`, `titledbox`, and others. See `main.tex`.
+
+* `\fatbar` and `\bot` for the bottom turnstile symbol.
+
+There are others. See `main.tex` for full details.
 
 ## Figures and Graphics
 
