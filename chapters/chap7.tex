@@ -1,0 +1,581 @@
+\chapter{List Comprehensions}
+\chapterauthors{Philip Wadler}
+\vspace{3cm}
+
+List comprehensions are a syntactic feature of several functional languages,
+which, like pattern-matching, can greatly increase the ease with which one
+can read and write functional programs. Like pattern-matching, they add no
+fundamental new power to the language, and it is easy to translate a program
+containing list comprehensions into an equivalent program that does not
+contain them.
+
+This chapter is organized as follows. Section 7.1 explains the list comprehension notation. Section 7.2 gives a formal semantics of list comprehensions
+in terms of reduction rules. Section 7.3 presents a method of translating
+comprehensions into the enriched lambda calculus, and Section 7.4 uses
+program transformation techniques to improve this method. For simplicity,
+Sections 7.2-7.4 do not allow patterns in comprehensions, and the results of
+these sections are extended to include patterns in Section 7.5.
+
+\section{Introduction to List Comprehensions}
+Set comprehensions were introduced by Burstall in an early version of the
+language NPL (which later evolved into Hope, but without set comprehensions). List comprehensions were first used by Turner in KRC, where they
+were called ZF expressions [Turner, 1982]. List comprehensions have since
+been included in several other functional languages, including Miranda and
+SASL (in both of which they are called ZF expressions), and Orwell.
+
+(List comprehensions have sometimes been called set abstractions. This
+name is unfortunate, since they operate on lists rather than sets, and since the
+word `abstraction' already has too many other meanings.)
+
+List comprehensions are analogous to set comprehensions in Zermelo-Frankel
+set theory. An example of a set comprehension in mathematics is
+\[ B = \{ \text{square } x \mid x \in A \wedge \text{odd } x \} \]
+that is, the squares of the odd elements of the set $A$. For example, if $A$ is
+$\{1,2,3\}$ then $B$ is $\{1,9\}$. The corresponding list comprehension in Miranda is
+\begin{mlcoded}
+    ys = [ square x\ |\ x $\leftarrow$ xs; odd x ]
+\end{mlcoded}
+The only difference in notation is that the curly braces are changed to square
+brackets, the $\wedge$ is changed to a semi-colon, and the symbol $\in$ is changed to $\leftarrow$,
+which is pronounced `drawn from'. A much more important difference is that
+the result is a list, not a set. Thus, if \ml{xs} is \ml{[1,2,3]} then \ml{ys} is \ml{[1,9]} and if \ml{xs} is \ml{[3,2,1]}
+then \ml{ys} is \ml{[9,1]}.
+
+In general, a list comprehension has the form,
+\begin{mlcoded}
+    [\text{<expression>}\ |\ \text{<qualifier>}; \ldots; \text{<qualifier>}]
+\end{mlcoded}
+\noindent
+where each \ml{<qualifier>} is either a generator (such as `\ml{x $\leftarrow$ xs}') or a filter (such
+as `\ml{odd x}').
+
+Here are some more examples of list comprehensions. The function \ml{cp} finds
+the Cartesian product of two lists:
+\begin{mlcoded}
+    cp xs ys = [ (x,y) | x $\leftarrow$ xs; y $\leftarrow$ ys ]
+\end{mlcoded}
+For example,
+\begin{letalign}
+    cp ['a','b'] [1,2,3] = [ &('a',1), ('a' ,2), ('a',3),\\
+    &('b', 1), ('b',2), ('b',3) ]
+\end{letalign}
+Note that the last generator changes most rapidly.
+
+The function \ml{pyth} returns a list of all Pythagorean triangles with sides of
+total length less than \ml{n}:
+\begin{letalign}
+    pyth n = [ (a,b,c) | &a, b, c $\leftarrow$ [1..n];\\
+    &a + b + c <= n;\\
+    &square a + square b = square c ]
+\end{letalign}
+(Here \ml{[1..n]} returns the list of numbers from \ml{1} to \ml{n}, and a generator such as
+`\ml{x, y $\leftarrow$ zs}' is shorthand for `\ml{x $\leftarrow$ zs; y $\leftarrow$ zs}'.) This function may be
+written a little more efficiently as
+\begin{letalign}
+    pyth n = [ (a,b,c) | &a $\leftarrow$ [1 ..n];\\
+    &b $\leftarrow$ [1 ..n-a];\\
+    &c $\leftarrow$ [1 ..n-a-b];\\
+    &square a + square b = square c ]
+\end{letalign}
+A later qualifier may refer to a variable defined in an earlier one, but not vice
+versa.
+
+The function \ml{sort} sorts a list into ascending order. The method used is that
+of quicksort: the list is divided into those elements less than or not less than
+the first element, and the two sublists are sorted recursively:
+\begin{letalign}
+    sort [\;] &= [\;] \\
+    sort (x:xs) &= sort [y | y $\leftarrow$ xs; y < x] \\
+    &\phantom{= }++ [x] ++ \\
+    &\phantom{= }sort [y | y $\leftarrow$ xs; y >= x]
+\end{letalign}
+(Here, \ml{++} is list append.)
+
+Patterns may appear to the left of the $\leftarrow$ arrow. For example, suppose that
+the function \ml{zip} returns a list of pairs of corresponding elements of a pair of
+lists, so that
+\begin{mlcoded}
+    zip ([1,2,3], [4,5,6]) = [(1,4), (2,5), (3,6)]
+\end{mlcoded}
+Then we can define a function \ml{vecAdd} for performing vector addition (adding
+corresponding elements of two lists) as follows:
+\begin{mlcoded}
+    vecAdd xs ys = [x+y | (x,y) $\leftarrow$ zip (xs,ys)]
+\end{mlcoded}
+The pattern \ml{(x,y)} appears to the left of a $\leftarrow$ arrow. For example,
+\begin{mlcoded}
+    vecAdd [1,2,3] [4,5,6] = [5,7,9]
+\end{mlcoded}
+It is often convenient to use \ml{zip} with list comprehensions in this way.
+
+More generally, in a generator `\ml{p $\leftarrow$ L}' the pattern \ml{p} may be refutable. In
+this case, elements of the list \ml{L} which do not match the pattern are simply
+filtered out. The function \ml{singletons} takes a list of lists and returns the
+elements of each list of length one:
+\begin{mlcoded}
+    singletons xs = [x | [x] $\leftarrow$ xs]
+\end{mlcoded}
+For example,
+\begin{mlcoded}
+    singletons [ [1,2], [5], [\;], [2] ] = [5, 2]
+\end{mlcoded}
+Here the `\ml{[x]}' to the left of the arrow is the refutable pattern. The elements
+\ml{[1,2]} and \ml{[\;]} do not match the pattern, and so are filtered out.
+
+For simplicity, in Sections 7.2-7.4 we will ignore the fact that a pattern may
+appear on the left of the $\leftarrow$ arrow, and only deal with variables. The results of
+these sections will then be extended to patterns in Section 7.5.
+
+(In Miranda there is a second form of ZF expression, written with curly
+braces, which indicates that duplicates should be removed from the result list
+and generators should be `diagonalized'. This form will not be dealt with
+here. There is also another form of generator which we do not cover here.)
+
+\section{Reduction Rules for List Comprehensions}
+Just as reduction rules (such as the $\beta$-rule) can be given to define the behavior
+of lambda abstractions, so can reduction rules to define the behavior of list
+comprehensions be given.
+
+To present these rules, we will write comprehensions in the form
+\begin{mlcoded}
+[E | Q]
+\end{mlcoded}
+where \ml{E} is an expression and \ml{Q} is a sequence of zero or more qualifiers. The
+sequence \ml{Q} will
+\begin{enumerate}
+    \item[(i)] either begin with a generator, in which case the rule is of the form
+\begin{mlcoded}
+    [E | v $\leftarrow$ L; Q']
+\end{mlcoded}
+    where \ml{v} is a variable and \ml{L} is a list-valued expression;
+    \item[(ii)] or begin with a filter, in which case the rule is of the form
+\begin{mlcoded}
+    [E | B; Q']
+\end{mlcoded}
+    where \ml{B} is a boolean-valued expression;
+    \item[(iii)] or will be empty, in which case the rule is of the form
+\begin{mlcoded}
+    [E | \;]
+\end{mlcoded}
+\end{enumerate}
+One does not normally see comprehensions with no qualifiers such as \ml{[E | ]},
+but they are useful for defining reduction rules in a uniform way.
+
+Abbreviations should be expanded so that all comprehensions are in the
+above form. In particular, generators of the form
+\begin{mlcoded}
+    v$_1$, \ldots, v$_n$ $\leftarrow$ L
+\end{mlcoded}
+should be expanded to
+\begin{mlcoded}
+    v$_1$ $\leftarrow$ L; \ldots; v$_n$ $\leftarrow$ L
+\end{mlcoded}
+where \ml{v$_1$}, \ldots, \ml{v$_n$} are variables.
+
+After abbreviations are expanded, the following five reduction rules suffice
+to define list comprehensions:
+\begin{mlcoded}
+    \begin{tabular}{lll}
+    (1) &\quad{[E | v $\leftarrow$ {[\;]}; Q]}  &= [\;] \\
+    (2) &\quad{[E | v $\leftarrow$ E':L'; Q]}  &= [E | Q][E'/\,v] ++ [E | v $\leftarrow$ L'; Q] \\
+    (3) &\quad{[E | False; Q]}  &= [\;] \\
+    (4) &\quad{[E | True; Q]}  &= [E | Q] \\
+    (5) &\quad{[E |\; ]}  &= E
+    \end{tabular}
+\end{mlcoded}
+The first two rules define the behavior of generators, the second two define
+the behavior of filters, and the last 'cleans up' after all the generators and
+filters have been processed. The second rule uses the substitution notation of
+Chapter 2, so \ml{[E | Q]\,[E'/\,v]} means \ml{[E | Q]} with all free occurrences of \ml{v}
+replaced by \ml{E'}.
+
+From rules (1) and (2) we can see that
+\begin{mlcoded}
+    \text{(2b)} \quad {[E | v $\leftarrow$ {[E$_1$, \ldots, E$_n$]}; Q]} \\
+    \phantom{\text{(2b)} \qquad} $\rightarrow$ {[E | Q]\,[E$_1$/\,v]} ++ \ldots ++ {[E | Q]}\,{[E$_n$/\,v]}
+\end{mlcoded}
+
+
+
+which may be an easier way to think of the rule for generators. For example,
+\begin{mlcoded}
+    [square x | x $\leftarrow$ [1, 2, 3]; odd x] \\
+    \phantom{w} $\rightarrow$ [square 1 | odd 1] ++ [square 2 | odd 2] ++ [square 3 | odd 3]
+\end{mlcoded}
+\hfill (by rules (1) and (2))
+\begin{mlcoded}
+        \phantom{w} $\rightarrow$ [square 1 | True] ++ [square 2 | False] ++ [square 3 | True]
+\end{mlcoded}
+\hfill (reducing odd)
+\begin{mlcoded}
+        \phantom{w} $\rightarrow$ [square 1 | ] ++ [\,] ++ [square 3 | ]
+\end{mlcoded}
+\hfill (by rules (3) and (4))
+\begin{mlcoded}
+        \phantom{w} $\rightarrow$ [square 1] ++ [\,] ++ [square 3]
+\end{mlcoded}
+\hfill (by rule (5))
+\begin{mlcoded}
+        \phantom{w} $\rightarrow$  [1, 9]
+\end{mlcoded}
+
+\noindent
+These rules are based upon using append (\ml{++}) to combine the result lists,
+rather than \ml{cons} (\ml{:}) as one might expect. This is necessary in order to make it
+easy for filters to remove elements (by reducing to the empty list, as with
+\ml{[square 2 | odd 2]}
+in the example above). It is also necessary for multiple
+generators, as in the example below:
+\begin{mlcoded}
+    cp ['a','b'] [1,2,3]\\
+        \phantom{w} $\rightarrow$ [(x,y) | x $\leftarrow$ ['a','b']; y $\leftarrow$ [1,2,3] ]
+\end{mlcoded}
+\hfill (definition of \ml{cp})
+\begin{mlcoded}
+        \phantom{w} $\rightarrow$  [('a',y) | y $\leftarrow$ [1,2,3] ] ++ [('b',y) | y $\leftarrow$ [1,2,3] ]
+\end{mlcoded}
+\hfill (by rules (1) and (2) again)
+\begin{mlcoded}
+        \phantom{w} $\rightarrow$ [('a', 1), ('a',2), ('a',3), \\
+        \phantom{w $\rightarrow$ [}('b',1), ('b',2), ('b',3) ]
+\end{mlcoded}
+\hfill (by rule (5))
+
+The careful reader will have noticed that the above examples have ignored
+lazy evaluation. A lazy evaluator would begin to reduce the first example as
+\begin{mlcoded}
+    [square x | x $\leftarrow$ [1, 2, 3]; odd x]\\
+        \phantom{w} $\rightarrow$ [square 1 | odd 1] ++ [square x | x $\leftarrow$ [2, 3]; odd x]
+\end{mlcoded}
+\hfill (by rule (2))
+\begin{mlcoded}
+        \phantom{w} $\rightarrow$ [square 1 | ] ++ [square x | x $\leftarrow$ [2, 3]; odd x]
+\end{mlcoded}
+\hfill (by rule (4))
+\begin{mlcoded}
+        \phantom{w} $\rightarrow$ [square 1] ++ [square x | x $\leftarrow$ [2, 3]; odd x]
+\end{mlcoded}
+\hfill (by rule (5))
+\begin{mlcoded}
+        \phantom{w} $\rightarrow$ 1 : [square x | x $\leftarrow$ [2, 3]; odd x]
+\end{mlcoded}
+\noindent
+and so the first element of the result can be returned without examining the
+entire input list.
+
+\section{Translating List Comprehensions}
+The above rules provide a concise definition of list comprehensions. In this
+section we will see that a very similar set of rules can be used to translate
+Miranda list comprehensions into the enriched lambda calculus.
+
+The translation requires one new function, \ml{flatMap}. This is defined in
+Miranda as follows:
+\begin{mlcoded}
+    flatMap f [\,] = [\,] \\
+    flatMap f (x:xs) = (f x) ++ (flatMap f xs)
+\end{mlcoded}
+That is, \ml{(flatMap f xs)} applies a list-valued function \ml{f} to each element of a list
+\ml{xs}, and then appends all the resulting lists together.
+
+The rules for translation can be expressed by giving some extra rules for the
+\ml{\metafn{TE}} scheme, which was introduced in Chapter 3, and Figure 7.1 gives these
+extra rules.
+
+\boxedfigure{
+
+{ % Localize column separation change
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llll}
+   (a) & \ml{\metafnbb{TE}{[E | v $\leftarrow$ L; Q]}} & $\equiv$ & \ml{flatMap (\tlb{v} \metafnbb{TE}{[E | Q]})  \metafnbb{TE}{L}}  \\
+    (b) & \metafnbb{TE}{[E | B; Q]}  & $\equiv$ & \ml{IF \metafnbb{TE}{B}  \metafnbb{TE}{[E | Q]}  NIL} \\
+    (c) & \metafnbb{TE}{[E | \,]}   & $\equiv$ & \ml{CONS \metafnbb{TE}{E}  NIL}
+\end{tabular}
+}
+
+\vs
+
+\begin{tabular}{lll}
+where & \ml{E} & is an expression,\\
+&\ml{B} & is a boolean-valued expression,\\
+&\ml{L} & is a list-valued expression,\\
+&\ml{Q} & is a sequence of zero or more qualifiers,\\
+& \ml{v} & is a variable.
+\end{tabular}
+}{
+Translation scheme for list comprehensions
+}
+
+
+It is not hard to see that rule (a), together with the definition of \ml{flatMap}, is
+equivalent to rules (1) and (2) of the preceding section. Similarly, rule (b) is
+equivalent to rules (3) and (4), and rule (c) is equivalent to rule (5).
+
+Here are two examples, showing how to compile comprehensions like those
+used in the examples in the preceding section:
+\vs
+
+{ % Localize column separation change
+\setlength{\tabcolsep}{10pt}
+\begin{tabular}{ll}
+    \ml{\metafnbb{TE}{[square x | x $\leftarrow$ xs; odd x]} } & \\
+    \ml{$\equiv$ flatMap (\tlb{x}\metafnbb{TE}{[square x | odd x]} ) xs} & (rule (a)) \\
+    \ml{$\equiv$ flatMap (\tlb{x}IF (odd x) \metafnbb{TE}{[square x |\, ]}  NIL) xs} & (rule (b)) \\
+    \ml{$\equiv$  flatMap (\tlb{x}IF (odd x) (CONS (square x) NIL) NIL) xs} & (rule (c)) \\
+\multicolumn{2}{c}{\vspace{2mm}} \\[-\normalbaselineskip] % Add extra space
+    \ml{\metafnbb{TE}{[(x,y) | x $\leftarrow$ xs; y $\leftarrow$ ys]}} & \\
+    \ml{$\equiv$  flatMap (\tlb{x}\metafnbb{TE}{ [(x,y) | y $\leftarrow$ ys]}) xs} & (rule (a)) \\
+    \ml{$\equiv$  flatMap (\tlb{x}flatMap (\tlb{y}\metafnbb{TE}{ [(x,y) | \, ] }) ys) xs} & (rule (a)) \\
+    \ml{$\equiv$  flatMap (\tlb{x}flatMap (\tlb{y}CONS \metafnbb{TE}{(x,y)}  NIL) ys) xs}  &  (rule (c)) \\
+    \ml{$\equiv$  flatMap (\tlb{x}flatMap (\tlb{y}CONS (PAIR x y) NIL) ys) xs} &
+\end{tabular}
+}
+
+\vs
+
+\noindent
+It is left as an exercise for the reader to evaluate the terms above (for some
+suitable values of \ml{xs} and \ml{ys}) and verify that they return the desired results.
+
+\section{Using Transformations to Improve Efficiency}
+
+The translation scheme described in the previous section is complete, but is
+not the most efficient translation method possible. This section uses well-known
+techniques of program transformation to derive a more efficient
+translation scheme.
+
+The translation scheme will be improved in two steps. The first step
+improves efficiency using the well-known idea of expanding-out a program in
+place. Notice that an expression of the form
+\begin{mlcoded}
+    flatMap (\tlb{v}E) L
+\end{mlcoded}
+may be replaced by the equivalent enriched lambda calculus expression
+\begin{mlcoded}
+{ % Localize column separation change
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{llll}
+    letrec & & & \\
+    \quad h = \tlb{us}case & us of & &\\
+    & NIL & $\Rightarrow$ & NIL \\
+    & CONS v us$'$ &  $\Rightarrow$ & APPEND E (h us$'$) \\
+    in (h L) & & &
+    \end{tabular}
+}
+\end{mlcoded}
+where \ml{h}, \ml{us} and \ml{us$'$} are new variable names. It is straightforward to show that
+this expansion corresponds to the original definition of \ml{flatMap}.
+
+\boxedfigure{
+\begin{mlcoded}
+    \metafnbb{TE}{[E | v $\leftarrow$ L; Q]} \\
+    { % Localize column separation change
+%        \setlength{\tabcolsep}{3pt}
+        \begin{tabular}{llll}
+            $\equiv$ letrec & & & \\
+            \quad\quad h = \tlb{us}case & us of & &\\
+            & NIL & $\Rightarrow$ & NIL \\
+            & CONS v us$'$ &  $\Rightarrow$ & APPEND \metafnbb{TE}{[E | Q]} (h us$'$) \\
+            \phantom{$\equiv$ } in (h \metafnbb{TE}{L}) & & &
+        \end{tabular}
+    }
+\end{mlcoded}
+where \ml{h}, \ml{us} and \ml{us$'$} are new variables which do not occur free in \ml{E}, \ml{L} or \ml{Q}.
+}{
+Improved rule (a) for translation scheme
+}
+
+If we apply this transformation to rule (a) then we get a new, equivalent
+rule, shown in Figure 7.2. Combining this rule with rules (b) and (c) gives a
+more long-winded, but more efficient, translation scheme. An example of the
+use of this scheme is shown in Figure 7.3.
+
+
+\boxedfigure{
+    \begin{mlcoded}
+        \metafnbb{TE}{[square x | x $\leftarrow$ xs; odd x]} \\
+        { % Localize column separation change
+            %        \setlength{\tabcolsep}{3pt}
+            \begin{tabular}{llll}
+                $\equiv$ letrec & & & \\
+                \quad\quad h = & \tlb{us}case us &of &\\
+                & NIL & $\Rightarrow$ & NIL \\
+                & CONS x us$'$ &  $\Rightarrow$ & APPEND   \\
+                & & & \quad (IF (odd x) (CONS (square x) NIL) NIL) \\
+                & & & \quad (h us$'$) \\
+                \phantom{$\equiv$ } in & (h xs) & &
+            \end{tabular}
+        }
+    \end{mlcoded}
+}{
+Example of a translation using the improved rule
+}
+
+This translation scheme is quite efficient, but there is room for further improvement. For instance, the example shown in Figure 7.3 contains the expression
+\begin{mlcoded}
+    APPEND (IF (odd x) (CONS (square x) NIL) NIL) (h us$'$)
+\end{mlcoded}
+and it would have been more efficient to generate the equivalent expression
+\begin{mlcoded}
+    IF (odd x) (CONS (square x) (h us$'$)) (h us$'$)
+\end{mlcoded}
+instead.
+
+In general, it would be desirable to eliminate all calls of \ml{APPEND}. The reason for this is simple: rather than generating two lists and then appending them, it is better to generate the desired list directly. This will be significantly more efficient, since evaluating \ml{APPEND} requires time and space proportional to the length of its first argument.
+
+Surprisingly, it is indeed always possible to translate list comprehensions in such a way that \ml{APPEND} does not appear in the final result. The second, and final, improvement in the translation scheme will be derived by applying program transformation methods to the first scheme to eliminate all appearances of \ml{APPEND}.
+
+Observe that the only place that \ml{APPEND} appears in the current translation scheme is in the following phrase in the improved rule:
+\begin{mlcoded}
+    APPEND \metafnbb{TE}{[E | Q]} (h us$'$)
+\end{mlcoded}
+This suggests that we might define a new translation scheme, \metafn{TQ}, such that
+\begin{mlcoded}
+    \metafnbb{TQ}{[E | Q] ++ L}  = APPEND \metafnbb{TE}{[E | Q]} \metafnbb{TE}{L} \hfill \normalfont{(7.1)}
+\end{mlcoded}
+
+for any expression \ml{E}, list of qualifiers \metafn{TQ}, and list-valued expression \ml{L}. Then we can replace the previous expression by:
+\begin{mlcoded}
+    \metafnbb{TQ}{[E : Q] ++ (h us$'$)}
+\end{mlcoded}
+It is easy to prove this is equivalent to the previous expression using rule (7.1).
+
+The rules defining \metafn{TQ} are given in Figure 7.4. Readers familiar with program transformation will see that it is easy to derive the new rules (A), (B), and (C) from the modified rule (a), and rules (b) and (c). For example, here is the derivation of rule (C):
+\vs
+
+{ % Localize column separation change
+            \setlength{\tabcolsep}{8pt}
+\begin{tabular}{ll}
+    \ml{\metafnbb{TQ}{ [E |\, ] ++ L} } & \\
+    \ml{\equivalent APPEND \metafnbb{TE}{[E | ]} \metafnbb{TE}{L}} & (by (7.1)) \\
+    \ml{\equivalent APPEND (CONS \metafnbb{TE}{E} NIL) \metafnbb{TE}{L}} & (by rule (c)) \\
+    \ml{\equivalent CONS \metafnbb{TE}{E} \metafnbb{TE}{L}} & (by definition of \ml{APPEND}) \\
+\end{tabular}
+}
+
+\noindent
+The derivation of the other rules is not much harder, and is left as an exercise for the interested reader.
+
+\boxedfigure{
+    \footnotesize
+
+    \ml{\metafnbb{TE}{[E | Q]} = \metafnbb{TQ}{[E | Q] ++ []}}
+
+    \vspace{-0.5\baselineskip}
+    \hdashsep
+    \vspace{0.25\baselineskip}
+
+
+    \begin{mlcoded}
+        \begin{tabular}{lllll}
+            \normalfont{(A)} &\multicolumn{4}{l}{ \metafnbb{TQ}{[E | v $\leftarrow$ L$_1$; Q] ++ L$_2$}} \\
+            & \equivalent&\quad letrec & & \\
+            & & \multicolumn{3}{l}{\qquad \; h = \tlb{us}case us of} \\
+            & & & NIL & $\Rightarrow$ NIL \\
+            & & & CONS v us$'$ & $\Rightarrow$ \metafnbb{TE}{L$_2$} \\
+            & & \quad in \;(h \metafnbb{TE}{L$_1$}) \\
+        \end{tabular}
+
+        % \metafnbb{TQ}{[E | Q] ++ (h us$'$)}
+
+        \begin{tabular}{ll}
+            \normalfont{(B)} &\metafnbb{TQ}{[E | B; Q] ++ L} \\
+            & \qquad $\equiv$ IF \metafnbb{TE}{B} \metafnbb{TQ}{[E | Q] ++ L} \metafnbb{TE}{L}\\
+            \normalfont{(C)} & \metafnbb{TQ}{[E |  ] ++ L} \\
+            &\qquad $\equiv$ CONS \metafnbb{TE}{E} \metafnbb{TE}{L}
+        \end{tabular}
+    \end{mlcoded}
+
+    \noindent
+    where \ml{h}, \ml{us} and \ml{us$'$} are new variables which do not occur free in \ml{E}, \ml{L$_1$}, \ml{L$_2$} or \ml{Q}
+
+}{
+Optimal translation scheme for list comprehensions
+}
+
+
+\boxedfigure{
+    \setlength{\tabcolsep}{2pt}
+    \begin{mlcoded}
+    \metafnbb{TE}{[square x | x $\leftarrow$ xs; odd x]} \\
+    $\equiv$ letrec h = \tlb{us}case us of \\
+    \begin{tabular}{lll}
+        \phantom{ h =} & NIL & $\Rightarrow$ NIL \\
+        & CONS x us$'$ & $\Rightarrow$ IF (odd x) (CONS (square x) (h us$'$)) (h us$'$)
+    \end{tabular}
+    \phantom{$\equiv$} in (h xs)\hfill
+    \end{mlcoded}
+
+    \begin{mlcoded}
+        \metafnbb{TE}{[(x,y) | x $\leftarrow$ xs; y $\leftarrow$ ys]} \\
+        $\equiv$ letrec g = \tlb{us}case us of \\
+        \begin{tabular}{lll}
+            \phantom{ h =} & NIL & $\Rightarrow$ NIL \\
+            & CONS x us$'$ & $\Rightarrow$
+        \end{tabular}\\
+        \phantom{spacing}
+         letrec\\
+        \phantom{for spacing}
+        h = \tlb{vs}case vs of \\
+        \phantom{this for spacing}
+        \begin{tabular}{ll}
+            NIL &$\Rightarrow$ (g us$'$) \\
+            CONS y vs$'$ &$\Rightarrow$ CONS (PAIR x y) (h vs$'$)
+        \end{tabular}\\
+        \phantom{for spacing}
+        in (h ys)\\
+        \phantom{$\equiv$} in (g xs)
+    \end{mlcoded} \hfill
+    \vspace{-\baselineskip}
+}{
+Example translations using the optimal scheme
+}
+
+Figure 7.5 shows two examples of the translations produced by the new scheme. These should be compared with the examples at the end of the previous section. The reader will see that the new translations are considerably longer, but also considerably more efficient. Indeed, the translations produced by the new scheme are as good as the best translations one would make by hand.
+
+More precisely, we can state that the new translation scheme is optimal in that it performs the minimum number of \ml{CONS} operations. For a list comprehension, this means performing exactly one \ml{CONS} operation for each element in the returned list. The old translation scheme performed rather more \ml{CONS} operations
+than this, because of the extra \ml{CONS} operations performed by \ml{APPEND}. However, the new scheme is indeed optimal in this sense, as the reader may verify (informally or by a simple inductive proof).
+
+Although the work here has been presented in an informal style, it is an excellent example of the power of formal methods. As has been pointed out, starting from the reduction rules of Section 7.2, one may derive the translation scheme of Section 7.3 and the improved translation scheme of this section. None of the transformation steps is particularly difficult. On the other hand, had formal methods not been used, the development would have been much more troublesome, and quite possibly the optimal translation scheme described here would not have been discovered.
+
+\subsection{Pattern-matching in Comprehensions}
+Sections 7.2-7.4 have ignored the fact that in general a pattern rather than a variable may appear to the left of the $\leftarrow$ in a generator. This was done in order to make the presentation of the material a little simpler. This section updates the results of the previous sections to allow patterns in generators.
+
+First, we consider the reduction rules that define the semantics of list comprehensions. Recall that the reduction rules for generators are:
+
+\begin{mlcoded}
+{
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lll}
+    \normalfont{\normalsize (1)} & [E | v $\leftarrow$ [\,]; Q] & $\rightarrow$ [\,] \\
+    \normalfont{\normalsize (2)} & [E | v $\leftarrow$ E$'$:L$'$; Q] & $\rightarrow$  [E | Q][E$'$/v] ++ [E | v $\leftarrow$ L$'$; Q]
+\end{tabular}
+}
+\end{mlcoded}
+
+\noindent
+To allow for patterns in generators, these are replaced by:
+
+\begin{mlcoded}
+    {
+        \setlength{\tabcolsep}{6pt}
+        \begin{tabular}{llll}
+            \normalfont{\normalsize (1)} & [E | p $\leftarrow$ [\,]; Q] & $\rightarrow$ &[\,] \\
+            \normalfont{\normalsize (2)} & [E | p $\leftarrow$ E$'$:L$'$; Q] & $\rightarrow$  &( ((\tlb{p}[E | Q]) E$'$) \fatbar{} [\,] ) \\
+            &  &  & ++ [E | p $\leftarrow$ L$'$; Q]
+        \end{tabular}
+    }
+\end{mlcoded}
+
+\noindent
+The only changes are that the variable \ml{v} has been replaced by the pattern \ml{p}, and that in the second rule the phrase
+\begin{mlcoded}
+[E | Q][E$'$/v]
+\end{mlcoded}
+has been replaced by
+\begin{mlcoded}
+    ((\tlb{p}[E | Q]) E$'$) \fatbar{} [\,]
+\end{mlcoded}
+
+\noindent
+Thus, instead of substitution we use a pattern-matching lambda abstraction, as described in Chapter 4. If the pattern does not match then \ml{[\,]} is returned; so, as desired, if an element does not match a pattern it is as if it had been filtered out of the list.
+
