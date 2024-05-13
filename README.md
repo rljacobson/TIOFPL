@@ -10,10 +10,42 @@ The scanned version is certainly nice to have but leaves a lot to be desired in 
 
 It is unlikely that I will typeset the entire book—or even half of it. I have already done the hard part of obsessively reproducing the typography and layout. It would only take a dozen or so people typesetting a chapter each to complete the whole thing, so pull requests are certainly welcome.
 
-Thank you again to Simon and to the many other scholars who have provided me countless hours of pleasure being lost in your books. 
+Thank you again to Simon and to the many other scholars who have provided me countless hours of pleasure being lost in your books.
 
 Sincerely,
 
 Robert Jacobson
 
 [CONTRIBUTING](CONTRIBUTING.md)
+
+# Progress
+
+- [X] 1 Introduction
+- [ ] Part I Compiling High-Level Functional Languages
+	- [X] 2 The Lambda Calculus
+	- [X] 3 Translating A High-Level Functional Language
+	- [X] Into The Lambda Calculus
+	- [X] 4 Structured Types And The Semantics Of Pattern-Matching
+	- [X] 5 Efficient Compilation Of Pattern-Matching
+	- [X] 6 Transforming The Enriched Lambda Calculus
+	- [X] 7 List Comprehensions
+	- [ ] 8 Polymorphic Type-Checking
+	- [ ] 9 A Type-Checker
+- [ ] Part II Graph Reduction
+	- [ ] 10 Program Representation
+	- [ ] 11 Selecting The Next Redex
+	- [ ] 12 Graph Reduction Of Lambda Expressions
+	- [ ] 13 Supercombinators And Lambda-Lifting
+	- [ ] 14 Recursive Supercombinators
+	- [ ] 15 Fully-Lazy Lambda-Lifting
+	- [ ] 16 Sk Combinators
+	- [ ] 17 Storage Management And Garbage Collection
+- [ ] Part III Advanced Graph Reduction
+	- [ ] 18 The G-Machine
+	- [ ] 19 G-Code - Definition And Implementation
+	- [ ] 20 Optimizations To The G-Machine
+	- [ ] 21 Optimizing Generalized Tail Calls
+	- [ ] 22 Strictness Analysis
+	- [ ] 23 The Pragmatics Of Graph Reduction
+	- [ ] 24 Parallel Graph Reduction
+- [ ] Appendix An Introduction To Miranda™
