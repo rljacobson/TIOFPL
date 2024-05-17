@@ -1,0 +1,1270 @@
+\chapter{Polymorphic Type-Checking}
+\chapterauthors{Peter Hancock}
+\vspace{3cm}
+
+\noindent
+In common with several other modern programming languages, Miranda
+has the property that a programmer need not specify the types of the objects
+defined in his program. The compiler can work out those types, if the program
+can be consistently typed at all. The part of the compiler that does this is
+usually called the `type-checker'. It attempts to infer the types of expressions
+in the program from their contexts. This kind of type-checking was first
+implemented for the language ML, around 1976. The type discipline was first
+expounded by Milner [1978].
+
+Whether or not a type-checker requires information from the programmer
+to check that a program is well typed, type-checking is of great value in
+drawing the programmer's attention to a variety of errors, from trivial slips in
+program entry, to gross logical blunders. It helps us to write robust programs.
+
+Another advantage of type-checking is that it helps to build faster
+implementations of programming languages. If a program is passed by the
+type-checker, then no type error should occur at run-time, such as the use of
+an integer as if it were a function, a boolean as if it were an integer, or a
+function as if it were a tuple. In Milner's words, well-typed expressions do not
+`go wrong': at run-time we will never misinterpret the representation of an
+expression. By omitting run-time checks for such errors, the implementation
+of a language can be made simpler and faster. Of course, any implementation
+should still provide for diagnosis of its own internal errors.
+
+The purpose of this chapter is to explain in some detail how a type-checker
+works. Then, in Chapter 9, we put the ideas into practice by constructing a
+type-checker for a simple functional language. The type-checker is constructed
+in Miranda, in the hope that the development of such a functional
+program may itself be of some additional interest.
+
+Given the informal spirit of this book, and its concentration on setting up
+intuitions rather than on attaining impregnable conceptual rigor, it is not
+appropriate to proceed `from the ground up'. Instead, we shall assume that
+the reader already has some understanding of the notion of a type, and wishes
+to see how that notion can be applied in practice. Nevertheless, some
+cautionary remarks may be in order, and they are made at the end of the
+chapter.
+
+This chapter is organized as follows. Section 8.1 reviews some basic
+concepts, and notations for types. Section 8.2 illustrates the concept of
+polymorphism, using several examples. Section 8.3 shows in an informal way
+how types may be inferred from the structure of a definition. Section 8.4 sets
+out the language for which we will build a type-checker. Section 8.5 considers
+the detailed type structure of expressions in the language, and attempts to
+clarify the rules of type inference, which are summarized in Section 8.6.
+Section 8.7 contains the cautionary remarks referred to before.
+
+\textit{Important note:} The type-checker described here is actually somewhat
+more liberal than that of the Miranda compiler itself, in that it will succeed in
+type-checking some programs which the Miranda compiler would reject. This
+difference is explained in Section 8.5.5. The Miranda type-checker is also
+considerably more sophisticated than the one we describe here, because it
+supports features, such as abstract data types and a module structure, which
+are beyond the scope of this book.
+
+\section{Informal Notation for Types}
+
+The types with which we are concerned in functional programming include
+ground types such as characters, numbers and booleans, types of tuples, lists
+and, of course, functions. To talk about these types, we will use the following
+notation. Capital letters will be used for type variables. A type variable A
+stands for a type in much the same way that a numerical variable n stands for a
+number in mathematics. Lower-case letters will be used for the elements of
+types. The notation
+\begin{mlcoded}
+a \hastype{} A
+\end{mlcoded}
+means that \ml{a} has type \ml{A}. For example, \ml{42\hastype num}, \ml{'f'\hastype char}, where \ml{num} is the
+type of numbers, and \ml{char} is the type of characters. (Note: the notation used
+for types in this chapter differs from that of Miranda -- in Miranda an upper
+case letter cannot stand for a type.)
+
+\subsection{Tuples}
+
+Given types \ml{A} and \ml{B}, \ml{(A,B)} is the type of ordered pairs \ml{(a,b)} where \ml{a\hastype A}, and
+\ml{b\hastype B}. Using Descartes' terminology, \ml{a} is the first \textit{coordinate} of \ml{(a,b)}, and \ml{b} is
+the second. More generally, if $n \geq 2$ and \ml{A$_1$}, \ldots , \ml{A$_n$} are types, then
+\begin{mlcoded}
+    (A$_1$, \ldots, A$_n$)
+\end{mlcoded}
+is the type whose values are of the form of tuples
+\begin{mlcoded}
+(a$_1$, \ldots, a$_n$)
+\end{mlcoded}
+where \ml{a$_1$\hastype A$_1$}, \ldots, \ml{a$_n$\hastype A$_n$}. The important points about tuples, so far as typing is
+concerned, are:
+\begin{numbered}
+    \item the coordinates of a tuple need not be of the same type;
+    \item the type of a tuple determines the number of its coordinates (that is, its
+    dimension), and their types.
+\end{numbered}
+
+
+\subsection{Lists}
+
+Given a type \ml{B}, \ml{[B]} is the type of lists whose entries are of type \ml{B}. More
+specifically, an object of type \ml{[B]} must be
+\begin{numbered}
+    \item either the empty list, which is denoted by \ml{[\,]};
+    \item or a non-empty list, formed by prefixing an object \ml{b\hastype B} to a list \ml{bs\hastype[B]},
+    which is denoted by \ml{b:bs}.
+\end{numbered}
+If all the successive entries \ml{b$_1$}, \ldots, \ml{b$_k$} of a finite list are known, we may write
+it using the notation
+\begin{mlcoded}
+[b$_1$, \ldots, b$_k$]
+\end{mlcoded}
+The important points about lists, so far as typing is concerned, are:
+\begin{numbered}
+    \item In contrast with the coordinates of a tuple, all entries of a list must be of
+    the same type. For example, it would make no sense to form a list in which
+    the entries were alternately characters and truth values. (We could in fact
+    define a type of such entities, but they would not be lists.)
+    \item In contrast with the dimension of a tuple, the length of a list is not
+    determined by its type. Indeed, when programming in a lazy language,
+    we may operate with infinite lists such as the list of positive integers.
+    There is no requirement that a list must be built up from the empty list by
+    a finite number of applications of the prefixing operation (\ml{b:bs}), or that a
+    principle of well-founded induction on the structure of lists should be valid.
+\end{numbered}
+
+\subsection{Structured Types}
+
+Tuple types and list types are both examples of structured types, which were
+introduced in Chapter 4. As explained there, in Miranda the general form of a
+declaration of an operator for forming structured types is:
+\begin{mlcoded}
+    name v$_1$ \ldots{} v$_k$ \typedecl{} \quad c$_1$ t$_{1,1}$ \ldots{} t$_{1,r_1}$ \\
+    \phantom{this is spacing hack} | \ldots \\
+    \phantom{this is spacing hack} | c$_m$ t$_{m,1}$ \ldots{} t$_{m,r_m}$
+\end{mlcoded}
+where $m \geq 1$, $r_i \geq 0$ for $1 \leq i \leq m$, and $k \geq 0$. Here $v_1$, \ldots, $v_k$ stand for schematic type variables, which in Miranda have the special form \ml{$\ast$}, \ml{$\ast\ast$}, \ml{$\ast\ast\ast$}, etc. Also,
+\ml{t$_{1,1}$}, \ldots, \ml{t$_{m,r_m}$} are type expressions, built up using variables from the list \ml{v$_1$}, \ldots, \ml{v$_k$}
+and names for type-forming operations which are either built-in or declared
+elsewhere in the script.
+
+For example, in the type declaration
+\begin{mlcoded}
+    tree $\ast$ \typedecl{} LEAF $\ast$ | BRANCH (tree $\ast$) (tree $\ast$)
+\end{mlcoded}
+\ml{v$_1$} is \ml{$\ast$}, \ml{c$_1$} is \ml{LEAF}, and \ml{t$_{1,1}$} is \ml{$\ast$}; \ml{c$_2$} is \ml{BRANCH}, and \ml{t$_{2,1}$}, \ml{t$_{2,2}$} are both \ml{(tree $\ast$)}.
+\ml{tree$'$} is a type-forming operator since, given a type as `argument', it produces a
+type as its `result'; for example, \ml{(tree char)}, \ml{(tree num)}, \ml{(tree (tree num))}. In
+this sense, the built-in basic types (such as \ml{char}, \ml{num}, \ml{bool}) are simply type-forming operators which take no arguments.
+
+A declaration with the form above means that an object of a type
+\begin{mlcoded}
+    name t$'_1$ \ldots t$'_k$
+\end{mlcoded}
+must have one of the constructed forms
+\begin{mlcoded}
+    c$_i$ x$_1$ \ldots x$_n$
+\end{mlcoded}
+where \ml{x$_j$:t$'_{i,j}$} for $1 \leq j \leq n$, and \ml{t$'_y$} denotes the result of simultaneously
+substituting the type expressions \ml{t$'_1$}, \ldots, \ml{t$'_k$} for the type variables \ml{v$_1$}, \ldots, \ml{v$_k$} in
+the type expression \ml{t$_{i,j}$}.
+
+For example, here is an object of type \ml{(tree char)}:
+\begin{mlcoded}
+    BRANCH (LEAF 'a') (LEAF 'b')
+\end{mlcoded}
+In this case, \ml{t$'_1$} is \ml{char}; the form of the object is a \ml{BRANCH}, and \ml{x$_1$} is
+\ml{(LEAF 'a')\hastype{}tree char}, \ml{x$_2$} is \ml{(LEAF 'b')\hastype{}tree char}.
+
+\subsection{Functions}
+Given types \ml{A} and \ml{B}, we use the notation:
+\begin{mlcoded}
+    A $\rightarrow$ B
+\end{mlcoded}
+to denote the type of functions \ml{f} applicable to objects \ml{a\hastype{}A}, whose values (\ml{f a})
+are of type \ml{B}.
+
+For example, \ml{(char $\rightarrow$ num)} is the type of integer-valued functions of
+characters. The function `code' which maps a character to its ASCII code is of
+this type.
+
+\ml{(char $\rightarrow$ bool)} is the type of boolean-valued functions of characters. For example, the function
+\begin{mlcoded}
+    isdigit ch = (code '0' <= x) \& (x <= code '9') \\
+    \phantom{isdigit ch =} where x = code ch
+\end{mlcoded}
+is a function of this type.
+
+\ml{([char] $\rightarrow$ [num])} is the type of functions whose arguments are lists of characters, and whose values are lists of integers. The function which returns the list of ASCII codes corresponding to a character list is of this type.
+
+
+(Note: in functional programming, we consider a function to belong to a
+type \ml{(A $\rightarrow$ B)} even though it is not totally defined on the domain type \ml{A}. For
+example, the partial function which assigns to every even number its successor
+has type \ml{(num $\rightarrow$ num)}.)
+
+The arrow in the function type notation \ml{(A $\rightarrow$ B)} is considered to be a
+right-associative binary operator. So
+\begin{mlcoded}
+    A $\rightarrow$ B $\rightarrow$ C
+\end{mlcoded}
+means the same as
+\begin{mlcoded}
+    A $\rightarrow$ (B $\rightarrow$ C)
+\end{mlcoded}
+and
+\begin{letalign}
+    & (A $\rightarrow$ B $\rightarrow$ C) \\
+    $\rightarrow$ & (A $\rightarrow$ B) \\
+    $\rightarrow$ & A \\
+    $\rightarrow$ & C \\
+\end{letalign}
+means the same as
+\begin{mlcoded}
+    (A $\rightarrow$ (B $\rightarrow$ C)) $\rightarrow$ ((A $\rightarrow$ B) $\rightarrow$ (A $\rightarrow$ C))
+\end{mlcoded}
+(We shall often lay out a large type expression over several lines, as above.)
+
+The reason we choose \ml{$\rightarrow$} to be right associative can be seen by considering
+a (curried) function \ml{f} of two arguments \ml{a\hastype{}A} and \ml{b\hastype{}B}. Then we have:
+\begin{letalign}
+    f &\hastype{} A $\rightarrow$ B $\rightarrow$ C \\
+    (f a) &\hastype{} B $\rightarrow$ C \\
+    (f a b) &\hastype{} C
+\end{letalign}
+If \ml{$\rightarrow$} were left associative, we would have to write
+\begin{mlcoded}
+    f \hastype{} A $\rightarrow$ (B $\rightarrow$ C)
+\end{mlcoded}
+which is less convenient, since it uses more brackets.
+
+\section{Polymorphism}
+
+Many of the functions we define in a functional program are to a greater or
+lesser degree indifferent to the types of their arguments. This can be
+illustrated with a few examples.
+
+\subsection{The Identity Function}
+
+The identity function \ml{id}, defined by
+\begin{mlcoded}
+    id x = x
+\end{mlcoded}
+works equally well on arguments of any type. For example, in
+\begin{letalign}
+    id 3 &= 3 \\
+    id 'a' &= 'a' \\
+    id (3, 'a') &= (3, 'a')
+\end{letalign}
+the function \ml{id} is used with the types
+\begin{mlcoded}
+    num $\rightarrow$ num \\
+    char $\rightarrow$ char \\
+    (num, char) $\rightarrow$ (num, char)
+\end{mlcoded}
+In this sense, \ml{id} is \textit{indifferent to the type of its arguments}. However, \ml{id} always
+returns a result of the same type as its argument. We express this by saying
+that \ml{id} is of type \ml{A $\rightarrow$ A}, for all types \ml{A}.
+
+Sometimes we omit the `for all types \ml{A}' (the jargon for which is \textit{schematic
+generality}; \ml{A} is said to be a \textit{schematic} (or \textit{generic}) \textit{variable}). When the
+schematic variables are not given explicitly, every type variable is here to be
+understood as a schematic variable.
+
+To say that \ml{id} is of type \ml{(A $\rightarrow$ A)} for all types \ml{A} means that the name \ml{id} can
+occur in a larger expression in any context suitable for a function whose type is
+of that form. When we indicate a form by means of a type expression, we
+should say which parts of the expression may vary, by indicating the schematic
+variables. To say that a type \ml{T} \textit{is of the form}
+\begin{mlcoded}
+    \ldots A\ldots B\ldots A\ldots C\ldots
+\end{mlcoded}
+where \ml{A} and \ml{B} are the schematic variables, is to say that \ml{T} may be obtained by
+substituting certain types \ml{TA} and \ml{TB} for the schematic variables. In other
+words, \ml{T} is a \textit{substitution instance} of the indicated type. The types
+\begin{mlcoded}
+    num $\rightarrow$ num \\
+    char $\rightarrow$ char \\
+    (num, char) $\rightarrow$ (num, char)
+\end{mlcoded}
+are all substitution instances of the form
+\begin{mlcoded}
+    A $\rightarrow$ A
+\end{mlcoded}
+where it is understood that \ml{A} is the schematic variable.
+
+For a final example, consider the expression:
+\begin{mlcoded}
+    id (code (id 'a'))
+\end{mlcoded}
+The first occurrence of \ml{id} must have type \ml{(num $\rightarrow$ num)}, and the second must
+have type \ml{(char $\rightarrow$ char)}. Since these are both substitution instances of the
+type of \ml{id}, \ml{(A $\rightarrow$ A)}, the expression is correctly typed.
+
+Note: What we here call schematic type variables are called in Miranda
+generic type variables and written using the special symbols \ml{$\ast$}, \ml{$\ast\ast$}, etc. to
+distinguish them from ordinary (non-generic) names for types.)
+
+\subsection{The Length Function}
+
+The function which returns the length of a list may be defined by the equations
+\begin{letalign}
+    length [\,] &= 0 \\
+    length (x:xs) &= (length xs) + 1
+\end{letalign}
+
+The function \ml{length} works equally well on any list, regardless of the type of its
+entries. For example, in the equations:
+\begin{letalign}
+    length [7,1,4] &= 3 \\
+    length ['7','1','4','z'] &= 4 \\
+    length [(3,'a'),(26,'z')] &= 2 \\
+    length [id, id] &= NN
+\end{letalign}
+the function is used with the types:
+\begin{letalign}
+    [num] &$\rightarrow$ num \\
+    {}[char] &$\rightarrow$ num \\
+    {}[(num, char)] &$\rightarrow$ num \\
+    {}[(A $\rightarrow$ A)] &$\rightarrow$ num
+\end{letalign}
+respectively. We express the type of \ml{length} by
+\begin{mlcoded}
+    length \hastype{} [A] $\rightarrow$ num, \normalfont{for all types} A
+\end{mlcoded}
+which conveys that
+\begin{numbered}
+    \item \ml{length} is a function;
+    \item its arguments are lists;
+    \item its values are numbers;
+    \item the type of the entries in the argument list does not matter.
+\end{numbered}
+
+\subsection{The Composition Function}
+
+Let us represent the composition of two functions \ml{f} and \ml{g} with a right-associative infix dot, and define
+\begin{mlcoded}
+    (f . g) x = f (g x)
+\end{mlcoded}
+(We shall write the composition function `\ml{compose}' when we do not want to
+indicate its arguments.) Composition is well defined so long as both its left-
+and right-hand arguments are functions, and the type of arguments of its
+left-hand argument is the same as the type of values of its right-hand
+argument. For example, the following make perfect sense:
+\begin{numbered}
+    \item \ml{decode . succ . code}\\
+where \ml{succ} denotes the successor of an integer. The expression denotes a
+function which returns `\ml{b}' from `\ml{a}', `\ml{c}' from `\ml{b}', and so on. The composition function is used here with the type:
+\begin{mlcoded}
+    (num $\rightarrow$ char) $\rightarrow$ (char $\rightarrow$ num) $\rightarrow$ char $\rightarrow$ char
+\end{mlcoded}
+at its first occurrence, and with the type:
+\begin{mlcoded}
+    (num $\rightarrow$ num) $\rightarrow$ (char $\rightarrow$ num) $\rightarrow$ char $\rightarrow$ num
+\end{mlcoded}
+at its second.
+    \item \ml{code . id} and \ml{id . code}\\
+    where \ml{id} is the identity function discussed above. In these expressions, the
+    composition function is used with the types:
+    \begin{mlcoded}
+        (char $\rightarrow$ num) $\rightarrow$ (char $\rightarrow$ char) $\rightarrow$ char $\rightarrow$ num \\
+        (num $\rightarrow$ num) $\rightarrow$ (char $\rightarrow$ num) $\rightarrow$ char $\rightarrow$ num
+    \end{mlcoded}
+    respectively.
+    \item \ml{isdigit . decode} \\
+    which is the predicate of an integer which is itself the ASCII code of a
+    decimal digit. Here the composition function is used with type:
+    \begin{mlcoded}
+        (char $\rightarrow$ bool) $\rightarrow$ (num $\rightarrow$ char) $\rightarrow$ num $\rightarrow$ bool
+    \end{mlcoded}
+\end{numbered}
+
+\noindent
+We can express the constraint on the types of the arguments of \ml{compose} by
+saying:
+\begin{mlcoded}
+    compose \hastype{} (B $\rightarrow$ C) $\rightarrow$ (A $\rightarrow$ B) $\rightarrow$ A $\rightarrow$ C
+\end{mlcoded}
+where \ml{A}, \ml{B}, and \ml{C} are the schematic variables.
+
+\subsection{The Function \ml{foldr}}
+
+The function \ml{foldr} may be defined by the equation
+\begin{mlcoded}
+    foldr f b [\,] = b \\
+    foldr f b (a:as) = f a (foldr f b as)
+\end{mlcoded}
+Again, \ml{foldr} is to a certain extent indifferent to the types of its arguments. For
+example, the following make perfect sense:
+\begin{numbered}
+    \item \ml{foldr plus 0 [7,1,4]} \\
+    where \ml{plus} means binary addition. The function \ml{foldr} is used here with the
+    type:
+    \begin{letalign}
+        &(num $\rightarrow$ num $\rightarrow$ num) \\
+        $\rightarrow$ & num \\
+        $\rightarrow$ & [num] \\
+        $\rightarrow$ & num \\
+    \end{letalign}
+    \item  \ml{foldr append [\,] ["str1","str2","str3"]}\\
+    Here \ml{append} is the function which concatenates two lists. The function
+    \ml{foldr} is being used here with type:
+    \begin{letalign}
+        & (string $\rightarrow$ string $\rightarrow$ string) \\
+        $\rightarrow$ & string \\
+        $\rightarrow$ & [string] \\
+        $\rightarrow$ & string
+    \end{letalign}
+    \item \ml{foldr cons [\,] [5,4,1,4,1]} \\
+    Here \ml{cons x y = x:y}. In this expression, \ml{foldr} is used with the type:
+    \begin{letalign}
+        & (num $\rightarrow$ [num] $\rightarrow$ [num])\\
+         $\rightarrow$ &[num] $\rightarrow$ [num] $\rightarrow$ [num]
+    \end{letalign}
+\end{numbered}
+
+\noindent
+In general, \ml{foldr} may be used in any context which requires a type of the form:
+\begin{letalign}
+    &(A $\rightarrow$ B $\rightarrow$ B) \\
+    $\rightarrow$ & B \\
+    $\rightarrow$ & [A] \\
+    $\rightarrow$ & B
+\end{letalign}
+where \ml{A} and \ml{B} are the schematic variables.
+
+\subsection{What Polymorphism Means}
+
+Polymorphism is a style of type discipline which seems to have been first
+identified by Christopher Strachey [1967]. A programming language has a
+polymorphic type discipline if it permits us to define functions which work
+uniformly for arguments of different types. For example, in a polymorphic
+language, we can define a single function \ml{length} of type:
+\begin{mlcoded}
+    [A] $\rightarrow$ num
+\end{mlcoded}
+In contrast, a language with a monomorphic type discipline forces the
+programmer to define different functions to return the length of a list of
+integers, a list of floating point numbers, a list of binary numerical functions,
+and so on. Languages such as Pascal and Algol 68 are monomorphic.
+
+Strachey distinguished between \textit{ad hoc polymorphism}, and \textit{parametric
+polymorphism}. A type discipline exhibits \textit{ad hoc} polymorphism if it permits
+the use of the same expression to denote distinct operations at distinct types,
+such as the use of the addition symbol to denote addition of integers,
+rationals, real numbers, ordinals, complex numbers, and so on. This characteristic of a language is often now described as the ability to \textit{overload}
+expressions. On the other hand, parametric polymorphism is just polymorphism as explained above.
+
+The words \textit{polymorphic} and \textit{monomorphic} are also sometimes used to
+distinguish between objects whose types are described by expressions with
+schematic type variables, and those whose type expressions have none. For
+example, the empty list is polymorphic, the functions \ml{id}, \ml{compose}, \ml{length} and
+\ml{foldr} are polymorphic, while the function \ml{decode} which returns from an
+integer the character with that ASCII code is monomorphic.
+
+A polymorphic object may take on different types at different occurrences,
+where these different types are substitution instances of the schematic type of
+the function. For example, we do not need to have different versions of \ml{foldr}
+for each pair of types that instantiate \ml{A} and \ml{B} in the type expression
+\begin{mlcoded}
+    (A $\rightarrow$ B $\rightarrow$ B) $\rightarrow$ B $\rightarrow$ [A] $\rightarrow$ B
+\end{mlcoded}
+or to parameterize \ml{foldr} with the type variables \ml{A} and \ml{B}. Precisely the same
+code is executed whatever the types \ml{A} and \ml{B} (at least in a naive implementation of the compiler), and it would be artificial to duplicate that code, or
+name it differently for each pair of types.
+
+The terminology is also sometimes (perhaps unfortunately) applied to
+types themselves. For example, it is said that \ml{foldr} possesses a `polymorphic'
+type, meaning that its type is expressed with schematic variables. (Going by
+etymology, `polymorphic' should mean `of many forms', and it is precisely in
+order to identify a single form that we use an expression with schematic
+variables.)
+
+A polymorphic type discipline was first worked out for the language ML
+around 1976, and since then has been incorporated in a number of functional
+and imperative languages. In pragmatic terms at least, polymorphism represents a significant advance over the type disciplines of languages such as
+Pascal or Algol 68.
+
+\section{Type Inference}
+
+This type discipline is not only polymorphic; it has the property that the only
+places in a program where we have to mention types at all are in the type
+definitions themselves. The type-checker is able, as part of a single process,
+\begin{enumerate}
+    \item to determine whether the program is well-typed; and
+    \item if the program \textit{is} well-typed, to determine the type of any expression in the
+    program.
+\end{enumerate}
+(Of course, to make a program easier to understand we should almost always
+accompany a definition with a specification of the type of the defined entity.)
+
+Before delving into the details of type-checking, we should ask ourselves
+how we can informally deduce the types of functions given only their defining
+equations.
+
+Consider the definition:
+\begin{letalign}
+    isdigit ch = &(code '0' <= x) \& (x <= code '9') \\
+    &where x = code ch
+\end{letalign}
+From the right-hand side of the definition we can see that, if the function is
+well defined at all, its value must be a truth-value, since the outermost
+operator \& (conjunction) produces truth-values. Moreover, the infix operator
+\ml{<=} which supplies its values as arguments to \& also produces truth-values. (So
+we can see that \& is used consistently with its type.) The arguments to \ml{<=} must
+both have the type \ml{num}, and this is clearly the case for the actual arguments,
+namely (\ml{code '0'}) and (\ml{code '9'}). It follows that \ml{x} must be a number, and for
+this to hold, \ml{ch} must have type \ml{char}. So the right-hand side of the definition is well typed, with type \ml{bool}, provided that the argument \ml{ch} has type \ml{char}. Since
+the left-hand side of an equation must have the same type as the right-hand
+side, we deduce that:
+\begin{mlcoded}
+    isdigit \hastype{} char $\rightarrow$ bool
+\end{mlcoded}
+Consider now the definition of \ml{length}, repeated here:
+\begin{mlcoded}
+    length [\,] = 0 \\
+    length (x:xs) = (length xs) + 1
+\end{mlcoded}
+From the first equation, it is clear that the type of \ml{length} is of the form
+\begin{mlcoded}
+    [A] $\rightarrow$ num
+\end{mlcoded}
+We must also look at the second equation to see whether it constrains the
+type \ml{A} any further. For example, if the second equation were something like
+\begin{letalign}
+    length (x:xs) &= (length xs) + 1, \quad x = 'a' \\
+    &= length xs
+\end{letalign}
+(using a conditional expression), we would have to conclude that the type \ml{A} is
+not in fact completely general, but completely specific: it is the type \ml{char}. But
+in the case of the function \ml{length}, the second clause imposes no further
+constraint, so we can say that
+\begin{mlcoded}
+    length \hastype{} [A] $\rightarrow$ num, \normalfont{for all types} A
+\end{mlcoded}
+Consider now the function \ml{foldr}, with definition
+\begin{mlcoded}
+    \begin{tabular}{lll}
+    foldr f x = g where &g [] &= x \\
+        &g (a:as) &= f a (g as)
+    \end{tabular}
+\end{mlcoded}
+The local function \ml{g} is evidently a function on lists, since it is defined by cases
+on the two constructors of list form. So suppose \ml{g} has type \ml{([A] $\rightarrow$ B)}.
+Both \ml{x} and \ml{(f a (g as))} must be of type \ml{B}. Since \ml{(g as)} has type \ml{B}, \ml{f} must
+have type \ml{(A $\rightarrow$ B $\rightarrow$ B)}. So, all in all,
+\begin{mlcoded}
+    foldr \hastype{} (A $\rightarrow$ B $\rightarrow$ B) $\rightarrow$ B $\rightarrow$ [A] $\rightarrow$ B
+\end{mlcoded}
+
+In general, by examining the context of an expression, we may be able to
+deduce an expression for the form of the type of an object which can fit into
+that context. By examining the expression itself, we may be able to deduce the
+form of the types which that expression can take on. So we have two type
+expressions that will usually contain variables, the first giving the form of the
+type required by the context (deduced from the `outside'), and the second
+giving the form of type which the object can take (deduced from the `inside').
+For the whole expression to be well typed, these two type expressions must
+match, in the sense that by substituting for the schematic variables of the type
+expressions, they can be brought to the same form.
+
+\section{The Intermediate Language}
+
+The language for which we will construct a type-checker is the language of the
+lambda calculus. We will use the form of that language in which recursion is
+expressed using the \ml{letrec} construct rather than by using the  \ml{Y} combinator.
+Briefly, the forms of expression are these:
+\begin{numbered}
+    \item Variables: \ml{x}, \ml{y}, etc.
+    \item Lambda abstractions: \ml{\tlb{x}E}
+    \item Application: \ml{E$_1$ E$_2$}
+    \item Simultaneous definitions (let-expressions):
+    \begin{letalign}
+        let &x$_1$ = E$_1$ \\
+        &\ldots \\
+        &x$_k$ = E$_k$ \\
+        in &E
+    \end{letalign}
+    \item Mutual recursion (\ml{letrec}-expressions):
+    \begin{letalign}
+        letrec &x$_1$ = E$_1$ \\
+        &\ldots \\
+        &x$_k$ = E$_k$ \\
+        in E &
+    \end{letalign}
+\end{numbered}
+The type-checker should be invoked when the source program has been
+brought into this form, and before lambda-lifting, or transformation to a
+supercombinator program (see Chapter 13). It is, however, important that
+the program is subjected to the dependency analysis referred to in Section 6.2.8
+before type-checking. This is for the following reason. If we include in a
+\ml{letrec}-expression a definition whose right-hand side does not `really' depend
+on the other names defined in the \ml{letrec}, we may not be able to type-check the
+program at all. (For an explanation of this, see Mycroft [1984].)
+
+The most conspicuous absentee from this list of constructs is anything
+corresponding to function definitions by pattern-matching. But as is shown in
+Chapters 4-6, we can replace such definitions by using instead built-in case
+functions associated with the type-forming operations defined by the
+programmer or supplied by the system. The names of these case functions,
+and indeed of the associated discriminators and selectors, can be regarded as
+the names of variables with predeclared types. Hence they are of no special
+interest in the type-checker.
+
+(In the same vein, we might have taken the easy way out in our treatment of
+recursion, and used the \ml{Y} combinator, regarding this as having a priori the
+predeclared type
+\begin{mlcoded}
+    Y \hastype{} (A $\rightarrow$ A) $\rightarrow$ A, for all types A
+\end{mlcoded}
+
+However, the issues involved in the problem of how a type discipline should
+treat recursion are rather subtle. Although the solution we have adopted is in
+fact precisely equivalent to adoption of the \ml{Y} combinator for the expression of recursion, we take the point of view that to do this would be to sweep the
+problem under the carpet.)
+
+The type-checking algorithm can still be developed when pattern-matching
+is present in the language. Indeed, for practical reasons, it is better to type-check while the program is still close to the form in which it was entered, in
+order that error messages can refer to program text that the programmer can
+recognize.
+
+\section{How to Find Types}
+
+Presumably, when we construct an expression \ml{E} in a program, we reason to
+ourselves that it is well typed. As a product of this reasoning, we are in a
+position to say what the type is of any subexpression \ml{E$'$} of \ml{E}. We can, as it
+were, label each subexpression with the type which we think it has. When we
+enter that expression into the text of our program, that `labelling' has been
+lost. It is the job of the type-checker to reason out the type structure of the
+expression once again, and to recover the labelling.
+
+If we accept that type-checking is a species of inference, this raises the
+question as to what forms of inference we may validly employ in checking the
+type of an expression. We shall not go so far as to try to state those forms of
+inference explicitly (akin to an exercise in formal logic), but rather by
+considering a sufficient variety of examples (as it were, particular syllogisms),
+try to work up some confidence that we can tell the difference between right
+and wrong inference.
+
+\subsection{Simple Cases, and Lambda Abstractions}
+
+In order to make enough space to expose the type structure of an expression,
+let us lay it out as a tree, where at the top we have the variables and constants,
+and as we proceed down towards the root, we pass through nodes labelled
+with the constructors applied in the formation of the expression. For an
+example containing both application and abstraction nodes, take the
+expression
+\begin{mlcoded}
+    (\tlb{x}\tlb{y}\tlb{z}x z (y z))
+\end{mlcoded}
+Laid out as a tree this becomes
+\begin{center}
+\begin{forest}
+    for tree={
+        grow=north, % This makes the tree grow upwards
+    }
+    [\ml{\tlb{x}\tlb{y}\tlb{z}}
+    [\ml{@}
+    [\ml{@}
+    [\ml{z}] [\ml{y}]
+    ]
+    [\ml{@}
+    [\ml{z}] [\ml{x}]
+    ]
+    ]
+    ]
+\end{forest}
+\end{center}
+Each node in this tree corresponds to a subexpression of the original
+expression and should therefore possess a type. Assign arbitrary type labels
+\ml{T0}, \ml{T1}, \ldots, \ml{T7} to the nodes of the tree. Drawing the tree in a slightly
+different way to use less space, we get:
+\[
+\inferrule*[right={\!\!@}]{
+\inferrule*[right={\!\!@}]{\text{\ml{x\hastype{} T0}} \\ \text{\ml{z\hastype{} T1}}}
+{ \text{\ml{T4}}} \\
+\inferrule*[right={\!\!@}]{\text{\ml{y\hastype{} T2}} \\ \text{\ml{z\hastype{} T3}}}
+{ \text{\ml{T5}}}
+}{
+\inferrule*[right={\!\!
+\textnormal{\ml{\tlb{x}\tlb{y}\tlb{z}}}
+}]
+{\text{\ml{T6}}}
+{
+    \text{\ml{T7}}}
+}
+\]
+In order to be sure that an expression (\ml{E$_1$ E$_2$}) of application form is well typed,
+the function \ml{E$_1$} must have a functional type (\ml{A $\rightarrow$ B}), where \ml{E$_2$} is of type \ml{A},
+and (\ml{E$_1$ E$_2$}) is of type \ml{B}. So whatever else is clear, the types of the subexpressions must be related by the following equations:
+\begin{mlcoded}
+    T0 = T1 $\rightarrow$ T4 \\
+    T2 = T3 $\rightarrow$ T5 \\
+    T4 = T5 $\rightarrow$ T6
+\end{mlcoded}
+Substituting back in the tree, we get
+\[
+\inferrule*[right={\!\!@}]{
+    \inferrule*[right={\!\!@}]{\text{\ml{x\hastype{} T1 $\rightarrow$ T5 $\rightarrow$ T6}} \\ \text{\ml{z\hastype{} T1}}}
+    { \text{\ml{T5 $\rightarrow$ T6}}} \\
+    \inferrule*[right={\!\!@}]{\text{\ml{y\hastype{} T3 $\rightarrow$ T5}} \\ \text{\ml{z\hastype{} T3}}}
+    { \text{\ml{T5}}}
+}{
+    \inferrule*[right={\!\!
+            \textnormal{\ml{\tlb{x}\tlb{y}\tlb{z}}}
+    }]
+    {\text{\ml{T6}}}
+    {
+        \text{\ml{T7}}}
+}
+\]
+
+Now what should we say about the abstraction? Certainly \ml{T7} will have the
+form
+\begin{mlcoded}
+    (T1 $\rightarrow$ T5 $\rightarrow$ T6) $\rightarrow$ (T3 $\rightarrow$ T5) $\rightarrow \cdots $
+\end{mlcoded}
+but it is not immediately clear what to do about the two type labels \ml{T1} and \ml{T3}
+for the two occurrences of the variable \ml{z}. It would be simple if we could see
+some reason to say that the labels \ml{T1} and \ml{T3} must stand for the same type. For
+then we could add two more equations to the set above, namely
+\begin{mlcoded}
+    T1 = T3 \\
+    T7 = (T0 $\rightarrow$ T2 $\rightarrow$ T1 $\rightarrow$ T6)
+\end{mlcoded}
+and then on substituting back in the tree we would get
+\[
+\inferrule*[right={\!\!@}]{
+    \inferrule*[right={\!\!@}]{\text{\ml{x\hastype{} T1 $\rightarrow$ T5 $\rightarrow$ T6}} \\ \text{\ml{z\hastype{} T1}}}
+    { \text{\ml{T5 $\rightarrow$ T6}}} \\
+    \inferrule*[right={\!\!@}]{\text{\ml{y\hastype{} T1 $\rightarrow$ T5}} \\ \text{\ml{z\hastype{} T1}}}
+    { \text{\ml{T5}}}
+}{
+    \inferrule*[right={\!\!
+            \textnormal{\ml{\tlb{x}\tlb{y}\tlb{z}}}
+    }]
+    {\text{\ml{T6}}}
+    {
+        \text{\ml{(T1 $\rightarrow$ T5 $\rightarrow$ T6) $\rightarrow$ (T1 $\rightarrow$ T5) $\rightarrow$ T1 $\rightarrow$ T6 }}}
+}
+\]
+On the other hand, we have already seen in Section 8.2.3 expressions such as
+\begin{mlcoded}
+    I . code . I
+\end{mlcoded}
+which make perfect sense, but in which the two occurrences of the
+composition function receive different types (to be sure, types sharing a
+common form, but nonetheless different).
+
+So it is not obvious that we should require all occurrences of a variable
+bound by a lambda abstraction to have the same type. However, let us take
+this requirement as an assumption, and explore its consequences using the
+following example:
+\begin{mlcoded}
+    F = \tlb{f}\tlb{a}\tlb{b}\tlb{c}c (f a) (f b)
+\end{mlcoded}
+and laid out as a tree, the expression is:
+\[
+\inferrule*[right={\!\!@}]{
+    \inferrule*[right={\!\!@}]{
+        \text{\ml{c \hastype{} T2}}
+        \\
+        \inferrule*[right={\!\!@}]
+        {\text{\ml{f \hastype{} T0}} \\ \text{\ml{a \hastype{} T1}}}
+        {\text{\ml{T3}}}
+    }
+    { \text{\ml{T6}}}
+    \\
+    \inferrule*[right={\!\!@}]{\textnormal{\ml{f \hastype{} T4}} \\ \text{\ml{b \hastype{} T5}}}
+    { \text{\ml{T7}}}
+}{
+    \inferrule*[right={\!\!\text{
+            \text{\ml{\tlb{f}\tlb{a}\tlb{b}\tlb{c}}}
+    }}]
+    {\text{\ml{T8}}}
+    {\text{\ml{T9}}}
+   }
+\]
+From which we derive the equations:
+\begin{mlcoded}
+    T0 = T1 $\rightarrow$ T3 \\
+    T2 = T3 $\rightarrow$ T6 \\
+    T4 = T5 $\rightarrow$ T7 \\
+    T6 = T7 $\rightarrow$ T8
+\end{mlcoded}
+If we now require that the different occurrences of \ml{f} have the same type, we
+can add the equation \ml{T0 = T4} to the list above. But then we must also have
+that \ml{T1 = T5} and \ml{T3 = T7}, which gives the tree:
+\[
+\inferrule*[right={\!\!@}]{
+    \inferrule*[right={\!\!@}]{
+        \text{\ml{c \hastype{} T3 $\rightarrow$ T3 $\rightarrow$ T8}}
+        \\
+        \inferrule*[right={\!\!@}]
+        {\text{\ml{f \hastype{} T1 $\rightarrow$ T3}} \\ \text{\ml{a \hastype{} T1}}}
+        {\text{\ml{T3}}}
+    }
+    { \text{\ml{T3 $\rightarrow$ T8}}}
+    \\
+    \inferrule*[right={\!\!@}]{\text{\ml{f \hastype{} T1 $\rightarrow$ T3}} \\ \text{\ml{b \hastype{} T1}}}
+    { \text{\ml{T3}}}
+}{
+    \inferrule*[right={\!\!\textnormal{
+            \ml{\tlb{f}\tlb{a}\tlb{b}\tlb{c}}
+    }}]
+    {\text{\ml{T8}}}
+    {\text{\ml{(T1 $\rightarrow$ T3) $\rightarrow$ T1 $\rightarrow$ T1 $\rightarrow$ (T3 $\rightarrow$ T3 $\rightarrow$ T8) $\rightarrow$ T8}}}
+}
+\]
+
+By demanding that both occurrences of \ml{f} should have the same type, we
+have forced \ml{a} and \ml{b} to be of the same type. Renaming variables, the function \ml{F}
+has type
+\begin{mlcoded}
+    (A $\rightarrow$ B) $\rightarrow$ A $\rightarrow$ A $\rightarrow$ (B $\rightarrow$ B $\rightarrow$ C) $\rightarrow$ C
+\end{mlcoded}
+according to our assumption.
+
+It is not hard to think of contexts \ml{(F f a b)} which would make sense when \ml{a}
+and \ml{b} are of different types. For example:
+\begin{mlcoded}
+    F I 0 'a'
+\end{mlcoded}
+seems to be the function which, when applied to a function \ml{c} of type
+\ml{(num $\rightarrow$ char $\rightarrow$ A)}, returns the value \ml{(c 0 'a')}. On the other hand,
+\begin{mlcoded}
+    F code 0 'a' K
+\end{mlcoded}
+would certainly be an error, since it would result in the evaluation of \ml{(code 0)},
+whereas the function \ml{code} is applicable only to characters. At last we can see
+the point of the assumption. In order for an expression to be well typed, it is
+not enough that it cannot `go wrong' when evaluated on its own, or in a
+particularly favorable context. We have to make sure that it cannot `go wrong'
+when plugged into \textit{any} well-typed context.
+
+So we shall require that variables bound in a lambda abstraction receive the
+same type at all their occurrences. Without `outside knowledge' of the
+arguments to which an abstraction will be applied, we must assume the worst:
+all occurrences of a variable bound by the same lambda abstraction must
+share the same type.
+
+To sum up, so far we have adopted the following rules:
+\begin{numbered}
+    \item The function part \ml{f} of an application \ml{(f a)} has a function type \ml{(A $\rightarrow$ V)},
+    where \ml{A} is the type of the argument part \ml{a} and \ml{V} is the type of the
+    application \ml{(f a)}.
+    \item All occurrences of a \ml{\tl}-bound variable must have the same types.
+\end{numbered}
+
+Moreover, when solving a system of equations, we have used the following
+rule:
+\begin{mlcoded}
+    \textnormal{If} (T1 $\rightarrow$ T2) = (T1$'$ $\rightarrow$ T2$'$), \textnormal{then} T1 = T1$'$ \textnormal{and} T2 = T2$'$
+\end{mlcoded}
+(This follows from a more general law which states that if two compound type
+expressions are equal, then they must be formed with the same construction,
+and their corresponding parts must be equal.)
+
+\subsection{A Mistyping}
+
+Consider the expression
+\begin{mlcoded}
+    \tlb{n}\tlb{a}\tlb{b}b n (n a b)
+\end{mlcoded}
+(This is sometimes used to define the successor function on natural numbers in
+the type-free lambda calculus.) Written as a tree, the expression is:
+\[
+\inferrule*[right={\!\!@}]
+{
+    \inferrule*[right={\!\!@}]
+    {\text{\ml{b \hastype{} T2}} \\ \text{\ml{n \hastype{} T3}}}
+    { \text{\ml{T6}}}
+    \\
+     \inferrule*[right={\!\!@}]
+     {
+        \inferrule*[right={\!\!@}]
+        {\text{\ml{n \hastype{} T0}} \\ \text{\ml{a \hastype{} T1}}}
+        {\text{\ml{T4}}}
+        \\
+        \text{\ml{b \hastype{} T5}}
+    }
+    { \text{\ml{T7}}}
+}
+{
+    \inferrule*[right={\!\!\textnormal{
+            \ml{\tlb{n}\tlb{a}\tlb{b}}
+    }}]
+    {\text{\ml{T8}}}
+    {\text{\ml{T9}}}
+}
+\]
+From which we get the equations:
+\begin{mlcoded}
+    T0 = T1 $\rightarrow$ T4  \\
+    T2 = T3 $\rightarrow$ T6
+    T4 = T5 $\rightarrow$ T7 \\
+    T6 = T7 $\rightarrow$ T8 \\
+    T9 = T0 $\rightarrow$ T1 $\rightarrow$ T2 $\rightarrow$ T8 \\
+    T3 = T0 \\
+    T5 = T2
+\end{mlcoded}
+Eliminating \ml{T4} and \ml{T6}, these become
+\begin{mlcoded}
+    T0 = T1 $\rightarrow$ T5 $\rightarrow$ T7 \\
+    T2 = T3 $\rightarrow$ T7 $\rightarrow$ T8 \\
+    T9 = T0 $\rightarrow$ T1 $\rightarrow$ T2 $\rightarrow$ T8 \\
+    T3 = T0 \\
+    T5 = T2
+\end{mlcoded}
+Now note that these equations contain a circularity. If we try to use the last
+two equations to eliminate \ml{T3} and \ml{T5}, we get
+
+\vs
+\begin{tabular}{llr}
+    \ml{T0} & \ml{= T1 $\rightarrow$ T2 $\rightarrow$ T7} & (since \ml{T5 = T2}) \\
+    & \ml{= T1 $\rightarrow$ (T3 $\rightarrow$ T7 $\rightarrow$ T8) $\rightarrow$ T7} & \\
+    & \ml{= T1 $\rightarrow$ (T0 $\rightarrow$ T7 $\rightarrow$ T8) $\rightarrow$ T7} & \hspace{4cm} (since \ml{T3 = T0})
+\end{tabular}
+\vs
+
+\noindent
+So it is clear that the type \ml{T0} is not finite, and so neither is the type \ml{T9}.
+
+Nevertheless, \ml{T9} possesses an infinite type, which may be expressed informally:
+\begin{mlcoded}
+    T0 $\rightarrow$ T1 $\rightarrow$ T2 $\rightarrow$ T8
+\end{mlcoded}
+where
+\begin{mlcoded}
+    T0 = T1 $\rightarrow$ (T0 $\rightarrow$ T7 $\rightarrow$ T8) $\rightarrow$ T7
+\end{mlcoded}
+There are many difficulties in dealing with infinite types. We shall simply
+avoid them by imposing the rule:
+\begin{quote}
+    If \ml{T1 = \ldots T1\ldots}, where the type variable \ml{T1} occurs properly within the
+    right-hand side of the equation, then the system of equations cannot be
+    solved, and the expression from which the system was derived is ill-typed.
+\end{quote}
+As a consequence of this, the definition in Section 2.4.2 of the fixed-point
+combinator \ml{Y} is ill-typed.
+
+\subsection{Top-level lets}
+
+Consider the expression
+\begin{letalign}
+    let &S = \tlb{x}\tlb{y}\tlb{z}x z (y z) \\
+    &K = \tlb{x}\tlb{y}x \\
+    in &S K K
+\end{letalign}
+It seems intuitively reasonable that we allow \ml{K} to take on different types at its
+different occurrences in the body of the \ml{let}-expression. Indeed, it is hard to see
+what polymorphism would mean if we insisted that variables introduced by a
+\ml{let} definition should have the same type, as with variables bound by \ml{x}.
+
+To examine the type structure of this expression, we need to extend the tree
+notation to represent it:
+\[
+\inferrule*[right={\!\textnormal{\ml{let S,K.}}}]
+{
+    \inferrule{\text{\ml{Tree-S}} \\\\ \text{\ml{S \hastype{} TS}}}{}
+    \\
+    \inferrule{\text{\ml{Tree-K}} \\\\ \text{\ml{K \hastype{} TK}}}{}
+    \\
+    \inferrule*[right={\!\!@}]
+    {
+        \inferrule*[right={\!\!@}]
+        {
+            {\text{\ml{S \hastype{} T6 $\rightarrow$ T7 $\rightarrow$ T8}}}
+            \\
+            {\text{\ml{K \hastype{} T6}}}
+        }
+        {\text{\ml{T7 $\rightarrow$ T8}}}
+        \\
+        {\text{\ml{K \hastype{} T7}}}
+    }
+    {\text{\ml{T8}}}
+}
+{
+   \text{\ml{T9}}
+}
+\]
+Since we already know how to type-check the right-hand sides of the
+definitions of \ml{S} and \ml{K}, we have merely indicated their type trees, to save
+space. Moreover, we have skipped a few steps in representing the type
+structure of \ml{(S K K)}. The equations for the type structure of the right-hand
+sides of the definitions of \ml{S} and \ml{K} can be solved to yield:
+\begin{mlcoded}
+    TS = (T0 $\rightarrow$ T1 $\rightarrow$ T2) $\rightarrow$ (T0 $\rightarrow$ T1) $\rightarrow$ T0 $\rightarrow$ T2 \\
+    TK = T3 $\rightarrow$ T4 $\rightarrow$ T3
+\end{mlcoded}
+The new constraints we have to consider are those relating \ml{T8} to \ml{T9}, and the
+types \ml{TS} and \ml{TK} to the types of their occurrences in the body of the \ml{let}-
+expression.
+
+For the first constraint, plainly we should require that \ml{T8 = T9}. As for the
+second, the constraint is that the type of the occurrence of \ml{S} should be an
+instance of the type \ml{TS}, and the types of the two occurrences of \ml{K} should each
+be an instance of the type \ml{TK}. But how should we represent such a requirement by means of an equation?
+
+When working out the equations by hand, it is quite natural to proceed as
+follows: \textit{refrain} from making any such representation at the outset. Instead,
+obtain first a fully evaluated expression for the type of \ml{TS} and \ml{TK} (as we have
+done). Then introduce new type labels for the instantiated variables at
+each occurrence of \ml{S} and \ml{K} in the body of the \ml{let}-expression. (In this case,
+there are three such variables in the type for \ml{S}, namely \ml{T0}, \ml{T1}, and \ml{T2}; and two
+in the type of \ml{K}, namely \ml{T3} and \ml{T4}.) If we use a fresh set of variables for each
+occurrence, then we can still work with equations, and leave the values of
+those fresh variables to be worked out while we are exploring the type
+structure of the body. So in this case we should add new variables \ml{T10}, \ml{T11},
+and \ml{T12} to instantiate \ml{TS} at its first occurrence, \ml{T13} and \ml{T14} to instantiate \ml{TK} at the
+first occurrence of \ml{K}, and \ml{T15} and \ml{T16} to instantiate \ml{TK} at the second
+occurrence of \ml{K}. We then add the equations:
+\begin{mlcoded}
+    \begin{tabular}{llll}
+        T6 $\rightarrow$ T7 $\rightarrow$ &T8 = & &(T10 $\rightarrow$ T11 $\rightarrow$ T12) \\
+        & & $\rightarrow$ &(T10 $\rightarrow$ T11) $\rightarrow$ T10 $\rightarrow$ T12 \\
+        & T6 = & T13 & $\rightarrow$ T14 $\rightarrow$ T13 \\
+        & T7 = & T15 & $\rightarrow$ T16 $\rightarrow$ T15
+    \end{tabular}
+\end{mlcoded}
+
+From the first of these we derive:
+\begin{mlcoded}
+    T6 = T10 $\rightarrow$ T11 $\rightarrow$ T12 \\
+    T7 = T10 $\rightarrow$ T11 \\
+    T8 = T10 $\rightarrow$ T12
+\end{mlcoded}
+reasoning that if \ml{(T1 $\rightarrow$ T2) = (T1' $\rightarrow$ T2')}, then \ml{T1 = T1'} and \ml{T2 = T2'}.
+By the same reasoning, we have:
+\begin{mlcoded}
+    T10 = T13 \\
+    T12 = T14 \\
+    T10 = T15 \\
+    T11 = T16 \\
+    T15
+\end{mlcoded}
+which allows us to express the types of the two occurrences of \ml{K} as:
+\begin{mlcoded}
+    T6 = T10 $\rightarrow$ (T16 $\rightarrow$ T10) $\rightarrow$ T10 \\
+    T7 = T10 $\rightarrow$ T16 $\rightarrow$ T10
+\end{mlcoded}
+and the type of the whole expression as:
+\begin{mlcoded}
+    T9 = T8 = T10 $\rightarrow$ T10
+\end{mlcoded}
+
+So the rule we adopt as the type-constraint for \ml{let}-expressions is that the
+types of the occurrences of the defined names in the body must be instances of
+the types of the corresponding right-hand sides. The procedure we adopt to
+compute those instances is to instantiate the variables in the types of those
+right-hand sides with new variables, making a fresh instance for each
+occurrence of the defined name in the body of the \ml{let}. In fact, we shall not in
+general be able to instantiate all the type variables, as we shall see shortly.
+
+\subsection{Top-level \ml{letrecs}}
+
+Turning now to \ml{letrecs}, it seems clear that a variable introduced by a \ml{letrec}
+definition should be capable of taking on different types in the body of the
+program governed by the \ml{letrec}, just as in the case of \ml{let}-definitions. So in
+\begin{mlcoded}
+    letrec f = (\ldots) \\
+    in (\ldots f\ldots f\ldots f\ldots )
+\end{mlcoded}
+we expect \ml{f} to be capable of taking on different types throughout the
+expression body. However, there is a new question we must answer. The
+variable introduced by a recursive definition can also have many occurrences
+in the right-hand side of its definition, as it were `while' it is being defined, as
+well as `after'. In general, when there are several mutually recursive
+definitions, as in
+\begin{letalign}
+    letrec &x$_1$ = (\ldots x$_1$\ldots x$_i$\ldots x$_k$\ldots) \\
+    &x$_k$ = (\ldots x$_1$\ldots x$_j$\ldots x$_k$\ldots) \\
+    in (\ldots &x$_1$\ldots x$_i$\ldots x$_j$\ldots x$_k$\ldots)
+\end{letalign}
+any one of the defined names \ml{x$_i$} can occur many times in many right-hand
+sides, as well as in the body. Should we insist that all these occurrences have
+the same type, in the sense of requiring equality to hold between the type
+labels for the variable occurrences in the definitions? Or should we treat them
+as we treat them in the body, and require only that at each such occurrence,
+the type be an instance of the type of the corresponding right-hand side?
+Unfortunately, in the nature of things, there is no obvious answer. Nevertheless,
+to see what the question means, consider the example:
+\begin{mlcoded}
+    letrec Y = (\tlb{f}f (Y f)) in \ldots
+\end{mlcoded}
+Written out as a tree, the first definition is:
+\[
+\inferrule*[right={\!\textnormal{\ml{\tlb{f}}}}]
+{
+    \inferrule*[right={\!\!@}]
+    {
+        {\text{\ml{f \hastype{} T2}}}
+        \\
+        \inferrule*[right={\!\!@}]
+        {
+            {\text{\ml{Y \hastype{} T0}}}
+            \\
+            {\text{\ml{f \hastype{} T1}}}
+        }
+        {\text{\ml{T3}}}
+    }
+    {\text{\ml{T4}}}
+}
+{
+    \text{\ml{Y \hastype{} T5}}
+}
+\]
+The constraints we can write down straight away are these:
+\begin{mlcoded}
+    T1 = T2 \\
+    T0 = T1 $\rightarrow$ T3 \\
+    T2 = T3 $\rightarrow$ T4 \\
+    T5 = T1 $\rightarrow$ T4
+\end{mlcoded}
+from which it follows that:
+\begin{mlcoded}
+    T0 = (T3 $\rightarrow$ T4) $\rightarrow$ T3
+\end{mlcoded}
+and
+\begin{mlcoded}
+    T5 = (T3 $\rightarrow$ T4) $\rightarrow$ T4
+\end{mlcoded}
+The question is, should we ask that \ml{T0 = T5}, or only that \ml{T0} be an instance
+of \ml{T5}? In the former case, the only solution is \ml{T5 = ((T4 $\rightarrow$ T4) $\rightarrow$ T4)},
+as we would expect of a fixed-point function. On the other hand,
+the alternative requires only that \ml{T3} be an instance of \ml{T4}, so again
+\ml{T5 = ((T4 $\rightarrow$ T4) $\rightarrow$ T4)} is a solution.
+
+We shall adopt the (usual) approach according to which `during' such
+definitions all occurrences of the defined variables must share the same type as
+the right-hand side of their definitions. On the other hand, `after' the
+definitions, the defined variables are polymorphic, and the type of such a
+variable can be instantiated differently to satisfy the local constraints on
+different occurrences of the variables in the body of the definition. If nothing
+else, this approach has at least the merit of simplicity.
+
+Some different approaches to the type-checking of recursive definitions
+have been explored by Mycroft [1984]. In some (but not all) of these
+approaches the problem of whether an expression is well typed becomes only
+semi-decidable.
+
+\subsection{Local Definitions}
+
+We have presented type-checking as the search for the solution of a system of
+constraints, represented by equations \ml{T$'$ = T} between type expressions. So
+far, we know that when type-checking an expression of \ml{let} or \ml{letrec} form, we
+should impose the constraint that the types of the occurrences of the defined
+variables in the body should equal new instances of the types derived for their
+right-hand sides. But just which type variables may be instantiated?
+
+To understand this issue, we have to probe a little into the reason for our
+conviction that a defined name can take on different types in the body of its
+definition. The reason seems to be this:
+\begin{quote}
+An expression \ml{(let x = E in E$'$)} is well typed just in case the expression
+\ml{E$'$[E/x]} is well typed, which is the expression obtained by substituting \ml{E} for
+the free occurrences of \ml{x} in \ml{E$'$}.
+\end{quote}
+For each occurrence of \ml{x} in \ml{E$'$}, we should be able to instantiate the type
+variables in the type tree for \ml{E} in such a way that it forms a subtree of the type
+tree for \ml{E$'$[E/x]}. This instantiation is only possible if we do not thereby violate
+the law that occurrences of a \ml{\tl}-bound variable must have the same type, or the
+corresponding law for \ml{letrecs}.
+
+Consider the expression \ml{(\tlb{x} let y = x in y y)}. By the principle above, this
+is well typed just in case \ml{(\tlb{x}x x)} is well typed, which it blatantly is not. The
+problem is that the type expression for \ml{y} contains (is!) a variable occurring in
+the type of a more global \ml{\tl}-bound variable. We cannot instantiate that
+variable differently at the different occurrences of \ml{y} in \ml{(y y)}.
+
+Consider the partial expression:
+\begin{mlcoded}
+    \begin{tabular}{llll}
+        \tlb{x} & & & \\
+        &let &I &= \tlb{z}z \\
+        & & prxl &= \tlb{c}(c x I) \\
+        & & p1 &= \tlb{x}\tlb{y}x \\
+        & & p2 &= \tlb{x}\tlb{y}y \\
+        & in &\ldots
+    \end{tabular}
+\end{mlcoded}
+Informally, the types of the defined names are:
+\begin{letalign}
+    I & \hastype{} A -> A \\
+    prxl & \hastype{} (X -> (A -> A) -> B) -> B \\
+    p1 & \hastype{} A -> B \\
+    p2 & \hastype{} A -> B -> B
+\end{letalign}
+where \ml{A} and \ml{B} are schematic variables, and \ml{X} is the type of \ml{x}. If we take the
+body of the \ml{let}-expression to be the expression
+\begin{mlcoded}
+    prxl p1 (prxl p1)
+\end{mlcoded}
+then it cannot be typed. For to satisfy the type constraints of this body, we
+would have to instantiate \ml{X} differently at the different occurrences of \ml{prxl}. On
+the other hand, if the body were
+\begin{mlcoded}
+    prxl p2 (prxl p2)
+\end{mlcoded}
+then the expression is well typed. For the structure of that expression does not
+constrain \ml{X} to be instantiated differently at the different occurrences of \ml{prxl}.
+
+When we are type-checking the body \ml{B} of a \ml{let} or \ml{letrec} definition, we must
+therefore distinguish the type variables in the type derived for a defined name
+according to whether they may or may not be differently instantiated at the
+various occurrences of the name. Variables of the former kind are those that
+do not occur in the type of any \textit{constrained} variable in the definition of the
+name. A constrained variable is one which is a bound variable of a lambda
+abstraction enclosing \ml{B}, or one defined in a \ml{letrec}-expression enclosing \ml{B} in
+one of its right-hand sides.
+
+This is one of the points at which the type regime of Miranda differs from
+that of the type checker described here. The Miranda compiler requires that
+all occurrences of a variable bound in a local definition share a single type.
+This has the effect that local definitions cannot introduce new polymorphism
+into a program. We will not explore the implications of this difference here—
+the type-checking rules given in this and the following chapter are for a
+standard implementation of the Milner type discipline.
+
+We have used the notion of type trees to help elucidate the type structure of
+expressions, and guide us towards a sharper view of the rules we use when
+constructing and checking the types of expressions. In the next section, we
+summarize those rules. With luck, the device will have served its purpose, and
+we can then consider how to turn our intuitions into algorithms.
+
+\section{Summary of Rules for Correct Typing}
+
+The following rules are intended to describe the local `look' of the type
+structure of a well-typed expression. To lighten the notational burden, we
+shall sometimes simplify the expression whose type tree is depicted in the
+figures. The simplifications are indicated in the commentary.
+
+\subsection{Rule for Applications}
+
+\plainbox{
+\[
+\inferrule*[right={\!\!@}]
+{
+    {\text{\ml{A $\rightarrow$ B}}}
+    \\
+    {\text{\ml{A}}}
+}
+{\text{\ml{B}}}
+\]
+}
+
+\subsection{Rule for Lambda Abstractions}
+
+\plainbox{
+\[
+    \inferrule*[vcenter, fraction={\cdot\cdots\cdot}]
+    {
+        \text{\ml{\ldots{} x \hastype{} A \ldots{} x \hastype{} A \ldots}}
+    }
+    {
+         \inferrule*[fraction={---},right={\!\textnormal{\ml{\tlb{x}}}}]
+        {
+            \phantom{hi} \\\\
+            \text{\ml{B}}
+        }
+        {
+            \text{\ml{A $\rightarrow$ B}}
+        }
+%text
+    }
+\]
+}
+\noindent
+Note that all occurrences of the variable \ml{x} bound by the abstraction must have
+the same type.
