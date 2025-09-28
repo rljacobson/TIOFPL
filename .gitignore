@@ -3,6 +3,7 @@ build/
 .ipynb_checkpoints
 *.ipynb
 source_text/
+.env
 
 ## macOS
 .DS_Store

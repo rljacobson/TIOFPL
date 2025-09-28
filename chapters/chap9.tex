@@ -1,0 +1,1086 @@
+\chapter{A Type Checker}
+\chapterauthors{Peter Hancock}
+\vspace{3cm}
+
+\noindent
+In this chapter, we will construct a type-checker in Miranda, taking the rules
+developed in the previous chapter as the basis for the type discipline.
+
+Sections 9.1 and 9.2 show how the expressions of the intermediate language
+and its type expressions can be represented as Miranda data types. Sections
+9.3 to 9.6 are concerned with the basic mechanisms of the type-checker, which
+is itself defined in Section 9.7.
+
+\section{Representation of Programs}
+
+Since we propose to write a type-checker in Miranda, we will have to
+represent the program to be type-checked as a Miranda data structure, which
+is passed as an argument to the type-checking function.
+
+The program to be checked will be represented by an object of the
+structured type \ml{vexp}, defined below. Each line of the type definition is derived
+directly from the corresponding construct in the concrete syntax.
+\begin{mlalign}
+    vname == &[char] \\
+    vexp \typedecl{} &VAR vname \\
+     &| LAMBDA vname vexp \\
+     &| AP vexp vexp \\
+     &| LET [vname] [vexp] vexp \\
+     &| LETREC [vname] [vexp] vexp
+\end{mlalign}
+\noindent
+In a sense, this type encompasses slightly too much. We shall suppose that the
+program is not `trivially' malformed: in a \ml{LET} or \ml{LETREC} construct, the list of
+variables must have the same length as the list of right-hand sides; the
+variable list in a \ml{LET} or \ml{LETREC} construct must not be empty, and should
+contain no repetitions. Moreover, the free variables in an expression must be
+among those associated with predeclared types, either because they are
+supplied by the system or because their types can be deduced from type
+definitions in the program. We can assure ourselves that these restrictions are
+met in a simple recursive scan through the program.
+
+To understand the representation, let us take for an example the following
+trivial program:
+\begin{letalign}
+    let &S = \tlb{x}\tlb{y}\tlb{z}x z (y z) \\
+    &K = \tlb{x}\tlb{y}x \\
+    in &S K K
+\end{letalign}
+Considered as an object in the type \ml{vexp}, the program becomes:
+\begin{mlcoded}
+LET ["S", "K"] [rhs\_S, rhs\_K] main\\
+where
+\end{mlcoded}
+\vspace{-\baselineskip}
+\begin{mlcoded}
+\begin{tabular}{rll}
+\phantom{XX}  &var\_S &= VAR "S" \\
+  &var\_K &= VAR "K" \\
+&var\_x &= VAR "x" \\
+&var\_y &= VAR "y" \\
+&var\_z &= VAR "z" \\
+&main &= AP (AP var\_S var\_K) var\_K \\
+&rhs\_S &= plambda ["x", "y", "z"] body\_S \\
+&rhs\_K &= plambda ["x", "y"] body\_K \\
+&body\_S &= AP (AP var\_x var\_z) (AP var\_y var\_z) \\
+&body\_K &= var\_x
+\end{tabular}\\
+plambda vs e = foldr LAMBDA e vs
+\end{mlcoded}
+\noindent
+which the reader may write out without using `\ml{where}' if so inclined.
+
+\section{Representation of Type Expressions}
+
+To construct the type-checker, we will need to represent type expressions by
+Miranda data structures. We need a type for the names of type variables and,
+for the moment, we will take this to be the type of lists of characters. (For
+technical convenience, we will revise this definition in Section 9.6.)
+\begin{letalign}
+    tvname &== [char] \\
+    type\_exp  &\typedecl{}  TVAR tvname \\
+     & \qquad | TCONS [char] [type\_exp]
+\end{letalign}
+This definition says that a type expression must be either a type variable or a
+compound type (such as \ml{(A $\rightarrow$ B)}, \ml{[A]} or \ml{(A,B)}). We represent such
+compound types by the name of the operator (e.g. ``\ml{arrow}'' for \ml{(A $\rightarrow$ B)},
+``\ml{cross}'' for \ml{(A,B)}), and a list of the operands.
+
+Whatever other type-forming operators we have, we will certainly need the
+function type operator. So let us define:
+\begin{mlcoded}
+    arrow \hastype{} type\_exp $\rightarrow$ type\_exp $\rightarrow$ type\_exp \\
+    arrow t1 t2 = TCONS "arrow" [t1,t2]
+\end{mlcoded}
+If \ml{t1} and \ml{t2} are of type \ml{type\_exp}, and we know what types they represent, then
+\ml{(arrow t1 t2)} will represent the type of functions from \ml{t1} to \ml{t2}. Using Miranda's
+dollar notation for infixes, we may write this in the form \ml{(t1 \$arrow t2)}, which
+adheres more closely to the informal notation.
+
+The other type-forming operations we have mentioned could be
+represented in a similar way:
+\begin{mlcoded}
+\begin{tabular}{llll}
+int &\hastype{} &type\_exp &\\
+int & & \phantom{t2} = TCONS &"int" [] \\
+&&&\\
+cross &\hastype{} &type\_exp $\rightarrow$ &type\_exp $\rightarrow$ type\_exp \\
+cross &t1 &t2 = TCONS &"cross" [t1,t2] \\
+&&&\\
+list & &type\_exp $\rightarrow$ &type\_exp \\
+list t & & \phantom{t2} = TCONS &"list" [t]
+\end{tabular}
+\end{mlcoded}
+
+The function \ml{tvars\_in} returns a list of the variable names that occur in a type
+expression. (The list may contain repetitions.)
+\begin{mlcoded}
+    tvars\_in \hastype{} type\_exp $\rightarrow$ [tvname] \\
+    tvars\_in t = tvars\_in$'$ t [\,] \\
+    \qquad where \\
+    \qquad \phantom{XX} tvars\_in$'$ (TVAR x) I = x : I \\
+    \qquad \phantom{XX} tvars\_in$'$ (TCONS y ts) I = foldr tvars\_in$'$ I ts
+\end{mlcoded}
+
+\section{Success and Failure}
+
+Since type-checking is something that can succeed or fail, we have to choose a
+mechanism for representing success and failure within Miranda.
+
+We shall use the type \ml{(reply $\ast$)} for the type of the values of a function which
+may succeed (returning an object of type \ml{$\ast$}) or fail (returning no indication as
+to why).
+\begin{mlcoded}
+    reply $\ast{}$ \typedecl{} OK $\ast{}$ | FAILURE
+\end{mlcoded}
+It would not be acceptable for a practical type-checker to return no indication
+as to why a check has failed. One might then use a slightly more complicated
+operator, such as
+\begin{mlcoded}
+    reply' $\ast{}$ $\ast\ast$ \typedecl{} OK$'$ $\ast$ | FAILURE$'$ $\ast\ast$
+\end{mlcoded}
+which is capable of returning error information. It is notoriously difficult to
+write error-handling code without obscuring the code to handle correct cases,
+so we will use instead the simpler, less informative operator. Any error
+detected while type-checking will be propagated up to the top level without
+further examination of the program. Here, too, there may be grounds for
+complaint, which we counter with the same excuse.
+
+(There is more than one way to represent success and failure. An
+alternative approach to the one taken here is described by Wadler [1985].)
+
+\section{Solving Equations}
+
+Consider type-checking an application \ml{(AP e1 e2)}, where we have worked out
+the type \ml{t1} for \ml{e1} and the type \ml{t2} for \ml{e2}. To do this, we try to `solve the equation'
+\begin{mlcoded}
+    t1 = t2 $\rightarrow$ (TVAR n)
+\end{mlcoded}
+where \ml{n} is a type variable name that has not been used before. As we have
+seen, the structure of an expression gives rise to a system of such equations.
+
+How should we represent solutions of systems of type equations? In
+mathematics, the solution of simultaneous equations
+\vspace{-0.25\baselineskip}
+\begin{align*}
+a_{1,1} \times x_1 + a_{1,2} \times x_2 &= b_1\\
+a_{2,1} \times x_1 + a_{2,2} \times x_2 &= b_2
+\end{align*}
+%\vspace{-0.5\baselineskip}
+is expressed by giving values for each of the unknowns $x_1$ and $x_2$ which satisfy
+the equations. Analogously, an alleged solution of a system of type equations
+can be expressed as a function from type variables (the unknowns) to type
+expressions (their values). The allegation is that the equations are satisfied
+when we replace (i.e. substitute) the unknowns by their values under the
+function. We therefore take
+\begin{mlcoded}
+    subst == tvname $\rightarrow$ type\_exp
+\end{mlcoded}
+to be the type of substitutions. We shall see how to determine whether a set of
+equations between type expressions has a solution, and if so how to construct
+a substitution that satisfies them. We shall use identifiers such as \ml{phi}, \ml{phi$'$}, and \ml{psi},
+as variables over substitutions.
+
+\subsection{Substitutions}
+
+Given a substitution function \ml{phi} and a type expression \ml{te}, we define
+\ml{(sub\_type phi te)} to be the type expression obtained by performing the \ml{phi}
+substitution on all the type variables in \ml{te}:
+\begin{letalign}
+    sub\_type \hastype{} subst $\rightarrow$ type\_exp& $\rightarrow$ type\_exp \\
+    sub\_type phi (TVAR tvn) &= phi tvn \\
+    sub\_type phi (TCONS tcn ts) &= TCONS tcn (map (sub\_type phi) ts)
+\end{letalign}
+Here \ml{map} is the function that applies a function to each entry in a list:
+\begin{letalign}
+    map \hastype{} ($\ast$ $\rightarrow$& $\ast\ast$) $\rightarrow$ [$\ast$] $\rightarrow$ [$\ast\ast$] \\
+    map f [\,] &= [\,] \\
+    map f (x:xs) &= f x : map f xs
+\end{letalign}
+Two substitutions can be composed to give a further substitution:
+\begin{mlcoded}
+    scomp \hastype{} subst $\rightarrow$ subst $\rightarrow$ subst \\
+    scomp sub2 sub1 tvn = sub\_type sub2 (sub1 tvn)
+\end{mlcoded}
+The crucial property of \ml{scomp} is that
+\begin{mlcoded}
+sub\_type (scomp phi psi) = (sub\_type phi) . (sub\_type psi)
+\end{mlcoded}
+(Remember that function composition is represented by an infix dot.)
+
+The identity substitution \ml{id\_subst} has the property that
+\begin{mlcoded}
+sub\_type id\_subst\ t = t
+\end{mlcoded}
+for all \ml{t\hastype{}type\_exp}. It can be defined by:
+\begin{mlcoded}
+    id\_subst \hastype{} subst \\
+    id\_subst tvn = TVAR tvn
+\end{mlcoded}
+
+A \textit{delta substitution} is one that affects one variable only. We define:
+\begin{letalign}
+    delta \hastype{} tvname& $\rightarrow$ type\_exp $\rightarrow$ subst \\
+    delta tvn t tvn$'$ &= t,\qquad \qquad\qquad \qquad tvn = tvn$'$ \\
+    \phantom{delta tvn t} &= TVAR tvn$'$
+\end{letalign}
+Hence, \ml{(sub\_type (delta tvn t))} is the function that maps a type expression to
+one that contains \ml{t} where before it had \ml{(TVAR tvn)}.
+
+In fact, all the substitutions we need will be built up from the identity
+substitution \ml{id\_subst} by composition on the left with substitutions of \ml{delta}.
+
+In general, a substitution may associate a variable with a value which itself
+contains variables. If those variables in turn are given values different from
+themselves, then the substitution is not 'fully worked out'. When we work out
+a set of equations
+\[
+x_1 = t_1;\; \ldots;\; x_k = t_k
+\]
+by substituting $t_i$ for $x_i$ at all of its occurrences in $t_1, \ldots, t_k$, we may have to
+iterate the substitution many times before the equations stabilize to their final
+forms. (Of course, this iterative process does not terminate if there is a
+circularity in the equations.) In general, we are interested in obtaining `fully
+worked out' substitutions, which do not have to be re-applied. The next
+definition is intended to capture what we mean by such a substitution.
+
+A substitution \ml{phi} is \textit{idempotent} if
+\begin{mlcoded}
+(sub\_type phi) . (sub\_type phi) = sub\_type phi
+\end{mlcoded}
+or equivalently, if \ml{(phi \$scomp phi) = phi}. In other words, if you apply the
+substitution twice, you get nothing different the second time. A type
+expression \ml{t} is a \textit{fixed point} of a substitution \ml{phi} if
+\begin{mlcoded}
+sub\_type phi\ t = t
+\end{mlcoded}
+In particular, if \ml{(TVAR x)} is a fixed point of \ml{phi}, then we say that \ml{x} is unmoved by \ml{phi}.
+
+Note that if \ml{phi} is idempotent, and \ml{phi} moves \ml{tvn}, then
+\begin{mlcoded}
+sub\_type phi (VAR tvn)
+\end{mlcoded}
+is a fixed point of \ml{phi}, and hence cannot contain \ml{tvn}.
+
+\subsection{Unification}
+In this section, we will show how to construct a substitution which solves a
+given set of type equations, using a process called \textit{unification}.
+
+A system of type equations can be represented by a list of pairs of type
+expressions, where each pair \ml{(t$_1$, t$_2$)} represents the equation
+\begin{mlcoded}
+t$_1$ = t$_2$
+\end{mlcoded}
+To solve the equations, we have to find a substitution \ml{phi} which \textit{unifies} the left-
+and right-hand sides of all equations in the system, where \ml{phi} unifies the pair
+\ml{(t$_1$, t$_2$)} if
+\begin{mlcoded}
+    sub\_type phi t$_1$ = sub\_type phi t$_2$
+\end{mlcoded}
+If this equation holds, \ml{phi} is said to be a \textit{unifier} of \ml{t$_1$} and \ml{t$_2$}. If \ml{phi} is a unifier of
+each pair in the list representing a set of equations, we may think of \ml{phi} as
+a simultaneous solution of the equations.
+
+If the substitution \ml{phi} solves a system of equations, then clearly any
+substitution \ml{psi$'$} of the form \ml{(psi \$scomp phi)} is also a solution, but \ml{phi} will
+usually be a more general solution than \ml{psi$'$}. A substitution \ml{phi} is \textit{no less
+general} than a substitution \ml{psi} if there is a substitution \ml{rho} such that
+\begin{mlcoded}
+    psi = rho \$scomp phi
+\end{mlcoded}
+If such an equation holds, then \ml{psi} is said to be an \textit{extension} of \ml{phi}.
+
+If we have constructed a solution \ml{phi} of a system of type equations, and we
+have done no more than is necessary to satisfy the equations, we will have a
+solution which is \textit{maximally general}, in the sense that it is no less general than
+any other solution.
+
+For an example (in informal terms), consider the type expressions
+\begin{mlcoded}
+    T1 = (A $\rightarrow$ B) $\rightarrow$ C\\
+    T2 = (B $\rightarrow$ A) $\rightarrow$ (A $\rightarrow$ B)
+\end{mlcoded}
+The substitutions \ml{phi1} and \ml{phi2}, where
+\begin{mlcoded}
+    phi1 A = B, phi1 C = (B $\rightarrow$ B)\\
+    phi2 B = A, phi2 C = (A $\rightarrow$ A)
+\end{mlcoded}
+are both unifiers of \ml{T1} and \ml{T2}. In fact, they are examples of maximally general
+unifiers: they each do (one version of) the minimum necessary to make \ml{T1} and
+\ml{T2} equal, so that any other unifier of \ml{T1} and \ml{T2} is an extension of each of them.
+
+The problem of unification is to find a maximally general idempotent unifier
+of a set of pairs of expressions. The method we use is Robinson's [1965]
+unification algorithm. It is convenient when coding the algorithm to concentrate
+on the problem of \textit{extending} a given substitution, which solves a set of
+equations
+\[
+t_1 = t_1';\; \ldots ;\; t_k = t_k'
+\]
+to one that solves an extended set
+\[
+t_1 = t_1';\; \ldots;\; t_k = t_k';\; t_{k+1} = t_{k+1}'
+\]
+So we shall pose the problem in the following way. Given a pair $(t_1, t_2)$ of type
+expressions, and an idempotent substitution \ml{phi}, our algorithm should return
+\ml{FAILURE} if there is no extension of \ml{phi} which unifies $(t_1, t_2)$, and it should return
+\ml{(OK psi)}, where \ml{psi} is an idempotent unifier of $(t_1, t_2)$ which extends \ml{phi}. (In
+fact, the one we construct will be maximally general among such extensions of
+\ml{phi}.)
+
+The simplest equation we can consider is one of the form
+\begin{mlcoded}
+TVAR tvn = t
+\end{mlcoded}
+To handle such cases in the unification algorithm, we will make use of the
+following function:
+\begin{mlcoded}
+\begin{tabular}{lll}
+extend \hastype{} subst $\rightarrow$ &tvname $\rightarrow$ type\_exp{}\,& $\rightarrow$ reply subst \\
+extend phi tvn t &= OK phi, & t = TVAR tvn \\
+&= FAILURE, &tvn \$in tvars\_in t \\
+&= OK ((delta tvn t) &\$scomp phi)
+\end{tabular}
+\end{mlcoded}
+An expression \ml{(extend phi tvn t)} will be evaluated only when:
+\begin{numbered}
+    \item \ml{phi} is an idempotent substitution (the solution we are trying to extend);
+    \item \ml{t} is a fixed point of \ml{phi};
+    \item \ml{tvn} is unmoved by \ml{phi} (\ml{tvn} does not already have a value under \ml{phi}).
+\end{numbered}
+
+The value of the expression is either \ml{FAILURE}, or of the form \ml{(OK phi$'$)},
+where \ml{phi$'$} is an idempotent substitution extending \ml{phi}, such that
+\begin{mlcoded}
+\begin{tabular}{lll}
+    sub\_type phi$'$ t$'$ &= t  & {\normalfont{if}} t$'$ = TVAR tvn\\
+    &= sub\_type phi t$'$\phantom{hack} & {\normalfont{otherwise}}
+\end{tabular}
+\end{mlcoded}
+In fact, \ml{phi$'$} is maximally general among extensions of \ml{phi} which solve the equation:
+\begin{mlcoded}
+    TVAR tvn = t
+\end{mlcoded}
+Note that if \ml{phi} is idempotent, \ml{t} is a fixed point of \ml{phi}, and \ml{tvn} \textit{is} moved by \ml{phi},
+then \ml{tvn} can occur in neither \ml{(phi tvn)} nor \ml{t}.
+
+We can code the unification algorithm as follows:
+\begin{mlcoded}
+    unify \hastype{} subst $\rightarrow$ (type\_exp, type\_exp) $\rightarrow$ reply subst \\
+    \\
+    unify phi ((TVAR tvn),t) \\
+    \phantom{XX}= extend phi tvn phit, \hspace{2cm} phitvn = TVAR tvn \\
+    \phantom{XX}= unify phi (phitvn, phit)\\
+    \phantom{XX= }where \\
+    \phantom{XXXX= }phitvn\ = phi tvn \\
+    \phantom{XXXX= }phit\phantom{tvn} = sub\_type phi t \\
+    \\
+    unify phi ((TCONS tcn ts),(TVAR tvn)) \\
+    \phantom{XX}= unify phi ((TVAR tvn),(TCONS tcn ts)) \\
+    \\
+    unify phi ((TCONS tcn ts),(TCONS tcn$'$ ts$'$)) \\
+    \phantom{XX}= unifyl phi (ts \$zip ts$'$),  \hspace{1.75cm} tcn = tcn$'$ \\
+    \phantom{XX}= FAILURE
+\end{mlcoded}
+The function \ml{zip}, which is generally useful, turns a pair of lists into a list of
+pairs, whose length is the same as that of the shorter of the lists:
+\begin{letalign}
+    zip \hastype{} [$\ast$] $\rightarrow$ [$\ast\ast$]& $\rightarrow$ [($\ast$,$\ast\ast$)] \\
+    zip [\,] xs &= [\,] \\
+    zip (x:xs) [\,] &= [\,] \\
+    zip (x:xs) (y:ys) &= (x,y):zip xs ys
+\end{letalign}
+The function \ml{unifyl} is defined such that \ml{(unifyl phi pts)} constructs a substitution
+extending \ml{phi} which unifies corresponding entries in the list of pairs \ml{pts}. This
+function is also generally useful, so it is defined globally too.
+\begin{mlcoded}
+    unifyl \hastype{} subst $\rightarrow$ [(type\_exp,type\_exp)] $\rightarrow$ reply subst
+\end{mlcoded}
+\begin{letalign}
+    unifyl phi eqns = &foldr unify$'$ (OK phi) eqns \\
+&where \\
+&\phantom{XXXX}unify$'$ eqn (OK phi) = unify phi eqn \\
+&\phantom{XXXX}unify$'$ eqn FAILURE = FAILURE
+\end{letalign}
+This completes the definition of the unification algorithm.
+
+It is important to see why the unification algorithm terminates. After all, in
+the definition above we have defined the value of \ml{(unify (TVAR tvn) t)} in terms
+of \ml{(unify phitvn phit)} where \ml{phitvn = (phi tvn)} and \ml{phit = (sub\_type phi t)},
+which may be very much larger expressions than \ml{(TVAR tvn)} and \ml{t}. However,
+we only use that clause of the definition in circumstances when \ml{tvn} cannot
+occur in \ml{phitvn} or \ml{phit}. Define the \textit{solution set} of \ml{phi} to be the set of variables
+which occur in an expression \ml{(phi tvn$'$)}, where \ml{tvn$'$} is moved by \ml{phi}. We can
+prove that \ml{(unify phi (t1,t2))} terminates, by a nested induction: the outer
+induction is on the number of variables in \ml{t1} and \ml{t2} which are not in the
+solution set of \ml{phi}, and the inner induction is on the combined length of \ml{t1} and
+\ml{t2}.
+
+The unification algorithm has many applications other than type-checking.
+In particular, it is a key algorithm in the implementation of programming
+languages such as Prolog.
+
+\section{Keeping Track of Types}
+
+When type-checking an expression with free variables, there are two ways to
+proceed.
+
+\subsection{Method 1: Look to the Occurrences}
+
+We can find the constraints imposed on the types of the free variables by the
+manner in which they occur in the expression. In a complete program, the free
+variables must stand for the system's built-in functions or functions associated
+with type definitions. We would then look to see whether the types deduced
+for \textit{each occurrence} of a free variable can be instances of the type supplied a
+priori for that variable. When type-checking a lambda abstraction \ml{(\tlb{x}E)}, we
+would check that the types deduced for the various occurrences of \ml{x} within \ml{E}
+can be unified to the same type expression, and we would handle occurrences
+of defined variables in the right-hand sides of a \ml{letrec}-expression in the same
+way.
+
+It is quite possible to develop a type-checker along these lines: one is
+presented in Damas [1985].
+
+\subsection{Method 2: Look to the Variables}
+
+It is technically rather a nuisance that distinct \textit{occurrences} of the same variable
+in an expression are associated with different type expressions. Is there
+something which we can associate with each \textit{variable} instead?
+
+Suppose we wish to type-check a \ml{let}-expression. First of all, we type-check
+the definitions of the \ml{let}, thus deducing a type for each variable defined by the
+\ml{let}. Then it seems that we could associate each variable with its type, and
+proceed to type-check the body of the \ml{let}-expression. At each occurrence of
+one of these defined variables in the body, we should construct an \textit{instance} of
+its associated type, substituting fresh type variables for the \textit{schematic}
+variables in the type (see Section 8.5.3). However, as we discovered in
+Section 8.5.5, some of the variables in the type are \textit{constrained} and should not
+be substituted for, and the instantiation mechanism must take account of this.
+
+What is needed, therefore, is to associate with each variable a kind of type
+\textit{template}, in which the schematic variables are distinguished from the non-
+schematic variables. Then the template can be instantiated by copying it,
+substituting a fresh type variable for each occurrence of a schematic variable
+(but copying non-schematic variables unchanged). This type template is
+called a \textit{type scheme}. To summarize:
+\begin{numbered}
+    \item The \textit{schematic} type variables in a type scheme associated with a variable
+    are those that may be freely instantiated to conform with the type
+    constraints on the various occurrences of that variable.
+    \item All the other (non-schematic) variables in a type scheme are constrained, and must not be instantiated when instantiating the type scheme. As we
+    remarked in Section 9.4, they behave in a similar way to the unknowns of
+    a mathematical equation. For example, consider the simultaneous
+    equations
+    \[
+    a_{1,1} \times x_1 + a_{1,2} \times x_2 = b_1
+    \]
+    \[
+    a_{2,1} \times x_1 + a_{2,2} \times x_2 = b_2
+    \]
+    We seek values for the unknowns $x_1$ and $x_2$, by solving the equations, but
+    they must be consistently instantiated, so that $x_1$ stands for the same value
+    wherever it occurs (and likewise $x_2$).\\
+    \phantom{XX}By analogy, we will refer to the non-schematic variables of a type
+    scheme as \textit{unknowns}. They are the type variables whose values we seek by solving the system of type constraints implied by the structure of an
+    expression.
+\end{numbered}
+
+
+
+(In papers about type-checking, schematic variables are often called \textit{generic}
+variables, and unknowns are called \textit{non-generic}. We mention this only to
+make it easier to link up with the literature, and will not use that terminology
+here.)
+
+There is a partial analogy between type schemes and lambda abstractions.
+The schematic variables of a type scheme correspond to the formal parameter
+of a lambda abstraction, and the unknowns of a type scheme correspond to
+the free variables of a lambda abstraction. Applying a lambda abstraction to
+an argument involves constructing an instance of its body, substituting the
+argument for occurrences of the formal parameter (but copying free variables
+unchanged). This is very similar to the process of instantiating a type scheme,
+which involves constructing an instance of the type scheme template,
+substituting fresh type variables for occurrences of the schematic variables
+(but copying unknowns unchanged).
+
+We will represent type schemes by objects of the type
+\begin{mlcoded}
+    type\_scheme \typedecl{} SCHEME [tvname] type\_exp
+\end{mlcoded}
+A type variable occurring in a type scheme (\ml{SCHEME scvs e}) is schematic if
+its name occurs in the list \ml{scvs}, otherwise it is an unknown.
+
+\begin{mlcoded}
+    unknowns\_scheme \hastype{} type\_scheme $\rightarrow$ [tvname]\\
+    unknowns\_scheme (SCHEME scvs t) = tvars\_in t \$bar scvs
+\end{mlcoded}
+where
+\begin{mlcoded}
+    bar \hastype{} [$\ast$] $\rightarrow$ [$\ast$] $\rightarrow$ [$\ast$]\\
+    bar xs ys = [ x $\leftarrow$ xs | $\sim$ (x \$in ys) ]\\
+    in \hastype{} $\ast \rightarrow$ [$\ast$] $\rightarrow$ bool\\
+    in x$'$ [\;] \quad \  = False\\
+    in x$'$ (x:xs)  = True, \qquad x = x$'$\\
+    \phantom{XXXXXXX\;\,\ }= x$'$ \$in xs
+\end{mlcoded}
+
+
+During the course of type-checking we will have occasion to apply a
+substitution to a type scheme, to reflect additional information we have on its
+unknowns. When doing this, we should take care that only the unknowns are
+affected (remember that the schematic variables function like the formal
+parameter of a lambda abstraction, and have only local significance):
+\begin{mlcoded}
+    sub\_scheme \hastype{} subst $\rightarrow$ type\_scheme $\rightarrow$ type\_scheme \\
+    sub\_scheme phi (SCHEME scvs t)\\
+    \phantom{XXXX} = SCHEME scvs (sub\_type (exclude phi scvs) t)
+\end{mlcoded}
+where
+\begin{mlalign}
+    exclude phi scvs tvn &= TVAR tvn, \quad tvn \$in scvs\\
+    &= phi tvn
+\end{mlalign}
+
+In Section 2.2.6 we demonstrated the irritating problem of `name-capture',
+whereby a free variable of a lambda abstraction could become bound by being
+substituted inside another lambda abstraction. There is a similar problem
+here with substitution into type schemes. We must take care that the
+expression
+\begin{mlcoded}
+    sub\_scheme phi (SCHEME scvs t)
+\end{mlcoded}
+is only evaluated when the schematic variables \ml{scvs} are distinct from any
+variables occurring in the result of applying the substitution \ml{phi} to any of the
+unknowns of \ml{t}. Otherwise a type variable in the range of the substitution
+(which is always an unknown) might surreptitiously be changed into a
+schematic variable. The way in which we ensure this is to guarantee that
+the names of the schematic type variables in the type scheme are always
+distinct from those which can occur in the range of the substitution (which are
+always unknowns).
+
+\subsection{Association Lists}
+
+Having decided to associate a type scheme with each free variable in an
+expression, rather than a type expression with each occurrence of a free
+variable, we now have to decide how this information should be provided to
+the type-checker. There are two requirements on the data structure we use:
+\begin{numbered}
+    \item It should provide a mapping from the free variables of the expression to
+    type schemes.
+    \item We should be able to determine the \textit{range} of that mapping.
+\end{numbered}
+To understand the second point, consider type-checking (\ml{let x = E in E$'$}). We
+start by deriving a type \ml{t} for \ml{E}, in a type environment
+\begin{mlcoded}
+x$_1$ \hastype{} ts$_1$, \; \ldots, \; x$_k$ \hastype{} ts$_k$
+\end{mlcoded}
+which associates a type scheme \ml{t$_i$} with each variable \ml{x$_i$} free in \ml{E}
+(the \ml{t$_i$} thus constitute the range of the type environment). In other words, we attempt to
+build a solution \ml{phi} to the type equations implied by the structure of \ml{E}, such
+that
+\begin{mlcoded}
+    E \hastype{} t \quad {\normalfont provided that} \quad x$_1$ \hastype{} ts$_1'$, \ldots, x$_k$ \hastype{} ts$_k'$
+\end{mlcoded}
+where \ml{ts$_i$$'$} is the image of \ml{ts$_i$} under the substitution \ml{phi}. We then form the type
+scheme \ml{ts} to be associated with \ml{x} when type-checking \ml{E$'$}, in the extended
+environment
+\begin{mlcoded}
+    x$_1$ \hastype{} ts$_1'$, \ldots, x$_k$ \hastype{} ts$_k'$, x \hastype{} ts
+\end{mlcoded}
+The schematic variables of \ml{ts} are all of the type variables of \ml{t} except those that
+are unknown (non-schematic) in any of the schemes \ml{ts$_1'$}, \ldots, \ml{ts$_k'$}. So
+whatever data structure we choose to represent the environment of the
+type-checker, it should give us ready access to the set of unknowns in its range
+(the \ml{ts$_i'$}).
+
+An association list provides us with a suitable data structure.
+\begin{mlcoded}
+    assoc\_list $\ast$ $\ast\ast$ == [($\ast$, $\ast\ast$)]
+\end{mlcoded}
+Here $\ast$ stands for the type of keys, and $\ast\ast$ for the type of associated values. A
+key \ml{k} is associated with a value \ml{v} by means of the pair \ml{(k,v)}. The partial
+function itself is represented by a list of such associations. We shall use \ml{al}, \ml{al$'$},
+etc. as variables over association lists.
+\begin{mlcoded}
+    dom \hastype{} assoc\_list $\ast$ $\ast\ast$ $\rightarrow$ [$\ast$]\\
+    dom al = [ k | (k,v) $\leftarrow$ al]
+\end{mlcoded}
+(\ml{dom al}) returns a list (possibly with duplications) of the keys associated with
+values in the list, which is how we shall represent the domain of a partial
+function.
+\begin{mlcoded}
+    val \hastype{} assoc\_list $\ast$ $\ast\ast$ $\rightarrow$ $\ast$ $\rightarrow$ $\ast\ast$ \\
+    val al k = hd [ v | (k$'$,v) $\leftarrow$ al ; k = k$'$ ]
+\end{mlcoded}
+If \ml{k} is a key in (\ml{dom al}), then (\ml{val al k}) returns the first value in the list which is
+associated with \ml{k}. When using this function, we should be careful to ensure
+that the second argument belongs to the domain of the association list.
+\begin{mlcoded}
+    install al k v = (k,v):al
+\end{mlcoded}
+(\ml{install al k v}) returns an association list which implements the same partial
+function as \ml{al}, except that the key \ml{k} is now mapped to the value \ml{v}.
+\begin{mlcoded}
+    rng \hastype{} assoc\_list $\ast$ $\ast\ast$ $\rightarrow$ [$\ast\ast$]\\
+    rng al = map (val al) (dom al)
+\end{mlcoded}
+The property which \ml{rng} is intended to satisfy is that every entry in (\ml{rng al}) is a
+value of (\ml{val al}).
+
+We shall represent the information passed to the type-checker about the
+types of the free variables of an expression by means of an object of the
+following type:
+\begin{mlcoded}
+    type\_env == assoc\_list vname type\_scheme
+\end{mlcoded}
+We shall use \ml{gamma}, \ml{gamma$'$}, etc. as variables standing for type environ-
+ments. The functions \ml{unknowns\_scheme} and \ml{sub\_scheme} can be extended to
+act on type environments, in the obvious way:
+\begin{mlcoded}
+    unknowns\_te \hastype{} type\_env $\rightarrow$ [tvname] \\
+    unknowns\_te gamma = appendlist (map unknowns\_scheme (rng gamma))\\
+\\
+    appendlist \hastype{} [\;[$\ast$]\;] $\rightarrow$ [$\ast$] \\
+    appendlist lls = foldr (++) [\,] lls\\
+\\
+    sub\_te \hastype{} subst $\rightarrow$ type\_env $\rightarrow$ type\_env \\
+    sub\_te phi gamma \\
+    \phantom{XXX} = [ (x, sub\_scheme phi st) | (x,st) $<-$ gamma ]
+\end{mlcoded}
+
+\section{New Variables}
+
+When type-checking a closed expression, we first assigned a distinct type
+variable to each subexpression, and then wrote down equations expressing
+the constraints on those variables imposed by the structure of the expression.
+When type-checking an expression containing variables defined in a \ml{let}- or
+\ml{letrec}-expression, we chose first to work out the schematic types of those
+variables (i.e.\ we checked the definitions first). We then assigned to each
+occurrence of such a variable a type expression obtained by substituting new
+unknown variables for the schematic variables, using a distinct set of
+unknowns for each distinct occurrence.
+
+So we will need a mechanism that enables us to `make up' new type
+variables, and guarantees that they are distinct from type variables we may
+introduce in the future. There are many ways to provide such a mechanism.
+The one we adopt here is to postulate that there is a type \ml{name\_supply}, and
+functions
+\begin{mlcoded}
+    \begin{tabular}{lll}
+    next\_name &\hastype{} name\_supply $\rightarrow$ &tvname \\
+    deplete   &\hastype{} name\_supply $\rightarrow$ &name\_supply \\
+    split     &\hastype{} name\_supply $\rightarrow$ &(name\_supply, name\_supply)
+    \end{tabular}
+\end{mlcoded}
+such that if \ml{ns} is a name supply, then (\ml{next\_name ns}) is distinct from any name
+supplied by (\ml{deplete ns}), and if (\ml{ns0,ns1}) = \ml{split ns}, then any name supplied
+from \ml{ns0} is distinct from any name supplied by \ml{ns1}. One way to implement
+such a type is to (re)define \ml{tvname}, thus:
+\begin{mlcoded}
+    \begin{tabular}{ll}
+        tvname       &== [num] \\
+        name\_supply  &== tvname \\
+        next\_name ns &= ns \\
+        deplete (n:ns) &= (n+2 : ns) \\
+        split ns       &= (0:ns, 1:ns)
+    \end{tabular}
+\end{mlcoded}
+For example, if we start with the name supply \ml{[0]}, then the names it will supply
+are \ml{[0]}, \ml{[2]}, \ml{[4]}, \ldots, while the names supplied by splitting the supply into
+\ml{[0,0]} and \ml{[1,0]} will be \ml{[0,0]}, \ml{[2,0]}, \ml{[4,0]}, \ldots, and \ml{[1,0]}, \ml{[3,0]}, \ml{[5,0]}, \ldots,
+respectively. (The $+2$ in the definition of \ml{deplete} is only an artifice to ensure that the
+two halves of a split name supply are forever distinct.)
+
+The function \ml{name\_sequence} returns from a name supply an infinite
+sequence of distinct names derived from that supply:
+\begin{mlcoded}
+    name\_sequence \hastype{} name\_supply $\rightarrow$ [tvname] \\
+    name\_sequence ns = next\_name ns : name\_sequence (deplete ns)
+\end{mlcoded}
+
+In practice, it is probably better to adopt an approach other than the supply
+of new variables, according to which variables are named by integers, and the
+name supply represented by the name of the next variable to be allocated. The
+type-checker would then take the name supply as an argument, and return the
+depleted supply as part of its value. We have adopted an approach which
+wastes large portions of the variable name space, in order not to encumber the
+type-checker code with a further avoidable detail.
+
+\section{The Type-checker}
+
+Finally, we are in a position to define the type-checker. This will take the form
+of a function \ml{(tc gamma ns e)} where
+\begin{numbered}
+    \item \ml{gamma} is a type environment, associating type schemes with each of the
+    free variables of \ml{e}. When the type-checker is invoked upon a complete
+    program, this type environment should be initialized to contain
+    declarations of the types of the built-in system-supplied identifiers.
+    \item \ml{ns} is a supply of type variable names.
+    \item \ml{e} is the expression to be checked.
+\end{numbered}
+The value returned will be a reply, which in the case of success will return a
+pair of the form \ml{(phi,t)} where
+\begin{numbered}
+    \item \ml{phi} is a substitution defined on the unknown type variables in \ml{gamma}.
+    \item \ml{t} is a type derived for the expression \ml{e}, in the type environment
+    \ml{(sub\_te phi gamma)}. It will in fact be a fixed point of the substitution \ml{phi}.
+\end{numbered}
+In other words, if
+\begin{mlcoded}
+    tc gamma ns e = OK (phi,t)
+\end{mlcoded}
+then \ml{e \hastype{} t} can be derived from \ml{gamma}, provided that each unknown \ml{tvn} in
+\ml{gamma} has the value given it by \ml{phi}.
+
+We shall define the function \ml{tc} by induction on the structure of the
+expression, with a different clause for each form which an expression can
+take:
+\begin{mlcoded}
+    \phantom{n}tc \hastype{} type\_env $\rightarrow$ name\_supply $\rightarrow$ vexp $\rightarrow$ reply (subst, type\_exp) \\
+    \begin{tabular}{l l l}
+        tc gamma ns (VAR x)        & = tcvar    &gamma ns x \\
+        tc gamma ns (AP e1 e2)     & = tcap     &gamma ns e1 e2 \\
+        tc gamma ns (LAMBDA x e)   & = tclambda &gamma ns x e \\
+        tc gamma ns (LET xs es e)  & = tclet    &gamma ns xs es e \\
+        tc gamma ns (LETREC xs es e) & = tcletrec &gamma ns xs es e
+    \end{tabular}
+\end{mlcoded}
+We will describe each of these cases in a separate section, beginning at Section
+9.7.2. First, however, we define a useful auxiliary function \ml{tcl}.
+
+\subsection{Type-checking Lists of Expressions}
+
+It is convenient to define a function \ml{(tcl es gamma n)} which applies to a list of
+expressions \ml{es}, and will return in the case of success a similar result \ml{OK (phi,ts)},
+where \ml{ts} is a list of types derived for corresponding components of the list \ml{es} in
+the type environment \ml{(sub\_te phi gamma)}. \ml{phi} embodies all the constraints
+on \ml{gamma} necessary to derive those types simultaneously. The function is
+defined from \ml{tc} by the equations:
+\begin{mlcoded}
+    \phantom{n}tcl \hastype{} type\_env $\rightarrow$ name\_supply $\rightarrow$ [vexp] $\rightarrow$ reply (subst, [type\_exp]) \\
+    \begin{tabular}{lll}
+        tcl gamma ns [\,]  &= &OK (id\_subst, [\,]) \\
+        tcl gamma ns (e:es) &= &tcl1 gamma ns0 es (tc gamma ns1 e) \\
+        & &where (ns0,ns1) = split ns
+    \end{tabular}
+\end{mlcoded}
+
+\begin{mlcoded}
+    \begin{tabular}{lll}
+    tcl1 gamma ns es FAILURE      &= &FAILURE \\
+    tcl1 gamma ns es (OK (phi,t)) &= &tcl2 phi t (tcl gamma$'$ ns es) \\
+    & &where gamma$'$ = sub\_te phi gamma
+    \end{tabular}
+\end{mlcoded}
+
+\begin{mlcoded}
+    \begin{tabular}{ll}
+        tcl2 phi t FAILURE          & = FAILURE \\
+        tcl2 phi t (OK (psi,ts))    & = OK (psi \$scomp phi, (sub\_type psi t) : ts)
+    \end{tabular}
+\end{mlcoded}
+The substitution can be thought of as built up in two stages. In the first stage,
+we type-check each entry in the list, in the type environment `seen' through
+the substitutions derived for previous entries. Then in the second stage, we
+form the substitution by cumulative composition, and ensure that each type
+returned for an expression is a fixed point of the composite substitution.
+
+\subsection{Type-checking Variables}
+
+When type-checking a variable \ml{x} in a given type environment \ml{gamma}, with
+name supply \ml{ns}, we look up the type scheme associated with that variable by
+\ml{gamma}. Recall that in a type scheme, a type variable is \textit{either schematic}, in
+which case we substitute a fresh type variable for it, or \textit{unknown}, in which case
+we leave it as it is.
+
+So we return a new instance of the schematic type associated with the
+variable, in which the schematic variables have been replaced by fresh type
+variables. In this way, the type constraints on different occurrences of a
+variable \ml{x} can be resolved independently, as indicated by the schematic
+variables in the type scheme associated with \ml{x}.
+\begin{mlalign}
+    tcvar \hastype{} type\_env &$\rightarrow$ name\_supply $\rightarrow$ vname \\
+    &$\rightarrow$ reply (subst, type\_exp)
+\end{mlalign}
+\begin{mlcoded}
+    tcvar gamma ns x \\
+    \phantom{XXXX}= OK (id\_subst, newinstance ns scheme) \\
+    \phantom{XXXXXX}where scheme = val gamma x
+\end{mlcoded}
+where
+\begin{mlcoded}
+    newinstance \hastype{} name\_supply $\rightarrow$ type\_scheme $\rightarrow$ type\_exp \\
+    newinstance ns (SCHEME scvs t) \\
+    \phantom{XXXX}= sub\_type phi t \\
+    \phantom{XXXXXX}where al  = scvs \$zip (name\_sequence ns) \\
+    \phantom{XXXXXXXXXXX}phi = al\_to\_subst al
+\end{mlcoded}
+
+Here we have built an association list between the schematic variables and
+an initial segment of the name sequence built on the given name supply. Such
+an association list can be made into a substitution, by means of the function:
+\begin{mlcoded}
+    \phantom{n}al\_to\_subst \hastype{} assoc\_list tvname tvname $\rightarrow$ subst \\
+    \begin{tabular}{ll}
+    al\_to\_subst al tvn &= TVAR (val al tvn),  tvn \$in dom al \\
+    &= TVAR tvn
+    \end{tabular}
+\end{mlcoded}
+
+\subsection{Type-checking Application}
+
+When type-checking an expression \ml{(AP e1 e2)} with respect to a type
+environment \ml{gamma}, we first of all try to construct a substitution \ml{phi} which
+solves the type constraints on \ml{e1} and \ml{e2} together. Suppose that the types
+\ml{t1} and \ml{t2} are derived for \ml{e1} and \ml{e2}. We then try to construct an extension of \ml{phi}
+which satisfies the additional constraint
+\begin{mlcoded}
+    t1 = t2 $\rightarrow$ t$'$
+\end{mlcoded}
+where \ml{t$'$} is a new type variable. We obtain this extension, as usual, by unifying
+\ml{t1} with \ml{t2 $\rightarrow$ t$'$}.
+\begin{mlcoded}
+    \begin{tabular}{ll}
+    tcap \hastype{} type\_env &$\rightarrow$ name\_supply $\rightarrow$ vexp $\rightarrow$ vexp \\
+        &$\rightarrow$ reply (subst, type\_exp)
+    \end{tabular} \\
+    \phantom{n}tcap gamma ns e1 e2 \\
+    \begin{tabular}{rl}
+         \phantom{XXX} = tcap1 tvn &(tcl gamma ns$'$ [e1,e2]) \\
+        where tvn &= next\_name ns \\
+        ns$'$ &= deplete ns
+    \end{tabular}
+\end{mlcoded}
+\begin{mlalign}
+    \phantom{n}tcap1 &tvn FAILURE \\
+    &= FAILURE \\
+    \phantom{n}tcap1 &tvn (OK (phi,[t1,t2])) \\
+    &= tcap2 tvn (unify phi (t1, t2 \$arrow (TVAR tvn)))
+\end{mlalign}
+\begin{mlcoded}
+    \begin{tabular}{ll}
+tcap2 tvn FAILURE &= FAILURE \\
+tcap2 tvn (OK phi) &= OK (phi, phi tvn)
+    \end{tabular}
+\end{mlcoded}
+
+\subsection{Type-checking Lambda Abstractions}
+
+When type-checking \ml{(LAMBDA x e)}, we know nothing at the outset about the
+type of \ml{x}. So we associate \ml{x} with a scheme of the form
+\ml{(SCHEME [ ] (TVAR tvn))}, where \ml{tvn} is a new type variable. Because this
+scheme has no schematic type variables, the various occurrences of the
+variable will be assigned the value of the same type variable. This is the formal
+counterpart of our decision to insist that all occurrences of the same \ml{LAMBDA}-bound variable should have the same type.
+
+\begin{mlcoded}
+    \begin{tabular}{l@{\hspace{8pt}}l}
+        tclambda \hastype{} type\_env &$\rightarrow$ name\_supply $\rightarrow$ vname $\rightarrow$ vexp \\
+        &$\rightarrow$ reply (subst, type\_exp)
+    \end{tabular} \\
+    \begin{tabular}{r@{\hspace{8pt}}l}
+        tclambda gamma ns x e& \\
+        = tclambda1 tvn &(tc gamma$'$ ns$'$ e) \\
+        where ns$'$ &= deplete ns \\
+        gamma$'$ &= new\_bvar (x,tvn)\; :\; gamma \\
+        tvn \hspace{.6cm} &= next\_name ns
+    \end{tabular}
+\end{mlcoded}
+
+\begin{mlcoded}
+    tclambda1 tvn FAILURE \\
+    \hspace*{1.5cm} = FAILURE \\
+    tclambda1 tvn (OK (phi,t)) \\
+    \hspace*{1.5cm} = OK (phi, (phi tvn) \$arrow t)
+\end{mlcoded}
+
+\begin{mlcoded}
+    new\_bvar (x, tvn) = (x, SCHEME [ ] (TVAR tvn))
+\end{mlcoded}
+
+\subsection{Type-checking \ml{let}-expressions}
+
+When type-checking an expression \ml{(LET xs es e)}, we first of all type-check
+the right-hand sides in the list \ml{es}. We then have to update the environment so
+that it associates the appropriate schematic types with the names in the list \ml{xs},
+and type-check the body \ml{e}. The details of constructing the `appropriate'
+schematic types are slightly involved, so we shall hide them in the definition of
+a function \ml{add\_decls}.
+
+\begin{mlcoded}
+    \begin{tabular}{l@{\hspace{6pt}}l}
+        tclet \hastype{} &type\_env $\rightarrow$ name\_supply \\
+        &$\rightarrow$ [vname] $\rightarrow$ [vexp] $\rightarrow$ vexp \\
+        &$\rightarrow$ reply (subst, type\_exp) \\
+    \end{tabular}\\
+    \begin{tabular}{r@{\hspace{4pt}}l}
+        tclet &gamma ns xs es e \\
+        = &tclet1 gamma ns0 xs e (tcl gamma ns1 es) \\
+        \vspace{.2cm}
+        &where (ns0, ns1) = split ns\\
+        tclet1 &gamma ns xs e FAILURE \\
+        = &FAILURE \\
+        tclet1 &gamma ns xs e (OK (phi, ts)) \\
+        = &tclet2 phi (tc gamma$''$ ns1 e) \\
+    \end{tabular}\\
+    \begin{tabular}{l@{\hspace{4pt}}l@{\hspace{4pt}}l}
+        \hspace*{1cm}where &gamma$''$ &= add\_decls gamma$'$ ns0 xs ts \\
+        &gamma$'$  &= sub\_te phi gamma \\
+    \vspace{.2cm}
+        &(ns0, ns1) &= split ns
+    \end{tabular}\\
+    \begin{tabular}{r@{\hspace{4pt}}l}
+        tclet2 &phi FAILURE \\
+        = &FAILURE \\
+        tclet2 &phi (OK (phi$'$,t)) \\
+        = &OK (phi$'$ \$scomp phi, t)
+    \end{tabular}
+\end{mlcoded}
+The purpose of \ml{add\_decls} is to update a type environment \ml{gamma} so that it
+associates schematic types formed from the types \ml{ts} with the variables \ml{xs}. The
+variables which become schematic variables are those that are not unknowns
+in \ml{gamma}. The definition is slightly complicated by our obligation to ensure
+that the names of the schematic variables are distinct from the names of any
+unknown variables which can occur in the range of a substitution. We use the
+name sequence \ml{ns} to supply new names for the schematic variables.
+
+\begin{mlcoded}
+    \begin{tabular}{l@{\hspace{6pt}}l}
+        add\_decls \hastype{} &type\_env $\rightarrow$ name\_supply \\
+        &$\rightarrow$ [vname] $\rightarrow$ [type\_exp] $\rightarrow$ type\_env
+    \end{tabular}\\
+    \begin{tabular}{r@{\hspace{4pt}}l}
+        add\_decls &gamma ns xs ts \\
+        = &(xs \$zip schemes) ++ gamma \\
+        &where schemes \hspace{.25cm}= map (genbar unknowns ns) ts \\
+        &\hspace{1.25cm}unknowns = unknowns\_te gamma
+    \end{tabular}
+\end{mlcoded}
+
+\begin{mlcoded}
+    \begin{tabular}{r@{\hspace{4pt}}l}
+        genbar &unknowns ns t \\
+        &= SCHEME (map snd al) t$'$ \\
+    \end{tabular}\\
+    \begin{tabular}{r@{\hspace{6pt}}l@{\hspace{6pt}}l}
+        \hspace*{1.6cm}where &al &= scvs \$zip (name\_sequence ns) \\
+        &scvs &= (nodups (tvars\_in t)) \$bar unknowns \\
+        &t$'$   &= sub\_type (al\_to\_subst al) t
+    \end{tabular}
+\end{mlcoded}
+Here \ml{snd} is a function which projects a pair to its second coordinate. The
+projection functions for pairs are defined by
+
+\begin{mlcoded}
+        fst \hastype{} ($\ast$,\,$\ast\ast$) $\rightarrow$ $\ast$ \\
+        \vspace{.2cm}fst (x, y) = x\\
+        snd \hastype{} ($\ast$,\,$\ast\ast$) $\rightarrow$ $\ast\ast$ \\
+        snd (x, y) = y
+\end{mlcoded}
+
+The function \ml{nodups} returns a list with the same set of entries as its
+argument list, but without duplicates:
+
+\begin{mlcoded}
+    \begin{tabular}{l@{\hspace{6pt}}l@{\hspace{6pt}}l}
+        nodups \hastype{}&[\,$\ast$\,] $\rightarrow$ [\,$\ast$\,] &\\
+        nodups xs &= f [ ] xs &\\
+        &where &\\
+        &\hspace{0.5cm}f acc [ ] &= acc \\
+        &\hspace{0.5cm}f acc (x:xs) &= f acc xs, \ x \$in acc \\
+        &\hspace{0.5cm}f acc (x:xs) &= f (x:acc) xs
+    \end{tabular}
+\end{mlcoded}
+
+\subsection{Type-checking letrec-expressions}
+
+The definition of the function invoked to type-check expressions
+\ml{(LETREC xs es e)} is rather intricate, as there are many things to do. In
+outline, they are these:
+
+\begin{numbered}
+    \item Associate new type schemes with the variables \ml{xs}. These schemes will
+    have no schematic variables, in accordance with our decision to insist
+    that all occurrences of a defined name in the right-hand sides of a
+    recursive definition should have the same type.
+    \item Type-check the right-hand sides. If successful, this will yield a
+    substitution and a list of types which may be derived for the right-hand
+    sides if the type environment is constrained by the substitution.
+    \item Unify the types derived for the right-hand sides with the types associated
+    with the corresponding variables, in the context of that substitution. This
+    is in accordance with our decision that the right-hand sides of recursive
+    definitions must receive the same types as occurrences of the corresponding variables. Should the unification succeed, that constraint can be
+    met.
+    \item We are now in much the same situation as we were in with expressions of
+    \ml{LET} form, when the definitions had been processed, and it remained to
+    type-check the body \ml{e}, after updating the type environment with
+    appropriate schematic types.
+\end{numbered}
+
+\begin{mlcoded}
+    \begin{tabular}{@{}r@{\hspace{6pt}}l}
+        tcletrec \hastype{} &type\_env $\rightarrow$ name\_supply \\
+        &$\rightarrow$ [vname] $\rightarrow$ [vexp] $\rightarrow$ vexp \\
+        &$\rightarrow$ reply (subst, type\_exp)
+    \end{tabular}\\
+    \begin{tabular}{@{}r@{\hspace{4pt}}l}
+        tcletrec &gamma ns xs es e \\
+        = &tcletrec1 gamma ns0 nbvs e (tcl (nbvs ++ gamma) ns1 es) \\
+    \end{tabular}\\
+    \begin{tabular}{r@{\hspace{4pt}}l@{\hspace{4pt}}l}
+    \hspace*{1.25cm}where &(ns0,ns$'$) &= split ns \\
+    &(ns1,ns2) &= split ns$'$ \\
+    &nbvs &= new\_bvars xs ns2
+    \end{tabular}\\
+\end{mlcoded}
+
+\begin{mlcoded}
+    new\_bvars xs ns = map new\_bvar (xs \$zip (name\_sequence ns))
+\end{mlcoded}
+
+\begin{mlcoded}
+    tcletrec1 gamma ns nbvs e FAILURE \\
+    \hspace*{0.75cm}= FAILURE \\
+    tcletrec1 gamma ns nbvs e (OK (phi,ts)) \\
+    \hspace*{0.75cm}= tcletrec2 gamma$'$ ns nbvs$'$ e (unify1 phi (ts \$zip ts$'$)) \\
+    \begin{tabular}{r@{\hspace{4pt}}l@{\hspace{4pt}}l}
+        \hspace*{1cm}where &ts$'$   &= map old\_bvar nbvs$'$ \\
+        &nbvs$'$ &= sub\_te phi nbvs \\
+        &gamma$'$ &= sub\_te phi gamma
+    \end{tabular}
+\end{mlcoded}
+
+\begin{mlcoded}
+    old\_bvar (x, SCHEME [ ] t) = t
+\end{mlcoded}
+
+\begin{mlcoded}
+    tcletrec2 gamma ns nbvs e FAILURE \\
+    \hspace*{0.75cm}= FAILURE \\
+    tcletrec2 gamma ns nbvs e (OK phi) \\
+    \hspace*{0.75cm}= tclet2 phi (tc gamma$''$ ns1 e) \\
+    \begin{tabular}{@{}r@{\hspace{4pt}}l@{\hspace{4pt}}l}
+        \hspace*{1.2cm}where &ts       &= map old\_bvar nbvs$'$ \\
+        &nbvs$'$   &= sub\_te phi nbvs \\
+        &gamma$'$  &= sub\_te phi gamma \\
+        &gamma$''$ &= add\_decls gamma$'$ ns0 (map fst nbvs) ts \\
+        &(ns0,ns1) &= split ns
+    \end{tabular}
+\end{mlcoded}
+The definition of the type-checker is now complete.
+
+\section*{References}
+
+\begin{references}
+
+    \item Damas, L. 1985. \textit{Type Assignment in Programming Languages}. CST-33-35.
+    Department of Computer Science, University of Edinburgh. April.
+
+    \item Robinson, J.A. 1965. A machine-oriented logic based on the resolution principle.
+    \textit{Journal of the ACM}. Vol. 12, no. 1, pp. 23–41.
+
+    \item Wadler, P. 1985. How to replace failure by a list of successes. In \textit{Conference on
+        Functional Programming Languages and Computer Architecture, Nancy}.
+    Jouannaud (editor). LNCS 201. Springer Verlag.
+
+\end{references}

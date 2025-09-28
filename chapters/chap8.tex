@@ -1268,3 +1268,158 @@ figures. The simplifications are indicated in the commentary.
 \noindent
 Note that all occurrences of the variable \ml{x} bound by the abstraction must have
 the same type.
+
+\subsection{Rule for \ml{let}-expressions}
+
+\plainbox{
+    \[
+\inferrule*[vcenter, right={\!\textnormal{\ml{let x.}}}]{
+%\infer{
+%    \[
+    \inferrule*[vcenter, fraction={\cdot\cdots\cdot}]
+    {
+        \{ \text{\ml{\ldots{} y \hastype{} C \ldots{}}} \}
+    }
+    {
+        \inferrule*[vcenter, fraction={\cdot\cdots\cdot}]
+        {\phantom{text}}
+        {\text{ \ml{x \hastype{} A} }}
+    }
+    \\
+    \inferrule*[vcenter, fraction={\cdot\cdots\cdot}]
+    {
+        \text{\ml{ \ldots{} x \hastype{} A$'$ \ldots{} x \hastype{} A$''$ \ldots{}}}
+    }
+    {
+       \text{\ml{B}}
+    }
+%    \]
+}
+{
+    {
+    \begin{tabular}{lcr}
+        & \ml{B} \phantom{w} & \\
+        $\{$\phantom{hacked} &  $\cdots$ \phantom{w} & \phantom{hack}$\}$ \\
+        $\{$ &  ------\ml{\tlb{y}}  & $\}$ \\
+        $\{$ &  $\cdots$ \phantom{w} & $\}$
+    \end{tabular}
+    }
+}
+\]
+}
+
+\noindent
+Here we have shown only the case where just one definition is made in the
+\ml{let}-expression: \ml{let x = E in E$'$}.
+
+\textit{Restriction:} \ml{A$'$} and \ml{A$''$} are instances of \ml{A}. No variable may be instantiated
+which occurs in the type of a variable bound in a more global lambda
+abstraction or \ml{letrec}-expression (i.e., one further down the tree). The portions
+of the figure in curly brackets indicate such a situation. Any type variables in \ml{A}
+shared with \ml{C} may not be instantiated in forming \ml{A$'$} and \ml{A$''$}.
+
+\subsection{Rule for \ml{letrec}-expressions}
+
+\plainbox{
+    \[
+    \inferrule*[vcenter, right={\!\textnormal{\ml{letrec x.}}}]{
+        %\infer{
+            %    \[
+            \inferrule*[vcenter, fraction={\cdot\cdots\cdot}]
+            {
+                \text{\ml{\ldots{} x \hastype{} A \ldots{} x \hastype{} A \ldots{}}}
+            }
+            {
+                \inferrule*[vcenter, fraction={\cdot\cdots\cdot}]
+                {\phantom{text}}
+                {\text{ \ml{x \hastype{} A} }}
+            }
+            \\
+            \inferrule*[vcenter, fraction={\cdot\cdots\cdot}]
+            {
+                \text{\ml{ \ldots{} x \hastype{} A$'$ \ldots{} x \hastype{} A$''$ \ldots{}}}
+            }
+            {
+                \text{\ml{B}}
+            }
+            %    \]
+        }
+        {
+            \text{\ml{B}}
+        }
+        \]
+    }
+
+\noindent
+Here we have shown only the case where just one definition is made in the
+\ml{letrec}-expression: \ml{letrec x = E in E$'$}. Note that the occurrences of \ml{x} within
+the right-hand side of the definition must have the same type.
+
+\textit{Restriction:} just as in the \ml{let} rule.
+
+\section{Some Cautionary Remarks}
+
+There is a beguiling similarity between the notion of type which we use in
+mathematics, and the notion which we use in functional programming. It is all
+too easy to transfer intuitions concerning the mathematical notion of type to
+the notion used in programming. There are at least two important differences.
+
+First, the types in a functional language are types of partial objects, whose
+evaluation may not terminate. In contrast, the mathematical notion of type,
+whose study began with Frege [Gaeck and Black, 1970] and Whitehead and
+Russell [1910-1913], concerns total objects, whose definitions are well
+founded. The purpose of the mathematical notion of type is to elucidate the
+foundations of mathematics. The purpose of the notion in functional programming
+is to assure us at compile-time that a program will not `go wrong',
+where we do not count a program to have gone wrong if it does not terminate,
+or a function is applied to arguments for which it has not been defined.
+
+Second, in functional programming `recursion' is interpreted in a very
+liberal sense, going far beyond recursion on well-founded structures, or
+positive inductive definitions. As a direct result of this, the notion of a type in
+functional programming cannot be the same notion that we use in
+mathematics. For example, in a functional program we can define an integer
+\ml{omega}, where
+\begin{mlcoded}
+    omega = omega + 1
+\end{mlcoded}
+and this cannot belong to the (mathematical) type of integers. Another
+symptom of this liberal attitude to recursion is exhibited by the definition of
+the algebraic type
+\begin{mlcoded}
+    D \typedecl{} LAMBDA (D $\rightarrow$ D)
+\end{mlcoded}
+in which the defined type occurs negatively (to the left of the arrow) on the
+right-hand side of the definition. This is not to say that there is no mathematical
+sense in the functional programming notions. On the contrary, there
+is a rich and sophisticated theory (domain theory) which aims to give a
+mathematical interpretation to just such constructs. But while constructing
+that theory, and reasoning about the mathematical structures it involves, we
+are using on the metalevel the ordinary mathematical notion of type.
+
+We hope that this chapter has shown that a naive understanding of the
+notion of type certainly gives us plenty to go on. We also hope to have
+achieved another goal: that of showing that there are limits to the questions
+we can settle on a naive basis alone.
+
+\section*{References}
+
+\begin{references}
+
+\item Gaeck, P., and Black, M. (editors) 1970. Function and concept. In \textit{Translations
+from the Philosophical Writings of Gottlob Frege}. Basil Blackwell.
+
+\item Milner, R. 1978. A theory of type polymorphism in programming. \textit{Journal of
+Computer and System Science}. Vol. 17, pp. 348-75.
+
+\item Mycroft, A. 1984. Polymorphic type schemes and recursive definitions. In \textit{Proceedings
+of the International Symposium on Programming, Toulouse}, pp. 217-39. LNCS
+167. Springer Verlag.
+
+\item Strachey, C. 1967. Fundamental concepts in programming languages. In \textit{Notes for the
+International Summer School in Computer Programming, Copenhagen}.
+
+\item Whitehead, A.N., and Russell, B.A.W. 1910-1913. \textit{Principia Mathematica}, 3
+volumes. Cambridge University Press.
+
+\end{references}

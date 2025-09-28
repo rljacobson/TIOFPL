@@ -66,15 +66,6 @@
 %\usepackage{newunicodechar}
 %\newunicodechar{λ}{\lt}
 
-% For source code highlighting.
-%\usepackage[no-math]{fontspec}
-%\usepackage{minted}
-%\usemintedstyle{mathematica}
-
-%\usepackage{tabu} % Tables
-%\usepackage{subcaption} % Subfigures (side-by-side)
-%\usepackage{wrapfig}
-
 
 % Get rid of those hideous arrows
 \usepackage{chemarrow}
@@ -96,10 +87,6 @@
 %\usepackage[sectionbib,authoryear]{natbib}
 %\usepackage{chapterbib}
 \usepackage[hidelinks]{hyperref} % links (after biblatex)
-
-%\usepackage{fullpage} %Comment this out before submission.
-%Only used for DRAFTS to include the time of compilation as a versioning system
-\usepackage{datetime}
 
 \usepackage{arydshln} % Dashed line in table
 \usepackage{dashrule} % \hdashrule
@@ -203,7 +190,7 @@
 % This is how to do this in memoir:
 \setsecnumdepth{subsubsection}
 %\setcounter{secnumdepth}{4}
-%\setcounter{tocdepth}{4}
+\setcounter{tocdepth}{2}
 
 \makeindex
 
@@ -434,35 +421,17 @@
 
 \newenvironment{parsetree}[1]{\begin{center}\begin{forest}[#1]}{\end{forest}\end{center}}
 
+% The following is useful for authoring but needs to be commented for final compilation. It excludes all other files but still reads in their aux files so that counters, etc., remain valid.
+\includeonly{chapters/chap9}
+
 \begin{document}
 
-\frontmatter
-
-\maketitlepg
-
-% Make Dedication
-\begin{flushleft}
-	\thispagestyle{empty}
-	\vspace*{\drop}
-%	\huge
-%	\dedication
-%	\dedicationstyle{\dedication}
-\end{flushleft}
-\clearpage
-
-\tableofcontents
-%\listoffigures
-%\listoftables
-
-\setlength{\parindent}{10pt}
-\setlength{\parskip}{0mm plus 0mm minus 0mm}
-
+\include{chapters/frontmatter}
 \include{chapters/preface}
 
 \mainmatter
 
-
-\input{chapters/chap1}
+\include{chapters/chap1}
 
 \part[Compiling High-Level Functional Languages]{Compiling High-Level\\ Functional Languages}
 
@@ -473,6 +442,9 @@
 \include{chapters/chap6}
 \include{chapters/chap7}
 \include{chapters/chap8}
+\include{chapters/chap9}
+
+% Adjust the `\includeonly{..}` command before `\begin{document}` to include/exclude document content for faster compilation.
 
 %\backmatter
 

@@ -1,58 +1,10 @@
 # Contributing
 
-Want to help? It's easy enough. Just use the first couple of chapters as a guide. 
-
-## Custom Macros
-
-Use the existing macros rather than "manually" typesetting code and other recurring text. The following utilities are provided:
-
-* Inline (`\ml{...}`) and displayed code (`\begin{mlcoded}
-  ... \end{mlcoded}`) environments. There are variants `letalign` (left, left aligned) and `mlalign` (right, left aligned) tabular variants. For aligning more than two columns, just put a `tabular` environment inside `mlcoded`.
-* Parse tree diagrams:
-
-```latex
-\begin{center}
-	\pstree[nodesep=4pt,levelsep=5ex]{ \TR{\ml{$*$}} }{  
-		\pstree{\TR{\ml{+}}}{ \TR{\ml{4}} \TR{\ml{1}} }
-		\pstree{\TR{\ml{--}}}{ \TR{\ml{4}} \TR{\ml{1}} }
-	}
-\end{center}
-```
-
-* Numbered lists:
-
-```latex
-\begin{numbered}
-\item ...
-⋮
-\end{numbered}
-```
-
-* References environment:
-
-  ```latex
-  \section*{References}
-  \begin{references}
-  \item ...
-  ⋮
-  \end{references}
-  ```
-
-* Macros for lambda expressions that apply the correct space: `\tlb{x}+ x 1` for an entire lambda expression and `\tl` for just a raw lambda. 
-
-* Boxed commands `plainbox`, `titledbox`, and others. See `main.tex`.
-
-* `\fatbar` and `\bot` for the bottom turnstile symbol.
-
-There are others. See `main.tex` for full details.
-
-## Figures and Graphics
-
-Try to reproduce the figures as closely as possible and in LaTeX with pstricks. See fig. 1.1 for an imperfect example.
+Want to help? It's easy enough. ~Just use the first couple of chapters as a guide.~ Actually, the last few chapters might be better, as I got better at typesetting in a standard way, especially formatting code listings.
 
 ## Possible Improvements
 
-The most pressing need, by several orders of magnitude, is that of just typesetting the text. 
+The most pressing need, by several orders of magnitude, is that of just typesetting the text.
 
 But if you are a LaTeX guru, here are some ideas:
 
@@ -60,3 +12,66 @@ But if you are a LaTeX guru, here are some ideas:
 * Modify the TOC to look like the book. (Hard)
 * Add a facility for the "automatic" production of the index. (Medium)
 * Reproduce a challenging figure. (Easy-Medium)
+
+## Custom Commands and Environments
+
+In the follow table, the `…` symbol is a placeholder for arbitrary text, math, or code, depending on the context. Also, we use placeholder names beginning with `the` for command parameters. For example, in `\simpletitledbox{thetitle}{…}`, the variable `thetitle` stands in for the title of the box, which can be any text.
+
+### Formatting Code
+
+
+| Command                                | Description                                                  | Example                              | Issues                                                       |
+| -------------------------------------- | ------------------------------------------------------------ | ------------------------------------ | ------------------------------------------------------------ |
+| `\ml{…}`                               | Inline pseudocode or Miranda code                            | The application `\ml{f x}` means.... | Do not use in an `mlcoded` environment.                      |
+| `\begin{mlcoded} …\end{mlcoded}`       | Displayed pseudocode or Miranda code                         |                                      |                                                              |
+| `\begin{mlalign} …\end{mlalign}`       | Two column tabular environment specifically for code with `rl` alignment |                                      | Wraps content in an `mlcoded` environment.                   |
+| `\begin{letalign} …\end{letalign}`     | Same as `mlalign` but `ll` aligned                           |                                      | Use for simple `let` definitions. Wraps content in an `mlcoded` environment. |
+| `\begin{mlnumbered} …\end{mlnumbered}` | Numbered code equivalent to math equation                    |                                      | Wraps content in an `mlcoded` environment.                   |
+
+
+### Operators and Symbols
+
+
+| Command                                               | Description                                   | Example                           | Issues                                                       |
+| ----------------------------------------------------- | --------------------------------------------- | --------------------------------- | ------------------------------------------------------------ |
+| `\tlb{…}`                                             | A lambda abstraction                          | `\tlb{x}f x`                      | Use neither space nor dot after `\tlb{…}`                    |
+| `\tl{}`                                               | A plain lambda, equivalent to `\lambda`       | A \tl{}-abstraction is...         |                                                              |
+| `\rightarrow`, `\to`, `\leftarrow`, `\leftrightarrow` | Arrows                                        | `f x \to x`                       |                                                              |
+| `\fatbar`                                             | The fat bar operator                          | `x \fatbar{} y`                   | Put `{}` after the operator to preserve whitespace after it. |
+| `\typedecl`                                           | The `::=` operator for declaring a type       | `f \typedecl{} \ta{} \to \tb{}`   |                                                              |
+| `\hastype`                                            | The `::` operator for type indication         | `x \hastype{} Integer`            |                                                              |
+| `\metafn{thefunctionname}`                            | Typesets `thefunctionname` as a meta function | `\metafn{Translate}`              | Use for function names only.                                 |
+| `\metafnbb{thefunctionname}{…}`                       | Typesets `thefunctionname` applied to content | `\metafn{Translate}{f x = * x x}` | Supplies brackets `[[…]]` automatically.                     |
+
+
+### Figures and Floats
+
+
+| Command                                | Description                                          | Example                                                      | Issues |
+| -------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------ | ------ |
+| `\boxedfigure{…}{thecaption}`          | A floating figure with caption `thecaption`          | `\boxedfigure{\includegraphics{Fig1}}{The traditional compilation pipeline.}` |        |
+| `\plainbox{…}`                         | A centered box containing content                    |                                                              |        |
+| `\simpletitledbox{thetitle}{…}`        | Box with title `thetitle`                            | `\simpletitledbox{Summary}{The following rules summarize …}` |        |
+| `\titledbox{thetitle}{thesubtitle}{…}` | Box with title `thetitle` and subtitle `thesubtitle` | `\titledbox{Disclaimer}{Use of Miranda trademark}{Miranda is a trademark of …}` |        |
+| `\theorembox{thetheoremname}{…}`       | A theorem statement box                              | `\theorembox{The Pumping Lemma}{If the string …}`            |        |
+| `\definitionbox{thedefinitionname}{…}` | A definition box                                     | `\theorembox{Open Set}{A set is open if and only if…}`       |        |
+
+
+### Structures and Environments
+
+| Command                               | Description                                                | Example | Issues                                 |
+| ------------------------------------- | ---------------------------------------------------------- | ------- | -------------------------------------- |
+| `\begin{numbered}…\end{numbered}`     | Numbered list environment (use with `\item`)               |         |                                        |
+| `\begin{references}…\end{references}` | Reference list environment for chapters (use with `\item`) |         |                                        |
+| `\begin{pcorollary}…\end{pcorollary}` | Environment for corollary statements                       |         | Prepends statement with "Corollary.\;" |
+| `\begin{pproof}…\end{pproof}`         | Environment for proofs                                     |         | Prepends proof with "Proof.\;"         |
+| `\begin{parsetree}…\end{parsetree}`   | Parse tree environment using `forest` package              |         |                                        |
+
+
+### Whitespace
+
+
+| Command | Description                                   | Example | Issues |
+| ------- | --------------------------------------------- | ------- | ------ |
+| `\vs`   | Vertical space, half a line                   |         |        |
+| `\pg`   | Starts a new page, equivalent to `\clearpage` |         |        |
