@@ -4,6 +4,8 @@ build/
 *.ipynb
 source_text/
 .env
+*.ai
+*.afdesign
 
 ## macOS
 .DS_Store

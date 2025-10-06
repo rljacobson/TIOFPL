@@ -12,6 +12,7 @@ But if you are a LaTeX guru, here are some ideas:
 * Modify the TOC to look like the book. (Hard)
 * Add a facility for the "automatic" production of the index. (Medium)
 * Reproduce a challenging figure. (Easy-Medium)
+* Replace an SVG figure with a tikz equivalent (as in Chapter 11, Easy)
 
 ## Custom Commands and Environments
 

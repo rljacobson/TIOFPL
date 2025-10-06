@@ -1,9 +1,0 @@
-References
-337
-References
-Aho, A.V., and Ullman, J.D. 1977. Principles of Compiler Design. Addison Wesley.
-Bauer, F.L., and Eickel, J. 1976. Compiler Construction. Springer Verlag.
-Landin, P.J. 1964. The mechanical evaluation of expressions. Computer Journal. Vol.
-6, pp. 308-20.
-Wulf, W., Johnsson, R.K., Weinstock, C.B., Hobbs, S.O., and Geschke, C.M. 1975.
-The Design of an Optimising Compiler. Elsevier.

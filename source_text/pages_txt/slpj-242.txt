@@ -1,9 +1,0 @@
-242
-Chapter 14 Recursive Supercombinators
-References
-Hudak, P., and Kranz, D. 1984. A combinator based compiler for a functional
-language. In Proceedings of the Ilth ACM Symposium on Principles of
-Programming Languages, pp. 122-32. January.
-Johnsson, T. 1985. Lambda-lifting - transforming programs to recursive equations. In
-Conference on Functional Programming and Computer Architecture, Nancy, pp.
-190-203. Jouannaud (editor). LNCS 201. Springer Verlag.
