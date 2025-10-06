@@ -1,0 +1,1154 @@
+\chapter{Selecting the Next Redex}
+\vspace{2cm}
+
+When the graph of a functional program has been loaded into a computer, an
+\textit{evaluator} is called to reduce the graph to normal form. It does this by
+performing successive reductions on the graph, which involves two distinct
+tasks:
+\begin{numbered}
+    \item selecting the next redex to be reduced;
+    \item reducing it.
+\end{numbered}
+In this chapter we shall address the first issue, before turning our attention to
+the second issue in the next chapter.
+
+As Section~2.3 has shown, the order in which reductions take place has a
+profound effect on the behavior of the program. We begin by discussing the
+nature of this effect.
+
+\section{Lazy Evaluation}
+
+In an ordinary imperative language (such as Pascal), arguments to a function
+are evaluated before the function is called (\textit{call by value}). However, it is
+possible that the argument thus passed is never used in the body of the
+function, so that the work done in evaluating it is wasted. This suggests that a
+better scheme might be to postpone the evaluation of the argument until its
+value is actually required (\textit{call by need}). Call by need is in fact rarely
+implemented in imperative languages for two main reasons:
+
+\begin{numbered}
+    \item The evaluation of an argument may cause some side-effects to take place,
+    and may produce a result which depends on the side-effects (such as
+    assignments) of other parts of the program. Hence, the exact time at
+    which the argument is evaluated is crucial to the correct behavior of the
+    program. However, it can be quite tricky to work out exactly when the
+    argument will first be needed (and hence evaluated).
+    \item Call by need is hard to implement in a stack-based implementation.
+\end{numbered}
+In the context of functional languages, call by need is often called \textit{lazy
+evaluation}, since it postpones work until it becomes unavoidable. Conversely,
+call by value is often called \textit{eager evaluation}.
+
+\subsection{The Case for Lazy Evaluation}
+
+In the context of functional programming, there are strong reasons for
+providing lazy evaluation in the language.
+
+It adds a new dimension of expressive power to the language, allowing, in
+particular, the construction and manipulation of \textit{infinite data structures} and
+\textit{streams}. A full justification of this point of view is outside the scope of this book, since it lies in the area of software engineering rather than implementations, and the reader is referred to Chapter 8 of Henderson's book [1980], Section 3.4 of Abelson and Sussman [1985] and the author's paper [Peyton Jones, 1986].
+
+Not all functional languages have lazy semantics. For instance, ML and
+Hope are strict, while SASL, KRC, LML, Miranda, Orwell and Ponder are
+lazy.
+
+\subsection{The Case Against Lazy Evaluation}
+
+There is only one argument against lazy evaluation, but it is a very persuasive
+one: the price of lazy evaluation is execution speed. There seems to be no
+avoiding this in practice. Faster implementations are possible when the
+arguments to functions can be evaluated before the function is applied.
+
+Languages like ML and Hope have strict (call by value) semantics, but
+support lazy evaluation where it is explicitly requested by the programmer
+(particularly in data constructors). The argument is that the price for lazy
+evaluation should only be paid where it is actually required.
+
+\subsection{Normal Order Reduction}
+
+Any implementation of lazy evaluation has two ingredients:
+\begin{numbered}
+\item Arguments to functions should be evaluated only when their value is
+needed, not when the function is applied.
+\item Arguments should only be evaluated once; further uses of the argument
+within the function should use the value computed the first time. Since the
+language is functional we can be sure that this scheme gives the same
+result as re-evaluating the argument.
+\end{numbered}
+In a nutshell, arguments should be evaluated \textit{at most once} and, if possible, not
+at all.
+
+Any implementation of a lazy language must somehow support these two
+ingredients. We will have to wait until the next chapter before we see how to
+support the second ingredient, but the first is rather easy – it is directly
+implemented by normal order reduction!
+
+Recall from Section 2.3 that normal order reduction specifies reducing the
+leftmost outermost redex first. Given an application of a function to an
+argument, the outermost redex is the function application itself, so a normal
+order reducer will reduce this prior to reducing the argument to normal form.
+For example, in the expression
+\begin{mlcoded}
+    \tlb{x}3 $<$bomb$>$
+\end{mlcoded}
+where \ml{$<$bomb$>$} does not terminate, normal order chooses to apply the
+lambda abstraction (giving the result \ml{3}) rather than first evaluating the
+argument \ml{$<$bomb$>$}. Hence normal order reduction directly implements the
+first ingredient of a lazy evaluator.
+
+In terms of reduction order, strict semantics means reducing the argument
+to a lambda expression \textit{before} reducing the application of the lambda
+expression to the argument. This is called \textit{applicative order} reduction.
+
+As we will see in this chapter, normal order is actually an extremely natural
+and easily implemented reduction order, since the rule for identifying the next
+redex turns out to be rather simple. Thus graph reduction gives a `good fit'
+with lazy evaluation.
+
+\subsection{Summary}
+
+There are strong arguments for and against lazy evaluation, but a detailed
+discussion of the question is beyond the scope of this book. (The author is,
+however, convinced that lazy evaluation is a crucially important feature for
+functional programming.)
+
+It seems undeniable, however, that graph reduction is a particularly
+effective implementation technique for lazy languages. Since graph reduction
+is the subject of this book, we will henceforth restrict our attention to
+languages with lazy semantics, implemented using normal order reduction.
+Arvind \textit{et al.} [1984] give a more detailed description of some of these issues.
+
+\section{Data Constructors, Input and Output}
+
+Suppose that the result of evaluating our program is an infinite list. We want
+this list to be printed out \textit{as it is generated}. We certainly do not want to wait
+until it has all been evaluated before printing anything, because we would
+have to wait forever! Similarly, we do not want the program to evaluate its
+entire input before producing any output. These observations focus our
+attention on the mechanisms available for input and output.
+
+Input and output are regarded as side-effects in imperative programming
+languages, so functional systems have to take a different view since they do
+not support side-effects. The accepted solution is to regard the functional
+program as a function from input data to output data:
+\begin{center}
+    \begin{tikzpicture}
+        % central box
+        \node[draw, rectangle, minimum width=4cm, minimum height=0.6cm] (program) {Functional program};
+
+        % labels with line breaks need align=center
+        \node[align=left] (input)  at (-4.0, 0) {Input\\data};
+        \node[align=left] (output) at ( 4.0, 0) {Output\\data};
+
+        % arrows
+        \draw[-{Stealth[length=3mm,width=2mm]}, thick] (input.east)  -- (program.west);
+        \draw[-{Stealth[length=3mm,width=2mm]}, thick] (program.east) -- (output.west);
+    \end{tikzpicture}
+\end{center}
+The input data are normally presented to the program as an infinite list of
+characters, which might, for example, come from the user’s keyboard. The
+output data are the result of applying the program to the input list, and are
+normally some kind of data structure which might, for example, be displayed
+on the user’s screen.
+
+As well as getting the correct results to the program, however, we also want
+it to have `nice’ operational behavior, namely that output is printed as soon as
+it is available, and that input is not consumed until it is needed. In the next two
+sections we discuss how this operational behavior can be achieved, beginning
+with the printing mechanism.
+
+\subsection{The Printing Mechanism}
+
+Since we want to print out a data structure as it is generated, we see that the
+evaluation of a functional program is driven by the need to print its result, and
+that the evaluator is called from the printing program. The printing program
+calls the evaluator, and then looks at the root of the result (i.e.\ the root of the
+evaluated graph). If it is a number (or boolean, character, etc.), the printer
+prints it and evaluation is complete. If, on the other hand, the result is a data
+constructor (such as a \ml{CONS} cell), the printing program can call the evaluator
+successively to evaluate the components of the data structure, printing out the
+results as it goes. The whole printing process can be repeated recursively on
+the components of the data structure.
+
+Assuming that our functional program always evaluates to a number or a
+\ml{CONS} cell, we might write a pseudo-code printing program like this:
+\begin{mlcoded}
+    Print( E ) \\
+    begin \\
+    \vs
+    \hspace*{1cm} E' := Evaluate( E ) \\
+    \hspace*{1cm} if (IsNumber( E' )) then Output( E' ) \\
+    \hspace*{1cm} else begin \\
+    \hspace*{2cm} Print( Head( E' )\ ) \\
+    \hspace*{2cm} Print( Tail( E' )\ ) \\
+    \hspace*{1cm} end \\
+    end
+\end{mlcoded}
+
+When \ml{Evaluate(E)} yields a \ml{CONS} cell it is vital that its head and tail are not
+yet evaluated. If they were evaluated immediately then the entire data
+structure would be evaluated before any of it could be printed. This is
+achieved by using \textit{lazy} constructors; that is, constructors that do not evaluate
+their arguments.
+
+It has become quite common for printing mechanisms to print the
+components of a data constructor one after the other, with no separating
+characters. This hides the underlying shape of the data structure, but gives the
+functional programmer complete control over the character stream actually
+output to the printer. SASL, for example, behaves in this way [Turner, 1983],
+though Miranda does not.
+
+So far we have assumed that the result of a program will be printed, but
+there is no reason why it should not be put in a file, or fed into some other
+program instead. This routing of output would be controlled by the `printing
+mechanism', possibly directed by routing information contained in the output
+data structure itself.
+
+\subsection{The Input Mechanism}
+
+In order to extract characters from the input list, the program will need to
+evaluate the list, element by element. Just as in the case of the printer, it is
+vital that the first evaluation does not force evaluation of the entire list,
+otherwise the entire input list would have to be evaluated (that is, read in)
+before any of it could be used. This would effectively rule out interactive
+programs, in which later input data depend on earlier output data.
+
+\section{Normal Forms}
+
+Our consideration of both input and output have led us to the same
+conclusion, namely that
+\begin{quote}
+    evaluating an expression whose result is a \ml{CONS} cell should not entail
+    evaluating its head and tail.
+\end{quote}
+This means that we should stop reduction when there may still be some
+redexes left in the graph (in the head and the tail). None of these redexes will
+be reduced by a normal order reduction scheme until the whole expression
+has been evaluated to a \ml{CONS} cell, because until then there will always be a
+top-level redex which normal order will select.
+
+Hence, what we need to do is to pursue normal order reduction, but \textit{stop}
+when there is no top-level redex (even though there may be inner redexes left
+in the graph).
+
+\subsection{Weak Head Normal Form}
+
+To express this idea precisely we need to introduce a new definition:
+
+\simpletitledbox{DEFINITION}{
+    A lambda expression is in \textit{weak head normal form} (WHNF) if and only if it
+    is of the form
+
+    \vs
+    \begin{tabular}{ll}
+        & \ml{F \; E$_1$ \; E$_2$ \; \ldots \; E$_n$}\\
+        where & \ml{n $\geq$ 0};  \\
+        and & either \ml{F} is a variable or data object\\
+        & or \ml{F} is a lambda abstraction or built-in function, and\\
+        & \phantom{XXX}\ml{(F \; E$_1$ \; E$_2$ \; \ldots \; E$_m$)} is not a redex for any \ml{m $\leq$ n}.
+    \end{tabular}
+
+    \vs
+    \noindent An expression has no \textit{top-level redex} if and only if it is in weak head normal
+    form.
+}
+
+\noindent
+For example, the following expressions are in weak head normal form:
+\vs
+
+\begin{tabular}{ll}
+    \ml{3}  \\
+    A \ml{CONS} cell  \\
+    \ml{+ (- 4 3)} & top-level \ml{+} does not have enough arguments \\
+    \ml{(\tlb{x}+ 5 1)} & not applied to anything
+\end{tabular}
+\vs
+
+\noindent The last two examples are in weak head normal form, but not in normal form,
+since they contain inner redexes. Weak head normal form is often confused
+with \textit{head normal form}; this point is discussed at the end of the section.
+
+Our reduction order is therefore to \textit{reduce} the top-level redex (there can
+only be one such) until weak head normal form is reached. We can think of it
+like this:
+
+\plainbox{
+    \centering
+    \begin{tikzpicture}
+        % Nodes
+        \node[align=left, anchor=west] (original) at (0,0) {Original expression};
+        \node[align=left, anchor=west] (weak) at (0,-2) {Weak head normal form (no top-level redexes)};
+        \node[align=left, anchor=west] (normal) at (0,-4) {Normal form (no redexes at all)};
+
+        % Labels on the right
+        \node[align=left, anchor=west] (label1) at (1.5,-1.) {Normal order reductions\\of top-level redexes};
+        \node[align=left, anchor=west] (label2) at (1.5,-3) {Normal order reductions\\of inner redexes};
+
+        % Arrows
+        \draw[{-Stealth, thick, line width=1.5pt}] ([xshift=1cm]original.south west) -- ([xshift=1cm]weak.north west);
+        \draw[{-Stealth, thick, line width=1.5pt}] ([xshift=1cm]weak.south west) -- ([xshift=1cm]normal.north west);
+
+    \end{tikzpicture}
+}
+
+We pursue normal order reduction, but stop at WHNF rather than
+proceeding all the way to normal form. This is an essential ingredient of lazy
+evaluation, since reducing through to normal form risks performing unnecessary reductions.
+
+\subsection{Top-level Reduction is Easier}
+
+The result of a functional program never has any free variables. For example,
+\ml{(+ x 1)} is not a valid functional program since it has the free variable \ml{x}, whose
+value is not specified.
+
+Since we only ever reduce the top-level redex, which has no free variables,
+it follows that the arguments of the redex have no free variables either. This
+means that the name-capture problem described in Section 2.2.6 can never
+arise in our implementations, which is a considerable relief. It is also an
+essential property if we are to compile our programs (see Chapter 13).
+
+\subsection{Head Normal Form}
+
+Head normal form is often confused with weak head normal form, so it merits
+some discussion. The content of this section is, however, largely academic
+since for most purposes head normal form is the same as weak head normal
+form. Nevertheless, we will stick to the term WHNF for the sake of precision.
+
+\simpletitledbox{DEFINITION}{
+    A lambda expression is in \textit{head normal form} (HNF) if and only if it is of the
+    form
+
+    \vs
+    \begin{tabular}{ll}
+        & \ml{\tlb{x$_1$}\tlb{x$_2$}$\ldots$\tlb{x$_n$}(v \;M$_1$ \;M$_2$ \;\ldots \;M$_\text{m}$)} \\
+        where & \ml{n, m $\geq$ 0};  \\
+        & v is a variable (\ml{x$_{\text{i}}$}), a data object, or a built-in function; \\
+        and & \ml{(v M$_1$ M$_2$ \ldots \;M$_\text{p}$)} is not a redex for any \ml{p $\leq$ m}.
+    \end{tabular}
+}
+
+\noindent
+Anything in HNF is also in WHNF, but not vice versa. For example, the
+following expression is in WHNF but not HNF:
+\begin{mlcoded}
+    \tlb{x}((\tlb{y}y) 3)
+\end{mlcoded}
+To reach HNF the inner redex should be reduced.
+
+The difference between HNF and WHNF is only significant when the result
+is a lambda abstraction, since for data objects and built-in functions they are
+identical. For the purists, though, the question is whether we should perhaps
+reduce to HNF rather than WHNF. This raises some practical difficulties,
+since it will involve performing inner reductions where the argument may
+have free variables, so the name-capture problem of Section 2.2.6 comes
+back.
+
+Taking this idea further, Barendregt \textit{et al.} [1986] advocate a reduction order
+called \textit{innermost spine reduction}. This is a modification of normal order which
+evaluates the body of a lambda expression \textit{before} applying it to an argument.
+For example
+\begin{mlalign}
+& (\tlb{x}((\tlb{y}y) 3)) 4 \\
+$\rightarrow$ & (\tlb{x}3) 4 \\
+$\rightarrow$ & 3
+\end{mlalign}
+This is based on the insight that the body of the lambda expression will
+subsequently be evaluated anyhow, so we do not risk non-termination by
+evaluating it before applying it. Thus Barendregt \textit{et al.} show that innermost
+spine reduction never takes more reductions than normal order, and some-
+times takes fewer. As mentioned above, the serious problem with innermost
+spine reduction is that it entails performing reduction in the presence of free
+variables. From an implementation point of view (only), this objection is so
+serious (see Section 11.3.2) that we abandon innermost spine reduction
+forthwith.
+
+This view is not universally held; see, for example, Watson \textit{et al.} [1986].
+
+\section{Evaluating Arguments of Built-in Functions}
+
+Some built-in functions, such as \ml{+} and \ml{HEAD}, need to evaluate their
+arguments before they can execute. For example, consider
+\begin{mlcoded}
+    + ($-$ 4 3) 5
+\end{mlcoded}
+The inner redex \ml{($-$ 4 3)} must be evaluated before the \ml{+} can proceed. We say
+that \ml{+} is \textit{strict} in both arguments (see Section 2.5.4).
+
+When the evaluator finds that the top-level redex is an application of a
+built-in function which evaluates its argument(s), it has to check whether the
+appropriate argument(s) are already in WHNF. If they are not, it must
+\textit{recursively invoke itself} to reduce them to WHNF before proceeding with the
+application of the function. For example, in the expression
+
+\begin{mlcoded}
+    IF (NOT TRUE) f g h
+\end{mlcoded}
+
+we will select the redex \ml{(IF (NOT TRUE) f g)} for reduction. Now, the function
+\ml{IF} must evaluate its first argument (only), and that argument is not yet in
+WHNF. So the evaluator recursively invokes itself on the \ml{(NOT TRUE)}
+expression, which returns \ml{FALSE}, at which point the \ml{IF} can proceed.
+
+As another example, consider
+\begin{mlcoded}
+    HEAD (CONS 2 NIL)
+\end{mlcoded}
+The outer level redex is the application of \ml{HEAD}, and \ml{HEAD} must evaluate its
+argument to WHNF (that is, until it is a \ml{CONS} cell). So the evaluator invokes
+itself recursively to evaluate
+\begin{mlcoded}
+    CONS 2 NIL
+\end{mlcoded}
+This evaluation produces a \ml{CONS} cell in one reduction, from which \ml{HEAD}
+extracts the result, \ml{2}.
+
+To summarize, the evaluator has to invoke itself recursively to evaluate the
+arguments of strict built-in functions.
+
+\section{How to Find the Next Top-level Redex}
+
+Having decided to implement normal order reduction of top-level redexes
+only, we must ask how to find the appropriate redex given a graph to reduce.
+Our expression can only be of the form
+
+\begin{mlcoded}
+    f \;E$_1$ \;E$_2$ \ldots \;E$_n$
+\end{mlcoded}
+
+\noindent
+whose graph looks like this:
+\begin{center}
+    \hspace{2.6cm}
+    \begin{forest}
+        [\ml{@}
+        [\ml{.}]
+        [\ml{E$_n$}]
+        ]
+    \end{forest}\\[-13pt]
+    \hspace{1.4cm}
+    .\\
+    \begin{forest}
+        [.
+            [\ml{@}
+                [\ml{@}
+                    [\ml{@}
+                        [\ml{f}]
+                        [\ml{E$_1$}]
+                    ]
+                    [\ml{E$_2$}]
+                ]
+                [\ml{E$_3$}]
+            ]
+            [.]
+        ]
+    \end{forest}
+\end{center}
+Here, \ml{f} is a data object, a built-in function or a lambda abstraction (but not an
+application or we would have drawn another level in the picture), and there
+may be zero or more arguments (\ml{E$_i$}), which are arbitrarily complicated
+expressions. There are now various possibilities:
+
+\begin{numbered}
+    \item \ml{f} may be a \textit{data object} such as a number or a \ml{CONS} cell, in which case the
+    expression is in weak head normal form and we are done. However, in
+    this case \ml{n} should be \ml{0}; if not, the data object is being applied to an
+    argument. This corresponds to a type error in the original program, such
+    as using a number as a function, and will never occur if the program has
+    been type-checked.
+    \item \ml{f} may be a \textit{built-in function} taking, say, \ml{k} arguments. In this case we must
+    check to see whether there are enough arguments available (i.e.\ \ml{n~$\geq$~k});
+    if so, \ml{(f E$_1$ \ldots \;E$_k$)} is the outermost redex which normal order will select.
+    For example, in Figure 11.1(a) the redex is \ml{(IF E$_1$ E$_2$ E$_3$)} and the \ml{\$}
+    marks the root of this subgraph.
+
+    \hspace{15pt} If there are too few arguments (\ml{n~$<$~k}) then the expression is in weak
+    head normal form.
+    \item \ml{f} may be a \textit{lambda abstraction}. If it has an argument available (\ml{n~$\geq$~1}) the
+    redex we should reduce next is \ml{(f E$_1$)}. For example, in Figure 11.1(b) the
+    redex is \ml{((\tlb{x}body) E$_1$)}, and the \ml{\$} marks this application node.
+
+    \hspace{15pt} If there are no arguments (\ml{n = 0}) then the expression is in weak head
+    normal form.
+\end{numbered}
+
+According to our abstract expression syntax there is one other possibility
+for \ml{f}: it could be a \textit{variable name}. However, in this case the variable must occur
+free in the entire expression, so we may justifiably give an error.
+
+\boxedfigure{
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \begin{forest}
+            [\ml{@}
+            [\ml{\$ @}
+            [\ml{@}
+            [\ml{@}
+            [\ml{IF}]
+            [\ml{E$_1$}]
+            ]
+            [\ml{E$_2$}]
+            ]
+            [\ml{E$_3$}]
+            ]
+            [\ml{E$_4$}]
+            ]
+        \end{forest}\\
+        (a)
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \begin{forest}
+            [\ml{@}
+                [\ml{@}
+                    [\ml{\$ @}
+                        [\ml{\tl{}x}
+                            [\ml{body}]
+                        ]
+                        [\ml{E$_1$}]
+                    ]
+                    [\ml{E$_2$}]
+                ]
+                [\ml{E$_3$}]
+            ]
+        \end{forest}\\
+        (b)
+    \end{minipage}
+}{Finding the next redex (marked \ml{\$})}
+
+Some evaluators insist that an expression always reduces to a data object in
+the end. They will therefore treat the case of a built-in function with too few
+arguments or lambda expression with no arguments as an error. If in addition
+the program is type-checked the test can be omitted altogether, since there
+will always be enough arguments for a function. (Note: this is not true for
+other reduction orders. For example, an applicative order reducer will
+evaluate the argument to a function before applying a function, and the
+argument might itself be a partially applied function.)
+
+Thus to find \ml{f} we just go down the left branch of each application node from
+the root. This left-branching chain of application nodes is called the \textit{spine} of
+the expression, and the act of `going down' the spine is sometimes called
+\textit{unwinding} the spine. Continuing the analogy, the \textit{vertebrae} of the spine are
+the application nodes encountered during unwinding, the \textit{ribs} are the
+arguments of the vertebrae (the \ml{E$_i$} in Figure 11.1), and the \textit{tip} of the spine is
+the extreme bottom of the spine (\ml{IF} is at the tip of the spine in Figure 11.1(a)).
+
+It is therefore rather easy to find the next redex to reduce. We just unwind
+the spine until we find a function, and then, based on the function we find, we
+go back up the spine to find the root of the redex.
+
+Notice that the most natural way to proceed is to reduce the top-level redex,
+so there is a good `fit' between normal order reduction and graph reduction.
+We have to go to extra trouble to evaluate arguments to functions before
+applying the function.
+
+\section{The Spine Stack}
+
+So far we have said that we should `unwind the spine' and `go back up the
+spine', without saying how to do so. In particular, as we unwind the spine we
+pass by the arguments that we will subsequently require during the reduction
+of the function (built-in or lambda abstraction) found at the tip. This suggests
+that we should keep a \textit{stack} of pointers to the vertebrae as shown in Figure
+11.2. Now the arguments are all readily available, and the number of
+arguments is given by the depth of the stack. Furthermore, the vertebrae
+themselves are also accessible from the stack. This will prove to be crucially
+important once we start to consider how to perform a reduction (in Chapter
+12), since the root of the redex is \textit{overwritten} with the result of performing the
+reduction.
+
+\boxedfigure{
+    \centering
+    \begin{tikzpicture}
+        % Stack parameters
+        \def\stackwidth{2.5}
+        \def\cellheight{1.1}
+        \def\numcells{5}
+
+        % Draw stack cells
+        \foreach \i in {0,...,4} {
+            \draw (0, \i*\cellheight) rectangle (\stackwidth, \i*\cellheight + \cellheight);
+        }
+
+        % Draw arrows from each cell
+        \foreach \i in {0,...,4} {
+            \draw[-Stealth, thick] (0.8*\stackwidth, \i*\cellheight + \cellheight/2) -- ++(\i*0.4 + 3,0);
+        }
+
+        % Labels
+        \node[anchor=south] at (\stackwidth/2, \numcells*\cellheight) {Stack base};
+        \node[anchor=north] at (\stackwidth/2, 0) {Stack top};
+
+    \end{tikzpicture}\hspace{-2.5cm}
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \vspace{-6.5cm}
+        \begin{forest}
+            [\ml{@}
+                [\ml{@}
+                    [\ml{@}
+                        [\ml{@}
+                            [\ml{f}]
+                            [\ml{P}]
+                        ]
+                        [\ml{Q}]
+                    ]
+                    [\ml{R}]
+                ]
+                [\ml{S}]
+            ]
+        \end{forest}
+    \end{minipage}
+}{The spine stack}
+
+When we recursively evaluate the arguments to a built-in function, we need
+a brand new stack. Fortunately,
+\begin{numbered}
+    \item the existing stack will not change until the argument evaluation is
+    complete,
+    \item the new stack can be discarded when the argument evaluation is
+    complete,
+\end{numbered}
+so the new stack can be built directly on top of the old one. We must, however,
+take care to save the depth of the old stack first, so that we can restore it when
+evaluation of the argument is completed. Most implementations have a
+separate stack, called the \textit{dump}, for this purpose. Alternatively, the depth of
+the old stack can be saved on the stack itself. This technique is rather
+reminiscent of the \textit{stack frames} of imperative languages.
+
+\subsection{Pointer-reversal}
+
+In some ways the stack is rather a nuisance because its size has no convenient
+bound, so it is not clear how much space to allocate to it. This problem is
+particularly pressing in machines specifically designed to do reduction, where
+the stack might have to be embodied in hardware.
+
+It turns out that a clever trick, known as \textit{pointer-reversal}, allows us to get
+away without a separate stack at all. It is borrowed from a well-known
+garbage collection technique (the Deutsch–Schorr–Waite algorithm
+[Schorrr and Waite, 1967]), and consists of simply \textit{reversing} the pointers in the spine as
+we unwind it.
+
+Specifically, we hold two pointers, \ml{F} and \ml{B} (for forward and backward). To
+begin with, \ml{F} points to the root of the expression, and \ml{B} points to a unique cell
+called \ml{TOP}. This initial set-up is shown in the left-hand column of Figure~11.3,
+where we have depicted the spine vertically on the page. Then to unwind one
+level, we set
+\[\hspace{-.75cm}
+\left.
+\begin{array}{lcl}
+    \text{\ml{F}}       & = & \text{\ml{Left( F )}} \\
+    \text{\ml{Left( F )}} & = & \text{\ml{B}}       \\
+    \text{\ml{B}}       & = & \text{\ml{F}}
+\end{array}
+\right\}
+\quad \text{simultaneously}
+\]
+\noindent
+where \ml{Left( F )} means the left field of the node \ml{F} points to. This operation is
+shown taking place in the subsequent columns of Figure~11.3. When we reach
+the tip, \ml{F} will point to the tip and \ml{B} will point back up the trail of reversed
+pointers to the root. Thus the vertebrae nodes and the arguments to the
+function can be found by following pointers from \ml{B}.
+
+When going back up (rewinding) the spine, we simply reverse the
+operation, putting the pointers back into their original state. We can easily tell
+when we reach the top because \ml{B} becomes \ml{TOP}.
+
+
+\begin{figure}[h]
+    \centering
+
+    \begin{tikzpicture}[
+        cell/.style={minimum width=0.3cm, minimum height=0.4cm, draw=none}
+        ]
+
+        % Define basic spacing
+        \def\colspacing{1.}
+        \def\rowspacing{0.9}
+        \def\rectwidth{3.1}
+        \def\rectheight{5.4}
+
+        % Compute offsets to center content
+        % Horizontal: content spans from column 0 to column 2 = 2*\colspacing
+        \pgfmathsetmacro{\xoffset}{(\rectwidth - 2*\colspacing)/2}
+
+        % Vertical:
+        % - TOP label needs space above (1.5*\rowspacing now instead of 0.5)
+        % - 4 rows: row 0 at y=0, row 3 at y=-3*\rowspacing
+        % - Bottom label needs space below (0.6*\rowspacing)
+        % Total content height = 1.5*\rowspacing + 3*\rowspacing + 0.6*\rowspacing
+        \pgfmathsetmacro{\contentHeight}{1.5*\rowspacing + 3*\rowspacing + 0.6*\rowspacing}
+        \pgfmathsetmacro{\yoffset}{-(\rectheight - \contentHeight)/2 - 1.5*\rowspacing}
+
+        % ===== DIAGRAM 1: Initial =====
+        \begin{scope}[xshift=0cm]
+            \coordinate (rect1west) at (0,0);
+            \coordinate (rect1east) at (\rectwidth,0);
+            \draw (0,0) rectangle (\rectwidth,-\rectheight);
+
+            \node[cell] (r0c0) at (\xoffset,\yoffset) {\ml{F}};
+            \node[cell] (r0c1) at (\xoffset+\colspacing,\yoffset) {\ml{@}};
+            \node[cell] (r0c2) at (\xoffset+2*\colspacing,\yoffset) {\ml{R}};
+
+            \node[cell] (r1c1) at (\xoffset+\colspacing,\yoffset-\rowspacing) {\ml{@}};
+            \node[cell] (r1c2) at (\xoffset+2*\colspacing,\yoffset-\rowspacing) {\ml{Q}};
+
+            \node[cell] (r2c1) at (\xoffset+\colspacing,\yoffset-2*\rowspacing) {\ml{@}};
+            \node[cell] (r2c2) at (\xoffset+2*\colspacing,\yoffset-2*\rowspacing) {\ml{P}};
+
+            \node[cell] (r3c1) at (\xoffset+\colspacing,\yoffset-3*\rowspacing) {\ml{f}};
+
+            \node[cell] (bottomlabel) at (\xoffset+\colspacing,\yoffset-3.6*\rowspacing) {\normalfont{Initial}};
+
+            \node (blabel) at (\xoffset,\yoffset+1.5*\rowspacing) {\ml{B}};
+            \node (toplabel) at (\xoffset+\colspacing,\yoffset+1.5*\rowspacing) {\ml{TOP}};
+
+            \draw[-Stealth, thick] ([xshift=-2pt]blabel.east) -- ([xshift=4pt]toplabel.west);
+            \draw[-Stealth, thick] (r0c0.east) -- (r0c1.west);
+            \draw[-Stealth, thick] (r0c1.south) -- (r1c1.north);
+            \draw[-Stealth, thick] (r1c1.south) -- (r2c1.north);
+            \draw[-Stealth, thick] (r2c1.south) -- (r3c1.north);
+            \draw[-Stealth, thick] (r0c1.east) -- (r0c2.west);
+            \draw[-Stealth, thick] (r1c1.east) -- (r1c2.west);
+            \draw[-Stealth, thick] (r2c1.east) -- (r2c2.west);
+        \end{scope}
+
+        % ===== DIAGRAM 2: Step 1 =====
+        \begin{scope}[shift={(rect1east)}]
+            \coordinate (rect2east) at (\rectwidth,0);
+            \draw (0,0) rectangle (\rectwidth,-\rectheight);
+
+            \node[cell] (r0c0) at (\xoffset,\yoffset) {\ml{B}};
+            \node[cell] (r0c1) at (\xoffset+\colspacing,\yoffset) {\ml{@}};
+            \node[cell] (r0c2) at (\xoffset+2*\colspacing,\yoffset) {\ml{R}};
+
+            \node[cell] (r1c0) at (\xoffset,\yoffset-\rowspacing) {\ml{F}};
+            \node[cell] (r1c1) at (\xoffset+\colspacing,\yoffset-\rowspacing) {\ml{@}};
+            \node[cell] (r1c2) at (\xoffset+2*\colspacing,\yoffset-\rowspacing) {\ml{Q}};
+
+            \node[cell] (r2c1) at (\xoffset+\colspacing,\yoffset-2*\rowspacing) {\ml{@}};
+            \node[cell] (r2c2) at (\xoffset+2*\colspacing,\yoffset-2*\rowspacing) {\ml{P}};
+
+            \node[cell] (r3c1) at (\xoffset+\colspacing,\yoffset-3*\rowspacing) {\ml{f}};
+
+            \node[cell] (bottomlabel) at (\xoffset+\colspacing,\yoffset-3.6*\rowspacing) {\normalfont{Step 1}};
+
+            \node (toplabel) at (\xoffset+\colspacing,\yoffset+1.5*\rowspacing) {\ml{TOP}};
+
+            \draw[-Stealth, thick] (r0c1.north) -- (toplabel.south);
+
+            \draw[-Stealth, thick] (r0c0.east) -- (r0c1.west);
+            \draw[-Stealth, thick] (r1c0.east) -- (r1c1.west);
+            %                \draw[-Stealth, thick] (r0c1.south) -- (r1c1.north);
+            \draw[-Stealth, thick] (r1c1.south) -- (r2c1.north);
+            \draw[-Stealth, thick] (r2c1.south) -- (r3c1.north);
+            \draw[-Stealth, thick] (r0c1.east) -- (r0c2.west);
+            \draw[-Stealth, thick] (r1c1.east) -- (r1c2.west);
+            \draw[-Stealth, thick] (r2c1.east) -- (r2c2.west);
+        \end{scope}
+
+        % ===== DIAGRAM 3: Step 2 =====
+        \begin{scope}[shift={(rect2east)}]
+            \coordinate (rect3east) at (\rectwidth,0);
+            \draw (0,0) rectangle (\rectwidth,-\rectheight);
+
+            \node[cell] (r0c1) at (\xoffset+\colspacing,\yoffset) {\ml{@}};
+            \node[cell] (r0c2) at (\xoffset+2*\colspacing,\yoffset) {\ml{R}};
+
+            \node[cell] (r1c0) at (\xoffset,\yoffset-\rowspacing) {\ml{B}};
+            \node[cell] (r1c1) at (\xoffset+\colspacing,\yoffset-\rowspacing) {\ml{@}};
+            \node[cell] (r1c2) at (\xoffset+2*\colspacing,\yoffset-\rowspacing) {\ml{Q}};
+
+            \node[cell] (r2c0) at (\xoffset,\yoffset-2*\rowspacing) {\ml{F}};
+            \node[cell] (r2c1) at (\xoffset+\colspacing,\yoffset-2*\rowspacing) {\ml{@}};
+            \node[cell] (r2c2) at (\xoffset+2*\colspacing,\yoffset-2*\rowspacing) {\ml{P}};
+
+            \node[cell] (r3c1) at (\xoffset+\colspacing,\yoffset-3*\rowspacing) {\ml{f}};
+
+            \node[cell] (bottomlabel) at (\xoffset+\colspacing,\yoffset-3.6*\rowspacing) {\normalfont{Step 2}};
+
+            \node (toplabel) at (\xoffset+\colspacing,\yoffset+1.5*\rowspacing) {\ml{TOP}};
+
+            \draw[-Stealth, thick] (r0c1.north) -- (toplabel.south);
+            \draw[-Stealth, thick] (r1c0.east) -- (r1c1.west);
+            \draw[-Stealth, thick] (r2c0.east) -- (r2c1.west);
+            \draw[-Stealth, thick] (r1c1.north) -- (r0c1.south);
+            %                \draw[-Stealth, thick] (r2c1.north) -- (r1c1.south);
+            \draw[-Stealth, thick] (r2c1.south) -- (r3c1.north);
+            \draw[-Stealth, thick] (r0c1.east) -- (r0c2.west);
+            \draw[-Stealth, thick] (r1c1.east) -- (r1c2.west);
+            \draw[-Stealth, thick] (r2c1.east) -- (r2c2.west);
+        \end{scope}
+
+        % ===== DIAGRAM 4: Step 3 =====
+        \begin{scope}[shift={(rect3east)}]
+            \draw (0,0) rectangle (\rectwidth,-\rectheight);
+
+            \node[cell] (r0c1) at (\xoffset+\colspacing,\yoffset) {\ml{@}};
+            \node[cell] (r0c2) at (\xoffset+2*\colspacing,\yoffset) {\ml{R}};
+
+            \node[cell] (r1c1) at (\xoffset+\colspacing,\yoffset-\rowspacing) {\ml{@}};
+            \node[cell] (r1c2) at (\xoffset+2*\colspacing,\yoffset-\rowspacing) {\ml{Q}};
+
+            \node[cell] (r2c0) at (\xoffset,\yoffset-2*\rowspacing) {\ml{B}};
+            \node[cell] (r2c1) at (\xoffset+\colspacing,\yoffset-2*\rowspacing) {\ml{@}};
+            \node[cell] (r2c2) at (\xoffset+2*\colspacing,\yoffset-2*\rowspacing) {\ml{P}};
+
+            \node[cell] (r3c0) at (\xoffset,\yoffset-3*\rowspacing) {\ml{F}};
+            \node[cell] (r3c1) at (\xoffset+\colspacing,\yoffset-3*\rowspacing) {\ml{f}};
+
+            \node[cell] (bottomlabel) at (\xoffset+\colspacing,\yoffset-3.6*\rowspacing) {\normalfont{Step 3}};
+
+            \node (toplabel) at (\xoffset+\colspacing,\yoffset+1.5*\rowspacing) {\ml{TOP}};
+
+            \draw[-Stealth, thick] (r0c1.north) -- (toplabel.south);
+            \draw[-Stealth, thick] (r2c0.east) -- (r2c1.west);
+            \draw[-Stealth, thick] (r3c0.east) -- (r3c1.west);
+            \draw[-Stealth, thick] (r1c1.north) -- (r0c1.south);
+            \draw[-Stealth, thick] (r2c1.north) -- (r1c1.south);
+            \draw[-Stealth, thick] (r0c1.east) -- (r0c2.west);
+            \draw[-Stealth, thick] (r1c1.east) -- (r1c2.west);
+            \draw[-Stealth, thick] (r2c1.east) -- (r2c2.west);
+        \end{scope}
+    \end{tikzpicture}
+
+    \caption{\textsf Pointer-reversal in action on (\ml{f P Q R})}
+\end{figure}
+
+%\boxedfigure{}{Pointer-reversal in action on (\ml{f P Q R})}
+
+\subsection{Argument Evaluation using Pointer-reversal}
+
+There is a slight problem when we need to evaluate the arguments to a strict
+built-in function. Consider the expression \ml{(IF (= x 0) P Q)}. When we have
+unwound the spine to find the \ml{IF}, the graph looks like the left column of Figure~11.4.
+Now we need to evaluate the argument, so we must unwind the spine of
+the argument. Unfortunately, we cannot initialize \ml{B} with \ml{TOP}, because we
+would then not be able to find our way back to the parent spine. Instead we
+simply pointer-reverse our way into the argument spine, but \textit{marking the
+    parent spine vertebra}, in some way. To `turn the corner’ into the argument
+spine, we perform the following operations:
+\[\hspace{-.75cm}
+\left.
+\begin{array}{lcl}
+    \text{\ml{F}}       & = & \text{\ml{Right( B )}} \\
+    \text{\ml{Right( B )}} & = & \text{\ml{F}}       \\
+    \text{\ml{Mark( B )}}
+\end{array}
+\right\}
+\quad \text{simultaneously}
+\]
+
+
+\begin{figure}[h]
+    \centering
+
+    \begin{tikzpicture}[
+        cell/.style={minimum width=0.3cm, minimum height=0.4cm, draw=none}
+        ]
+
+        % Define basic spacing
+        \def\colspacing{0.9}
+        \def\rowspacing{1}
+        \def\rectwidth{4.2}
+        \def\rectheight{8}
+
+        % Compute offsets to center content
+        % Horizontal: content spans from column 0 to column 4 = 4*\colspacing
+        \pgfmathsetmacro{\xoffset}{(\rectwidth - 4*\colspacing)/2}
+
+        % Vertical:
+        % - TOP label needs space above (1.5*\rowspacing)
+        % - 5 rows: row 0 at y=0, row 4 at y=-4*\rowspacing
+        % - Bottom label needs space below (0.6*\rowspacing)
+        % Total content height = 1.5*\rowspacing + 4*\rowspacing + 0.6*\rowspacing
+        \pgfmathsetmacro{\contentHeight}{1.5*\rowspacing + 4*\rowspacing + 0.6*\rowspacing}
+        \pgfmathsetmacro{\yoffset}{-(\rectheight - \contentHeight)/2 - 1.25*\rowspacing}
+
+        % ===== DIAGRAM 1: After unwinding =====
+        \begin{scope}[xshift=0cm]
+            \coordinate (rect1west) at (0,0);
+            \coordinate (rect1east) at (\rectwidth,0);
+            \draw (0,0) rectangle (\rectwidth,-\rectheight);
+
+            % Row 0
+%            \node[cell] (r0c0) at (\xoffset,\yoffset) {0,0};
+            \node[cell] (r0c1) at (\xoffset+\colspacing,\yoffset) {\ml{@}};
+            \node[cell] (r0c2) at (\xoffset+2*\colspacing,\yoffset) {\ml{Q}};
+%            \node[cell] (r0c3) at (\xoffset+3*\colspacing,\yoffset) {0,3};
+%            \node[cell] (r0c4) at (\xoffset+4*\colspacing,\yoffset) {0,4};
+
+            % Row 1
+%            \node[cell] (r1c0) at (\xoffset,\yoffset-\rowspacing) {1,0};
+            \node[cell] (r1c1) at (\xoffset+\colspacing,\yoffset-\rowspacing) {\ml{@}};
+            \node[cell] (r1c2) at (\xoffset+2*\colspacing,\yoffset-\rowspacing) {\ml{P}};
+%            \node[cell] (r1c3) at (\xoffset+3*\colspacing,\yoffset-\rowspacing) {1,3};
+%            \node[cell] (r1c4) at (\xoffset+4*\colspacing,\yoffset-\rowspacing) {1,4};
+
+            % Row 2
+            \node[cell] (r2c0) at (\xoffset,\yoffset-2*\rowspacing) {\ml{B}};
+            \node[cell] (r2c1) at (\xoffset+\colspacing,\yoffset-2*\rowspacing) {\ml{@}};
+%            \node[cell] (r2c2) at (\xoffset+2*\colspacing,\yoffset-2*\rowspacing) {2,2};
+            \node[cell] (r2c3) at (\xoffset+3*\colspacing,\yoffset-2*\rowspacing) {\ml{@}};
+            \node[cell] (r2c4) at (\xoffset+4*\colspacing,\yoffset-2*\rowspacing) {\ml{0}};
+
+            % Row 3
+            \node[cell] (r3c0) at (\xoffset,\yoffset-3*\rowspacing) {\ml{F}};
+            \node[cell] (r3c1) at (\xoffset+\colspacing,\yoffset-3*\rowspacing) {\ml{IF}};
+%            \node[cell] (r3c2) at (\xoffset+2*\colspacing,\yoffset-3*\rowspacing) {3,2};
+            \node[cell] (r3c3) at (\xoffset+3*\colspacing,\yoffset-3*\rowspacing) {\ml{@}};
+            \node[cell] (r3c4) at (\xoffset+4*\colspacing,\yoffset-3*\rowspacing) {\ml{x}};
+
+            % Row 4
+%            \node[cell] (r4c0) at (\xoffset,\yoffset-4*\rowspacing) {4,0};
+%            \node[cell] (r4c1) at (\xoffset+\colspacing,\yoffset-4*\rowspacing) {4,1};
+%            \node[cell] (r4c2) at (\xoffset+2*\colspacing,\yoffset-4*\rowspacing) {4,2};
+            \node[cell] (r4c3) at (\xoffset+3*\colspacing,\yoffset-4*\rowspacing) {$=$};
+%            \node[cell] (r4c4) at (\xoffset+4*\colspacing,\yoffset-4*\rowspacing) {4,4};
+
+            \node[cell, anchor=west, align=left] (bottomlabel) at (\xoffset,\yoffset-5*\rowspacing) {\normalfont After unwinding\\the \ml{IF} spine};
+
+            \node (toplabel) at (\xoffset+\colspacing,\yoffset+1.5*\rowspacing) {\ml{TOP}};
+
+            % Keep existing arrows for now
+            \draw[-Stealth, thick] (r0c1.north) -- (toplabel.south);
+            \draw[-Stealth, thick] (r1c1.north) -- (r0c1.south);
+            \draw[-Stealth, thick] (r2c1.north) -- (r1c1.south);
+            \draw[-Stealth, thick] (r0c1.east) -- (r0c2.west);
+            \draw[-Stealth, thick] (r1c1.east) -- (r1c2.west);
+            \draw[-Stealth, thick] (r2c0.east) -- (r2c1.west);
+            \draw[-Stealth, thick] (r3c0.east) -- (r3c1.west);
+            \draw[-Stealth, thick] (r2c1.east) -- (r2c3.west);
+            \draw[-Stealth, thick] (r2c3.east) -- (r2c4.west);
+            \draw[-Stealth, thick] (r3c3.east) -- (r3c4.west);
+            \draw[-Stealth, thick] (r2c3.south) -- (r3c3.north);
+            \draw[-Stealth, thick] (r3c3.south) -- (r4c3.north);
+
+        \end{scope}
+
+        % ===== DIAGRAM 2: After turning the corner =====
+        \begin{scope}[shift={(rect1east)}]
+            \coordinate (rect2east) at (\rectwidth,0);
+            \draw (0,0) rectangle (\rectwidth,-\rectheight);
+
+            % Row 0
+            %            \node[cell] (r0c0) at (\xoffset,\yoffset) {0,0};
+            \node[cell] (r0c1) at (\xoffset+\colspacing,\yoffset) {\ml{@}};
+            \node[cell] (r0c2) at (\xoffset+2*\colspacing,\yoffset) {\ml{Q}};
+            %            \node[cell] (r0c3) at (\xoffset+3*\colspacing,\yoffset) {0,3};
+            %            \node[cell] (r0c4) at (\xoffset+4*\colspacing,\yoffset) {0,4};
+
+            % Row 1
+            %            \node[cell] (r1c0) at (\xoffset,\yoffset-\rowspacing) {1,0};
+            \node[cell] (r1c1) at (\xoffset+\colspacing,\yoffset-\rowspacing) {\ml{@}};
+            \node[cell] (r1c2) at (\xoffset+2*\colspacing,\yoffset-\rowspacing) {\ml{P}};
+            %            \node[cell] (r1c3) at (\xoffset+3*\colspacing,\yoffset-\rowspacing) {1,3};
+            %            \node[cell] (r1c4) at (\xoffset+4*\colspacing,\yoffset-\rowspacing) {1,4};
+
+            % Row 2
+            \node[cell] (r2c0) at (\xoffset,\yoffset-2*\rowspacing) {\ml{B}};
+            \node[cell] (r2c1) at (\xoffset+\colspacing,\yoffset-2*\rowspacing) {\phantom{\textit{\#}}\ml{@}\textit{\#}};
+            \node[cell] (r2c2) at (\xoffset+2*\colspacing,\yoffset-2*\rowspacing) {\ml{F}};
+            \node[cell] (r2c3) at (\xoffset+3*\colspacing,\yoffset-2*\rowspacing) {\ml{@}};
+            \node[cell] (r2c4) at (\xoffset+4*\colspacing,\yoffset-2*\rowspacing) {\ml{0}};
+
+            % Row 3
+            %            \node[cell] (r3c0) at (\xoffset,\yoffset-3*\rowspacing) {\ml{F}};
+            \node[cell] (r3c1) at (\xoffset+\colspacing,\yoffset-3*\rowspacing) {\ml{IF}};
+            %            \node[cell] (r3c2) at (\xoffset+2*\colspacing,\yoffset-3*\rowspacing) {3,2};
+            \node[cell] (r3c3) at (\xoffset+3*\colspacing,\yoffset-3*\rowspacing) {\ml{@}};
+            \node[cell] (r3c4) at (\xoffset+4*\colspacing,\yoffset-3*\rowspacing) {\ml{x}};
+
+            % Row 4
+            %            \node[cell] (r4c0) at (\xoffset,\yoffset-4*\rowspacing) {4,0};
+            %            \node[cell] (r4c1) at (\xoffset+\colspacing,\yoffset-4*\rowspacing) {4,1};
+            %            \node[cell] (r4c2) at (\xoffset+2*\colspacing,\yoffset-4*\rowspacing) {4,2};
+            \node[cell] (r4c3) at (\xoffset+3*\colspacing,\yoffset-4*\rowspacing) {$=$};
+            %            \node[cell] (r4c4) at (\xoffset+4*\colspacing,\yoffset-4*\rowspacing) {4,4};
+
+            \node[cell, anchor=west, align=left] (bottomlabel) at (\xoffset,\yoffset-5*\rowspacing) {\normalfont After turning the\\corner};
+
+            \node (toplabel) at (\xoffset+\colspacing,\yoffset+1.5*\rowspacing) {\ml{TOP}};
+
+            % Keep existing arrows for now
+            \draw[-Stealth, thick] (r0c1.north) -- (toplabel.south);
+            \draw[-Stealth, thick] (r1c1.north) -- (r0c1.south);
+            \draw[-Stealth, thick] (r2c1.north) -- (r1c1.south);
+            \draw[-Stealth, thick] (r0c1.east) -- (r0c2.west);
+            \draw[-Stealth, thick] (r1c1.east) -- (r1c2.west);
+            \draw[-Stealth, thick] (r2c0.east) -- ([xshift=8pt]r2c1.west);
+%            \draw[-Stealth, thick] (r3c0.east) -- (r3c1.west);
+            \draw[-Stealth, thick] (r2c2.east) -- (r2c3.west);
+            \draw[-Stealth, thick] (r2c3.east) -- (r2c4.west);
+            \draw[-Stealth, thick] (r3c3.east) -- (r3c4.west);
+            \draw[-Stealth, thick] (r2c3.south) -- (r3c3.north);
+            \draw[-Stealth, thick] (r3c3.south) -- (r4c3.north);
+            \draw[-Stealth, thick] (r2c1.south) -- (r3c1.north);
+
+        \end{scope}
+
+        % ===== DIAGRAM 3: grid =====
+        \begin{scope}[shift={(rect2east)}]
+            \coordinate (rect3east) at (2*\rectwidth,0);
+            \draw (0,0) rectangle (\rectwidth,-\rectheight);
+
+            % Row 0
+            %            \node[cell] (r0c0) at (\xoffset,\yoffset) {0,0};
+            \node[cell] (r0c1) at (\xoffset+\colspacing,\yoffset) {\ml{@}};
+            \node[cell] (r0c2) at (\xoffset+2*\colspacing,\yoffset) {\ml{Q}};
+            %            \node[cell] (r0c3) at (\xoffset+3*\colspacing,\yoffset) {0,3};
+            %            \node[cell] (r0c4) at (\xoffset+4*\colspacing,\yoffset) {0,4};
+
+            % Row 1
+            %            \node[cell] (r1c0) at (\xoffset,\yoffset-\rowspacing) {1,0};
+            \node[cell] (r1c1) at (\xoffset+\colspacing,\yoffset-\rowspacing) {\ml{@}};
+            \node[cell] (r1c2) at (\xoffset+2*\colspacing,\yoffset-\rowspacing) {\ml{P}};
+            \node[cell] (r1c3) at (\xoffset+3*\colspacing,\yoffset-\rowspacing) {\ml{B}};
+            %            \node[cell] (r1c4) at (\xoffset+4*\colspacing,\yoffset-\rowspacing) {1,4};
+
+            % Row 2
+            %            \node[cell] (r2c0) at (\xoffset,\yoffset-2*\rowspacing) {\ml{B}};
+            \node[cell] (r2c1) at (\xoffset+\colspacing,\yoffset-2*\rowspacing) {\phantom{\textit{\#}}\ml{@}\textit{\#}};
+            %            \node[cell] (r2c2) at (\xoffset+2*\colspacing,\yoffset-2*\rowspacing) {\ml{F}};
+            \node[cell] (r2c3) at (\xoffset+3*\colspacing,\yoffset-2*\rowspacing) {\ml{@}};
+            \node[cell] (r2c4) at (\xoffset+4*\colspacing,\yoffset-2*\rowspacing) {\ml{0}};
+
+            % Row 3
+            %            \node[cell] (r3c0) at (\xoffset,\yoffset-3*\rowspacing) {\ml{F}};
+            \node[cell] (r3c1) at (\xoffset+\colspacing,\yoffset-3*\rowspacing) {\ml{IF}};
+            \node[cell] (r3c2) at (\xoffset+2*\colspacing,\yoffset-3*\rowspacing) {\ml{F}};
+            \node[cell] (r3c3) at (\xoffset+3*\colspacing,\yoffset-3*\rowspacing) {\ml{@}};
+            \node[cell] (r3c4) at (\xoffset+4*\colspacing,\yoffset-3*\rowspacing) {\ml{x}};
+
+            % Row 4
+            %            \node[cell] (r4c0) at (\xoffset,\yoffset-4*\rowspacing) {4,0};
+            %            \node[cell] (r4c1) at (\xoffset+\colspacing,\yoffset-4*\rowspacing) {4,1};
+            %            \node[cell] (r4c2) at (\xoffset+2*\colspacing,\yoffset-4*\rowspacing) {4,2};
+            \node[cell] (r4c3) at (\xoffset+3*\colspacing,\yoffset-4*\rowspacing) {$=$};
+            %            \node[cell] (r4c4) at (\xoffset+4*\colspacing,\yoffset-4*\rowspacing) {4,4};
+
+            \node[cell, anchor=west, align=left] (bottomlabel) at (\xoffset,\yoffset-5*\rowspacing) {\normalfont After first unwind\\on the \ml{arg} spine};
+
+            \node (toplabel) at (\xoffset+\colspacing,\yoffset+1.5*\rowspacing) {\ml{TOP}};
+
+            % Keep existing arrows for now
+            \draw[-Stealth, thick] (r0c1.north) -- (toplabel.south);
+            \draw[-Stealth, thick] (r1c1.north) -- (r0c1.south);
+            \draw[-Stealth, thick] (r2c1.north) -- (r1c1.south);
+            \draw[-Stealth, thick] (r0c1.east) -- (r0c2.west);
+            \draw[-Stealth, thick] (r1c1.east) -- (r1c2.west);
+%            \draw[-Stealth, thick] (r2c0.east) -- ([xshift=8pt]r2c1.west);
+            %            \draw[-Stealth, thick] (r3c0.east) -- (r3c1.west);
+%            \draw[-Stealth, thick] (r2c2.east) -- (r2c3.west);
+            \draw[-Stealth, thick] (r2c3.east) -- (r2c4.west);
+            \draw[-Stealth, thick] (r3c3.east) -- (r3c4.west);
+%            \draw[-Stealth, thick] (r2c3.south) -- (r3c3.north);
+            \draw[-Stealth, thick] (r3c3.south) -- (r4c3.north);
+            \draw[-Stealth, thick] (r2c1.south) -- (r3c1.north);
+
+            \draw[-Stealth, thick] (r2c3.west) -- (r2c1.east);
+
+            \draw[-Stealth, thick] (r1c3.south) -- (r2c3.north);
+
+            \draw[-Stealth, thick] (r3c2.east) -- (r3c3.west);
+
+
+
+            \end{scope}
+
+    \end{tikzpicture}
+
+    \caption{\textsf Pointer-reversal for argument evaluation}
+\end{figure}
+
+In the diagram we have marked the vertebra with \textit{\#}. Now when rewinding
+the argument spine, we know we have reached the top when we encounter a
+node marked with \textit{\#}, at which point we know that we have completed
+evaluation of the argument, and can resume evaluation of the parent spine.
+
+This technique was discovered by a number of researchers independently,
+and is described by Stoye \textit{et al.} [1984].
+
+\subsection{Stacks versus Pointer-reversal}
+
+Given the alternative, then, is pointer-reversal better than a stack?
+
+\begin{numbered}
+    \item A stack is significantly faster than the pointer-reversing scheme. The
+    stack gives instant access to arguments and vertebrae, without having to
+    follow chains of pointers. This is particularly important in a parallel
+    machine, where there are much higher overheads associated with
+    accessing the (global) heap than the (local) stack. Furthermore, all
+    reversed pointers have to be un-reversed later, resulting in heap accesses
+    which a stacking implementation may not have to make.
+
+    \item Pointer-reversal uses very little extra storage. All that is required is a bit
+    in each cell to control the evaluation of arguments to strict built-in
+    functions. There is no (reasonable) bound to the possible length of a
+    spine, so not only does a separate stack require some extra storage, but
+    also (more seriously) we cannot know in advance how much extra
+    storage to allocate. This is a significant complication for machines which
+    implement the stack in hardware (e.g. NORMA [Scheevel, 1986]).
+
+    \item It turns out that the stack offers a large number of further opportunities
+    for performance improvement, and we address this topic more fully in
+    Chapters 20 and 21.
+
+    \item For a pointer-reversing implementation, the complete state of the
+    evaluation is described by the two pointers \ml{F} and \ml{B} (together with the
+    graph). This is useful for a parallel machine, when evaluations may need
+    to be suspended and their state saved somehow. This topic is discussed in
+    Chapter 24.
+\end{numbered}
+It seems, therefore, that pointer-reversal alone is suitable only for small
+experimental implementations. A stack is necessary for high performance,
+but a parallel machine may well use both schemes together.
+
+\section*{References}
+
+\begin{references}
+    \item \item
+    Abelson, H., and Sussman, G.J. 1985. \textit{Structure and Interpretation of Computer
+        Programs.} MIT Press.
+
+    \item
+    Arvind, Kathail, V., and Pingali, K. 1984. \textit{Sharing of Computation in Functional
+        Language Implementations.} Laboratory for Computer Science, MIT. July.
+
+    \item
+    Barendregt, H.P., Kennaway, J.R., Klop, J.W., and Sleep, M.R. 1986. \textit{Needed
+        reduction and spine strategies for the lambda calculus.} Report CS-R8621. Centre
+    for Mathematics and Computer Science, Amsterdam. May.
+
+    \item
+    Henderson, P. 1980. \textit{Functional Programming – Application and Implementation.}
+    Prentice-Hall.
+
+    \item
+    Peyton Jones, S.L. 1986. Functional programming languages as a software engineering
+    tool. In \textit{Software Engineering – The Critical Decade.} Ince (editor). Peter
+    Peregrinus.
+
+    \item
+    Scheevel, M. 1986. Norma: a graph reduction processor. In \textit{Proceedings of the ACM
+        Conference on Lisp and Functional Programming, Cambridge, Mass.}, pp. 212–19.
+    August.
+
+    \item
+    Schorr, H., and Waite, W. 1967. An efficient machine independent procedure for
+    garbage collection. \textit{Communications of the ACM.} Vol. 10, no. 8, pp. 501–6.
+
+    \item
+    Stoye, W.R., Clarke, T.J.W., and Norman, A.C. 1984. Some practical methods for
+    rapid combinator reduction. In \textit{Proceedings of the ACM Symposium on Lisp and
+        Functional Programming, Austin}, pp. 159–66. August.
+
+    \item
+    Turner, D.A. 1983. \textit{The SASL Language Manual.} University of Kent. November.
+
+    \item
+    Watson, P., Watson, I., and Woods, V. 1986. \textit{A Model of Computation for the Parallel
+        Evaluation of Functional Languages.} PMP/MU/PW/000001. Department of
+    Computer Science, University of Manchester. February.
+\end{references}

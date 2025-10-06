@@ -22,6 +22,9 @@
 % Required for grammar trees
 \usepackage{pst-node,pst-tree}
 
+% Used for arrows between cells
+\usetikzlibrary{arrows.meta}
+
 \usepackage[space]{grffile} % For spaces in paths
 \usepackage{etoolbox} % For spaces in paths
 \makeatletter % For spaces in paths
@@ -95,27 +98,13 @@
 \newcommand{\vs}{\vspace{.5\baselineskip}}
 \newcommand{\pg}{\clearpage}
 
-% We create a math mode for the Miranda code, because there is occasional need
-% for mathematical operators.
-%\usepackage{sansmath}
-%\usepackage{mathastext}
-%\DeclareMathVersion{sfmath}
-%\DeclareSymbolFont{sfletters}{OT1}{qhv}{m}{up}
-%\SetSymbolFont{letters}{sfmath}{OT1}{qhv}{m}{up}
-%\DeclareSymbolFont{sfoperators}{OT1}{qhv}{m}{up}
-%\SetSymbolFont{operators}{sfmath}{OT1}{qhv}{m}{up}
-%\SetMathAlphabet\mathit{sfmath}{OT1}{qhv}{m}{sl}
-%\SetMathAlphabet\mathrm{sfmath}{OT1}{qhv}{m}{n}
-
 % This is the mlcoded environment, an environment in upright Helvetica.
 \newenvironment{mlcoded}{
 	% The following newline is necessary for some reason!
 
 	\sffamily
 	\footnotesize
-	\spaceskip=2
-	\fontdimen2
-	\font
+	\spaceskip=2\fontdimen2\font
 	\list{}{\rightmargin10pt\leftmargin10pt}\item[] % This line is how the quote environment is defined.
 %	\noindent\par\vspace{0.5\baselineskip}
 }{
@@ -217,7 +206,7 @@
 \usepackage{calc}
 
 \usepackage{caption}
-\captionsetup{labelsep=quad,font={sf}}
+\captionsetup{labelsep=quad,font={sf,footnotesize}}
 
 % Section Formatting
 \usepackage{titlesec}
@@ -422,7 +411,7 @@
 \newenvironment{parsetree}[1]{\begin{center}\begin{forest}[#1]}{\end{forest}\end{center}}
 
 % The following is useful for authoring but needs to be commented for final compilation. It excludes all other files but still reads in their aux files so that counters, etc., remain valid.
-\includeonly{chapters/chap9}
+\includeonly{chapters/chap11}
 
 \begin{document}
 
@@ -444,6 +433,10 @@
 \include{chapters/chap8}
 \include{chapters/chap9}
 
+\part[Graph Reduction]{Graph Reduction}
+
+\include{chapters/chap10}
+\include{chapters/chap11}
 % Adjust the `\includeonly{..}` command before `\begin{document}` to include/exclude document content for faster compilation.
 
 %\backmatter

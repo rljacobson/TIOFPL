@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 9934 14044" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g>
+        <g transform="matrix(1,0,0,1,4228.9,5034.29)">
+            <text x="0px" y="49.182px" style="font-family:'TimesNewRomanPSMT', 'Times New Roman', serif;font-size:70.833px;">Node</text>
+            <text x="172.914px" y="49.182px" style="font-family:'TimesNewRomanPSMT', 'Times New Roman', serif;font-size:70.833px;">A</text>
+        </g>
+        <g transform="matrix(1,0,0,1,5078.24,5034.29)">
+            <text x="0px" y="49.182px" style="font-family:'TimesNewRomanPSMT', 'Times New Roman', serif;font-size:70.833px;">Node</text>
+            <text x="176.824px" y="49.182px" style="font-family:'TimesNewRomanPSMT', 'Times New Roman', serif;font-size:70.833px;">B</text>
+        </g>
+        <g transform="matrix(1,0,0,1,4228.9,5309.05)">
+            <text x="0px" y="49.182px" style="font-family:'TimesNewRomanPSMT', 'Times New Roman', serif;font-size:70.833px;">Node</text>
+            <text x="176.824px" y="49.182px" style="font-family:'TimesNewRomanPSMT', 'Times New Roman', serif;font-size:70.833px;">C</text>
+        </g>
+        <g transform="matrix(1,0,0,1,5078.24,5309.05)">
+            <text x="0px" y="49.182px" style="font-family:'TimesNewRomanPSMT', 'Times New Roman', serif;font-size:70.833px;">Node</text>
+            <text x="176.824px" y="49.182px" style="font-family:'TimesNewRomanPSMT', 'Times New Roman', serif;font-size:70.833px;">D</text>
+        </g>
+        <path d="M4163.41,5028.07L4215.34,5054.04L4163.41,5080.01C4176.39,5067.02 4176.39,5041.06 4163.41,5028.07Z"/>
+        <path d="M4215.26,5344.52L4119.19,5344.52L4119.19,5054.04L4173.79,5054.04" style="fill:none;stroke:black;stroke-width:6.25px;"/>
+        <path d="M5022.14,5028.07L5074.08,5054.04L5022.14,5080.01C5035.13,5067.02 5035.13,5041.06 5022.14,5028.07Z"/>
+        <path d="M4467.05,5054.04L5032.53,5054.04" style="fill:none;stroke:black;stroke-width:6.25px;"/>
+        <g transform="matrix(1,0,0,1,0,290.48)">
+            <g transform="matrix(1,-0,-0,1,0,-290.48)">
+                <path d="M5022.14,5318.55L5074.08,5344.52L5022.14,5370.49C5035.13,5357.5 5035.13,5331.53 5022.14,5318.55Z"/>
+                <path d="M4467.05,5344.52L5032.53,5344.52" style="fill:none;stroke:black;stroke-width:6.25px;"/>
+            </g>
+        </g>
+        <g transform="matrix(0.909338,0,0,0.909338,391.465,462.587)">
+            <g transform="matrix(1.0997,-0,-0,1.0997,-430.495,-508.707)">
+                <path d="M4343.82,5248.06L4317.85,5299.99L4291.89,5248.06C4304.87,5261.04 4330.84,5261.04 4343.82,5248.06Z"/>
+                <path d="M4317.85,5102.32L4317.85,5258.44" style="fill:none;stroke:black;stroke-width:6.25px;"/>
+            </g>
+        </g>
+        <g transform="matrix(0.962093,-0.0121435,-0.0121435,0.99611,231.08,74.0257)">
+            <g transform="matrix(1.03956,0.0126732,0.0126732,1.00406,-241.16,-77.2548)">
+                <path d="M5076.27,5252.54L5117.81,5293.11L5060.42,5302C5076.75,5293.59 5084.67,5268.86 5076.27,5252.54Z"/>
+                <path d="M4467.05,5084.65L5078.24,5280.44" style="fill:none;stroke:black;stroke-width:6.25px;"/>
+            </g>
+        </g>
+    </g>
+</svg>
