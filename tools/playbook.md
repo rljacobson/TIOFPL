@@ -43,7 +43,7 @@
 
 - Spaces in code tuples/applications: write `\ml{(phi tvn)}` (no escaped inter-word space like `\ `).
 
-- Special type operators: use `\typedecl{}` to typeset `::=` and `hastype{}` to typeset `::`. 
+- Special type operators: use `\typedecl{}` to typeset `::=` and `hastype{}` to typeset `::`. 
 
 ## Environment hygiene
 
@@ -85,7 +85,7 @@
 
 - Detect headings by their numeric pattern and emit the correct LaTeX sectioning command **without** the number.
 - Do **not** invent headings where the page shows none.
-- Use the special environment `\begin{numbered}` / `\end{numbered}` instead of  `\begin{enumerate}[(i)]` / `\end{enumerate}`.
+- Use the special environment `\begin{numbered}` / `\end{numbered}` instead of  `\begin{enumerate}[(i)]` / `\end{enumerate}`.
 
 ## Final QA checklist (run mentally before submitting)
 
