@@ -1,0 +1,674 @@
+\chapter[Supercombinators and Lambda-Lifting]{Supercombinators and\\Lambda-Lifting}
+%\vspace{2cm}
+\vspace{1cm}
+
+\noindent
+Since the operation of constructing an instance of a lambda body while
+substituting for the formal parameter is the fundamental operation of our
+implementation, we will now consider how to make it more efficient.
+
+In this chapter and the next we will show how to transform a lambda
+expression into a form in which the lambda abstractions are particularly easy
+to instantiate. These special lambda abstractions are called
+\textit{supercombinators}, and the transformation is called \textit{lambda-lifting}. Then, in
+Chapter~15, we will show how to enhance the lambda-lifting transformation to
+be \textit{fully lazy}, a property alluded to in Section~12.1.3. The terms
+`supercombinator' and `fully lazy' were both coined by Hughes, who was the
+first to combine full laziness with lambda-lifting [Hughes, 1984].
+
+\section{The Idea of Compilation}
+
+The operation of instantiating the body of a lambda abstraction was called
+\ml{Instantiate} in the previous chapter, and was performed by a recursive tree-walk
+over the lambda body. Such an \ml{Instantiate} operation is rather inefficient for the
+following reasons:
+
+\begin{numbered}
+    \item at each node of the body, \ml{Instantiate} has to do a case analysis on the tag of
+    the node;
+    \item at each variable node \ml{Instantiate} has to test if the node is the formal
+    parameter; a similar test has to be made at each lambda node;
+    \item new instances of subexpressions containing no free occurrences of the
+    formal parameter will be constructed when they could safely and
+    beneficially be shared (we discuss this point in more detail in Chapter
+    15).
+\end{numbered}
+
+A more efficient alternative to this is \textit{compilation}, whereby we associate
+with each lambda body a \textit{fixed sequence of instructions} which will construct an
+instance of the lambda body. Then the operation of instantiating a lambda
+body would consist simply of obeying the sequence of instructions associated
+with the lambda body.
+
+This instruction sequence can be constructed in advance by a compiler, and
+contains implicitly the knowledge about the shape of the body and where the
+formal parameter occurs. Hence we would expect the compiled code to run
+much faster than the \ml{Instantiate} method, for just the same reasons that
+compiled code runs faster than interpreted code in conventional languages. In
+effect, all the tests in \ml{Instantiate} are made in advance by the compiler.
+Furthermore, it turns out that compilation opens up many new avenues for
+optimization, which offer considerable further efficiency increases.
+
+Unfortunately, not all lambda abstractions are amenable to compilation in
+this way. Consider, for example, the lambda abstraction
+
+\begin{letalign}
+    \tlb{x}(\tlb{y}$-$ y x)
+\end{letalign}
+
+When we apply the \ml{\tl x} abstraction to an argument, \ml{3} say, we instantiate its
+body, thus creating a brand new lambda abstraction \ml{(\tlb{y}$-$ y 3)}.
+Furthermore, each application of the \ml{\tl x} abstraction to a different argument
+will create a new and different \ml{\tl y} abstraction, thus making a nonsense of our
+hope to compile a single fixed code sequence for each lambda abstraction.
+
+The problem is that \ml{x} occurs free in the body of the \ml{\tl y} abstraction, so that
+we have to make a new instance of the \ml{\tl y} abstraction whenever \ml{x} is bound to a
+new value by an application of the \ml{\tl x}  abstraction. In the case of lambda
+abstractions which have no free variables there is no problem, and we can
+compile a code sequence for it as outlined above.
+
+One way around this problem would be to allow the code sequence to
+access the values of the free variables in some way, thus parameterizing the
+code sequence on the values of the free variables. This approach leads us to
+the SECD machine [Landin, 1964; Henderson, 1980], in which the code
+sequence for a lambda abstraction has access to an \textit{environment} which
+contains values for each of the free variables, thus allowing a single code
+sequence for each lambda abstraction. It is also the route followed by all
+block-structured languages, in which the values of free variables are found by
+looking in the appropriate stack frame.
+
+In this book, however, we will study a totally different approach, called
+\textit{supercombinator graph reduction}, which does not require the addition of an
+environment to our model of graph reduction. The idea is to \textit{transform} the
+program into an equivalent one in which all the lambda abstractions are
+amenable to compilation. This transformation algorithm, which is called
+\textit{lambda-lifting}, is of considerable interest in its own right, and we devote the
+rest of this chapter and the next to it. After this, we spend a chapter discussing
+an important optimization to lambda-lifting, called \textit{full laziness}, and Chapter
+16 then digresses to describe an important alternative transformation, into \textit{SK
+    combinators}. Finally, the bulk of the third part of the book (Chapters 18--21)
+is spent in an extended discussion of how to compile the transformed program
+into a linear instruction sequence, and the optimizations which this opens up.
+
+\section{Solving the Problem of Free Variables}
+
+In this section we outline our strategy for dealing with the problem of free
+variables. We do so by using a modified form of \tb-reduction, in which we may
+effectively perform several \tb-reductions at once.
+
+Consider our current example
+\begin{letalign}
+    \tlb{x}\tlb{y}$-$ y x
+\end{letalign}
+Suppose we applied it to two arguments, thus:
+\begin{letalign}
+    (\tlb{x}\tlb{y}$-$ y x) 3 4
+\end{letalign}
+The lambda reducer described in Chapter~12 would proceed like this:
+\begin{letalign}
+    & (\tlb{x}\tlb{y}$-$ y x) 3 4 \\
+    \reduction{} & (\tlb{y}$-$ y 3) 4 \\
+    \reduction{} & $-$ 4 3
+\end{letalign}
+
+There is no reason, however, why we should not perform the \ml{\tl x} and \ml{\tl y}
+reductions \textit{simultaneously}, thus:
+\begin{letalign}
+    & (\tlb{x}\tlb{y}$-$ y x) 3 4 \\
+    \reduction{} & $-$ 4 3
+\end{letalign}
+This `multi-argument' reduction entails constructing an instance of the body
+\ml{($-$ y x)} whilst substituting \ml{3} for free occurrences of \ml{x}, and \ml{4} for free
+occurrences of \ml{y}. The following observations are crucial:
+
+\begin{numbered}
+    \item Much is gained by performing the reductions simultaneously. Firstly,
+    doing so builds less intermediate structure in the heap, since the inter-
+    mediate result of the \ml{\tl x} reduction is never constructed. Second (and
+    more important), no problems are presented by the free occurrence of \ml{x}
+    in the \ml{\tl y} abstraction.
+    \item Nothing is lost by performing the \ml{\tl x} and \ml{\tl y} reductions simultaneously.
+    The result of performing the \ml{\tl x} reduction alone is a \ml{\tl y} abstraction, and
+    (assuming that we perform normal order reduction until WHNF is
+    reached) no further work can be done on the \ml{\tl y} abstraction until it is given
+    another argument.
+
+    \phantom{xx}Hence we may as well wait until both arguments are present and then
+    perform both reductions at once. This applies even if the application of the
+    \ml{\tl x} abstraction to a single argument is shared.
+\end{numbered}
+
+\subsection{Supercombinators}
+
+What sort of lambda abstractions are amenable to this sort of multi-argument
+reduction? Simply lambda abstractions of the form \ml{(\tlb{x$_1$}\tlb{x$_2$}\ldots\tlb{x$_n$}E)}. This
+motivates a new definition:
+
+\definitionbox{\vspace{-1.5\baselineskip}}{%
+    A \emph{supercombinator}, \ml{\$S}, of \emph{arity} $n$ is a lambda expression of the form
+%    \vspace{-1.5\baselineskip}
+    \begin{letalign}
+        \tlb{x$_1$}\tlb{x$_2$}\ldots\tlb{x$_n$}E
+    \end{letalign}
+    where \ml{E} is not a lambda abstraction (this just ensures that all the `leading
+    lambdas' are accounted for by \ml{x$_1$}\ldots\ml{x$_n$}) such that
+    \vs
+    \begin{compactenum}[(i)]
+        \item \ml{\$S} has no free variables,
+        \item any lambda abstraction in \ml{E} is a supercombinator,
+        \item $n \geq 0$; that is, there need be no lambdas at all.
+    \end{compactenum}
+    \vs
+    A \textit{supercombinator redex} consists of the application of a supercombinator
+    to n arguments, where n is its arity. A \textit{supercombinator reduction} replaces
+    a supercombinator redex by an instance of the supercombinator body with
+    the arguments substituted for free occurrences of the corresponding
+    formal parameter.
+}
+
+\noindent For example,
+\begin{mlcoded}
+    3 \\
+    (+ 2 5) \\
+    \tlb{x}x \\
+    \tlb{x}+ x 1 \\
+    \tlb{x}+ x x \\
+    \tlb{x}\tlb{y}$-$ y x \\
+    \tlb{f}f (\tlb{x}+ x x)
+\end{mlcoded}
+are all supercombinators, while the following are not:
+
+
+\begin{tabular}{@{}l@{\quad}l@{}}
+    \ml{\tlb{x}y }        & (\ml{y} occurs free) \\
+    \ml{\tlb{y}$-$ y x}   & (\ml{x} occurs free) \\
+    \ml{\tlb{f}f (\tlb{x}f x 2)} & (inner \ml{\tl x} abstraction is not a supercombinator, since \ml{f} \\
+    & occurs free) \\
+\end{tabular}
+\vs
+
+\subsubsection{Supercombinators of non-zero arity}
+
+Supercombinators of non-zero arity (that is, having at least one \ml{\tl{}} at the front)
+are important because they will be our \textit{unit of compilation}. Since they have no
+free variables (clause (i)) we can compile a fixed code sequence for them.
+Furthermore, clause (ii) ensures that any lambda abstractions in the body
+have no free variables, and hence do not need to be copied when instantiating
+the supercombinator body.
+
+Such a supercombinator is somewhat analogous to a Pascal function which
+takes several (value) parameters, which does not refer to any global variables,
+and which has no side-effects.
+
+\subsubsection{Supercombinators of arity zero and CAFs}
+
+A supercombinator of arity zero (that is, having no \tl s at the front) is just a
+constant expression (remember that it has no free variables). These super-
+combinators are often called \textit{constant applicative forms} or CAFs. For
+example,
+\begin{mlcoded}
+    3 \\
+    + 4 5 \\
+    + 3
+\end{mlcoded}
+are all CAFs. The last example makes the point that CAFs can still be
+functions.
+
+Since a CAF has no \ml{\tl}s at the front, they are never instantiated. Hence, no
+code need be compiled for it, since a single instance of its graph can freely be
+shared.
+
+\subsubsection{Combinators}
+
+A `supercombinator' sounds like a special sort of `combinator' and indeed this
+is the case:
+
+\definitionbox{
+\vspace{-1.5\baselineskip}
+}{
+A \emph{combinator} is a lambda expression which contains no occurrences of a
+free variable [Barendregt, 1984].
+}
+
+\noindent
+A combinator is a `pure' function in the sense that the value of a combinator
+applied to some arguments depends only on the values of the arguments, and
+not on any free variables. The term `combinator' has a long pedigree [Curry
+and Feys, 1958].
+
+Thus some lambda expressions are combinators, and some combinators are
+supercombinators.
+
+\subsection{A Supercombinator-based Compilation Strategy}
+
+If only all the lambda abstractions in our program were supercombinators!
+Then it would be easy to compile them all, for the reasons mentioned in the
+last section. Real programs, of course, have many lambda abstractions which
+are not supercombinators, but it turns out to be relatively straightforward to
+transform the program so that it contains only supercombinators. This will be
+our strategy, and we embark on the transformation in Section~13.3.
+
+For the sake of clarity we will often give names to supercombinators. These
+names are entirely arbitrary, since the lambda abstractions are anonymous,
+and we will normally begin them with a \ml{\$} to make them distinctive. Thus we
+could write
+\begin{letalign}
+    \ml{\$XY} = \tlb{x}\tlb{y}$-$ y x
+\end{letalign}
+but to emphasize their special status further we will write the definition like
+this:
+\begin{letalign}
+    \ml{\$XY} x y = $-$ y x
+\end{letalign}
+Our strategy is therefore to transform the lambda expression we wish to
+compile into:
+\begin{numbered}
+    \item a set of supercombinator definitions, plus
+    \item an expression to be evaluated.
+\end{numbered}
+To emphasize the inseparability of these two components we use a box, just as
+we did in the case of Miranda programs (Section~3.3), thus:
+
+\combinatorbox{
+    Supercombinator definitions \\
+    \phantom{XXXX}\ldots \\
+    \phantom{XXXX}\ldots
+}{
+   Expression to be evaluated
+}
+
+\noindent
+For example, we could represent the expression
+\begin{letalign}
+    (\tlb{x}\tlb{y}$-$ y x) 3 4
+\end{letalign}
+\noindent
+as
+
+\combinatorbox{
+    \ml{\$XY x y = $-$ y x}
+}{
+    \ml{\$XY 3 4}
+}
+
+A crucial point in the definition of a supercombinator given above is that a
+supercombinator reduction only takes place when all the arguments are
+present. For example,
+\begin{letalign}
+    (\ml{\$XY} 3)
+\end{letalign}
+is not a supercombinator redex, and will not be reduced. We can therefore
+regard the supercombinator definitions as a set of \textit{rewrite rules}. A reduction
+consists of rewriting an expression which matches the left-hand side of a rule
+with an instance of the corresponding right-hand side. Such systems are called
+\textit{term rewrite systems} and have been much studied in their own right
+[O'Donnell, 1977; Klop, 1980; Hoffman and O'Donnell, 1982].
+
+\section[Transforming Lambda Abstractions]{Transforming Lambda Abstractions into Supercombinators}
+
+To summarize our progress so far, we have seen that certain sorts of lambda
+abstractions, the supercombinators, are particularly easy to compile. Our
+implementation effort now breaks into two parts:
+
+\begin{numbered}
+    \item a translation algorithm which transforms all the lambda abstractions in
+    the program into supercombinators;
+    \item an implementation of supercombinator reduction.
+\end{numbered}
+
+First of all we consider how to transform lambda abstractions into super-
+combinators. Here is an example program (in which neither lambda
+abstraction is a supercombinator):
+
+\combinatorbox{}{
+    \ml{(\tlb{x}(\tlb{y}+ y x) x) 4}
+}
+
+Consider first the innermost lambda abstraction \ml{(\tlb{y}+ y x)}.
+
+It has a free variable, \ml{x}, so it is not a supercombinator. However, a simple
+transformation will make it into one:
+\begin{quote}
+make each free variable into an extra parameter (we sometimes call this
+\textit{abstracting} the free variable).
+\end{quote}
+Thus we would transform
+\begin{mlcoded}
+    (\tlb{y}+ y x)
+\end{mlcoded}
+to
+\begin{mlcoded}
+    (\tlb{x}\tlb{y}+ y x) x
+\end{mlcoded}
+(This operation is simply \ml{\tb}-abstraction.) To see that these two expressions are
+equivalent, just perform a \ml{\tb}-reduction on the second to get the first. To make
+it slightly clearer we could perform an \ml{\ta}-conversion on the \ml{\tl x} abstraction to give
+\begin{mlcoded}
+    (\tlb{w}\tlb{y}+ y w) x
+\end{mlcoded}
+This clarifies the distinction between the two \ml{x}s which occurred in the previous
+version. Now the lambda abstraction \ml{(\tlb{w}\tlb{y}+ y w)} is a supercombinator!
+Performing this transformation on our original program gives
+
+\combinatorbox{}{
+    \ml{(\tlb{x}(\tlb{w}\tlb{y}+ y w) x x) 4}
+}
+
+Next we give the supercombinator a name, \ml{\$Y} say, like this
+
+\combinatorbox{
+    \ml{\$Y w y = + y w}
+}{
+    \ml{(\tlb{x}\$Y x x) 4}
+}
+
+Now we see that the \ml{\tl x} abstraction also fulfills the conditions for
+supercombinatorhood, and we give it the name \ml{\$X}, thus
+
+\combinatorbox{
+    \ml{\$Y w y = + y w} \\
+\indent    \ml{\$X x = \$Y x x}
+}{
+    \ml{\$X 4}
+}
+
+We can now execute our program by performing supercombinator
+reductions:
+\begin{letalign}
+    & \ml{\$X 4} \\
+    \reduction{} & \ml{\$Y 4 4} \\
+    \reduction{} & \ml{+ 4 4} \\
+    \reduction{} & \ml{8}
+\end{letalign}
+To review the algorithm so far:
+\vs
+
+\ml{UNTIL} there are no more lambda abstractions:
+\begin{quote}
+    \vspace{-0.5\baselineskip}
+    \begin{compactenum}[(1)]
+        \item Choose any lambda abstraction which has no inner lambda
+        abstractions in its body.
+        \item Take out all its free variables as extra parameters.
+        \item Give an arbitrary name to the lambda abstraction (e.g.\ \ml{\$X34}).
+        \item Replace the occurrence of the lambda abstraction by the name
+        applied to the free variables.
+        \item Compile the lambda abstraction and associate the name with the
+        compiled code.
+    \end{compactenum}
+    \vspace{-0.5\baselineskip}
+\end{quote}
+
+\ml{END}
+\vs
+
+\noindent It is easy to see that we suffer an increase in the size of the program during this
+transformation, but it is a price we pay willingly in exchange for the easier
+reduction rules.
+
+When we have completed the algorithm we arrive at a program of the form
+
+\combinatorbox{
+    {\ldots\ supercombinator definitions \ldots}
+}{
+    \ml{E}
+}
+
+But what about the expression \ml{E}? It must have no free variables, since it is
+the top-level expression to be evaluated, so we can make it into a zero-
+parameter supercombinator (a CAF) thus
+
+\combinatorbox{
+    {\ldots\ supercombinator definitions \ldots} \\
+    \indent \ml{\$Prog = E}
+}{
+    \ml{\$Prog}
+}
+
+\noindent
+thus completing the transformation of the program into supercombinators.
+
+So far we have not made any explicit mention of recursion. This topic is so
+important that we devote the whole of the next chapter to it.
+
+Following Johnsson [1985], we call the transformation from lambda
+expressions to supercombinators `lambda-lifting' since all the lambda
+abstractions are lifted to the top level.
+
+\subsection{Eliminating Redundant Parameters}
+
+In this section and the next we will consider two simple optimizations to the
+lambda-lifting algorithm. Consider the expression
+\begin{mlcoded}
+    \tlb{x}\tlb{y}$-$ y x
+\end{mlcoded}
+It is actually a supercombinator as it stands, but suppose we blindly applied
+our algorithm as described above. First we choose the \ml{\tl y} abstraction, noting
+that \ml{x} is free, and transform it to
+
+\combinatorbox{
+    \ml{\$Y x y = $-$ y x}
+}{
+    \ml{\tlb{x}\$Y x}
+}
+
+\noindent
+(Here we have chosen to use \ml{x} instead of \ml{w} as the name of the extra parameter
+to the \ml{\$Y} supercombinator. This choice is arbitrary, but we will normally
+choose the same name as the free variable being abstracted.) Now dealing
+with the \ml{\tl x} abstraction, we get
+
+\combinatorbox{
+    \ml{\$Y x y = $-$ y x} \\
+    \ml{\$X x = \$Y x}
+}{
+    \ml{\$X}
+}
+
+It is clear that we can simplify the definition of \ml{\$X} to
+
+\begin{letalign}
+    \ml{\$X} = \ml{\$Y}
+\end{letalign}
+
+\noindent
+(This is just \te-reduction, of course.) Having done this we see that \ml{\$X} itself is
+redundant, and \ml{\$X} can be replaced wherever it occurs by \ml{\$Y}, giving
+
+\combinatorbox{
+    \ml{\$Y x y = $-$ y x}
+}{
+    \ml{\$Y}
+}
+
+So there are two optimizations to consider:
+
+\begin{numbered}
+    \item Remove redundant parameters from definitions by \te-reduction.
+    \item Where this produces redundant definitions, eliminate them.
+\end{numbered}
+
+These optimizations together exploit supercombinators that appear naturally
+in the original program, and sometimes catch other \te-reductions as well.
+
+\textit{Caveat:} it turns out that, for more sophisticated implementations,
+performing such \te-reductions is actually \textit{undesirable}, unless they succeed in
+eliminating a definition, which is always desirable. For a full explanation of
+this point, see Section~20.3.4.
+
+\subsection{Parameter Ordering}
+
+When we take out several free variables from a lambda abstraction as extra
+parameters the order in which we put them seems rather arbitrary. For
+example, consider the program
+
+\combinatorbox{}{
+    \ml{(\ldots} \\
+    \phantom{XXXX} \ml{(\tlb{x}\tlb{z}+ y ($\ast$ x z))} \\
+    \phantom{XXXX} \ml{\ldots)}
+}
+
+\noindent
+where the `\ldots' stands for some expression enclosing the \ml{\tl x} abstraction. It
+could be transformed to
+
+\combinatorbox{
+    \ml{\$S x y z = + y ($\ast$ x z)}
+}{
+    \ml{(\ldots} \\
+    \phantom{XXXX} \ml{(\tlb{x}\$S x y)} \\
+    \phantom{XXXX} \ml{\ldots)}
+}
+
+\noindent
+or alternatively it could be transformed to
+
+\combinatorbox{
+    \ml{\$S y x z = + y ($\ast$ x z)}
+}{
+    \ml{(\ldots} \\
+    \phantom{XXXX} \ml{(\tlb{x}\$S y x)} \\
+    \phantom{XXXX} \ml{\ldots)}
+}
+
+\noindent
+Both \ml{x} and \ml{y} are free, and it does not seem to matter which order we take them
+out in. However, let us take the second possibility one stage further, by lifting
+the \ml{\tl x} abstraction:
+
+\combinatorbox{
+    \ml{\$S y x z = + y ($\ast$ x z)} \\
+    \indent \ml{\$T y x \phantom{z} = \$S y x}
+}{
+    \ml{(\ldots} \\
+    \phantom{XXXX} \ml{(\$T y)} \\
+    \phantom{XXXX} \ml{\ldots)}
+}
+
+\noindent
+Now we can remove the redundant parameters from the definition of \ml{\$T}, and
+eliminate the definition of \ml{\$T} altogether (since it is the same as \ml{\$S}). This
+would not have been possible had we put the extra parameters \ml{x} and \ml{y} for \ml{\$S} in
+the other order. Hence we should \textit{order the free variables}, with those bound at
+inner levels coming last in the parameter list of the supercombinator.
+
+This suggests that we could associate a \textit{lexical level-number} with each
+lambda abstraction, so that the lexical level-number of a lambda abstraction is
+defined to be one more than the number of textually enclosing lambdas (the
+experienced reader will recognize these level-numbers as de Bruijn numbers
+[de Bruijn, 1972]). For example, consider
+\begin{mlcoded}
+    (\tlb{x}\tlb{y}+ x ($\ast$ y y))
+\end{mlcoded}
+The \ml{\tl x} abstraction is at level 1, while the \ml{\tl y} abstraction is at level 2 (since it is
+enclosed by a \ml{\tl x} abstraction).
+
+The lexical level of a variable is now defined to be the lexical level of the
+lambda abstraction which binds it. If the level of \ml{x} is less than \ml{y} we say that \ml{x} is
+\textit{freer} than \ml{y}, since it is bound further out.
+
+Constants (including built-in functions such as \ml{+}, and previously generated
+supercombinators) can be regarded as being bound at the top level, and so
+should be at level 0. There is, of course, no need to abstract out constants as
+extra parameters during lambda-lifting.
+
+To summarize:
+
+\begin{numbered}
+    \item The level-number of a \textit{lambda abstraction} is one more than the number
+    of lambda abstractions which textually enclose it. If there is none, then
+    its level-number is 1.
+    \item The level-number of a \textit{variable} is the level-number of the lambda
+    abstraction which binds it.
+    \item The level-number of a \textit{constant} is 0.
+\end{numbered}
+
+It is simple to determine the lexical levels of all variables in a single
+tree-walk over the expression. On the way down the tree the level-numbers of
+the lambdas are recorded in a sort of environment, while on the way up the
+level of each variable is computed, using the environment.
+
+Now to maximize the chances of being able to apply \te-reduction we can
+simply sort the extra parameters in increasing order of lexical level.
+
+\section{Implementing a Supercombinator Program}
+
+All the preceding work has shown how to compile our program into a set of
+supercombinator definitions. What happens now? We have spoken of the
+supercombinators being compiled in some way, but in fact there is a spectrum
+of possible implementations:
+
+\begin{numbered}
+    \item We could keep the body of the supercombinator as a tree, and instantiate
+    it using a function similar to \ml{Instantiate}. This is the supercombinator
+    equivalent of the lambda reducer in the last chapter, and all the
+    mechanisms described in the previous chapters concerning how to find
+    the next redex, how to perform a reduction, indirection nodes, the stack
+    and so on are still valid. The only change required is in the implemen-
+    tation of \ml{Instantiate}. It is simplified because all lambda abstractions are
+    known to be supercombinators (which have no free variables, and hence
+    need never be copied), but is made more complicated because it has to
+    substitute for several variables at once.
+
+    \phantom{xx} We call this the template-instantiation implementation.
+
+    \item We could keep the body of the supercombinator as a tree, but held in a
+    contiguous block of store. Now the instantiation can be done with a
+    modified block move, which can be implemented much more efficiently
+    than a tree-walking instantiation. This idea is used by Keller [1985]. It is
+    possible because supercombinators are constructed once and for all at
+    compile-time, rather than being generated on the fly at run-time.
+
+    \item We could compile the body to a linear sequence of instructions which will
+    create an instance when executed. This is the idea behind the G-machine
+    [Johnsson, 1984], which we discuss in Chapters 18--21. This is faster still,
+    and also opens the way to many further optimizations, as we shall see.
+    \end{numbered}
+
+    \noindent
+    The fundamental point is that all we can do with a supercombinator is to apply
+    it, and hence we are free to choose a representation for the supercombinator
+    that makes this operation efficient.
+
+    \section*{References}
+
+    \begin{references}
+
+    \item Barendregt, H.P. 1984. \textit{The Lambda Calculus: its syntax and semantics}, 2nd edition, p.
+    24. North-Holland.
+
+    \item Curry, H.B., and Feys, R. 1958. \textit{Combinatory Logic}, Vol. I. North-Holland.
+
+    \item De Bruijn, N.G. 1972. Lambda calculus notation with nameless dummies.
+    \textit{Indagationes Mathematicae}. Vol. 34, pp. 381--92.
+
+    \item Henderson, P. 1980. \textit{Functional Programming: application and implementation}.
+    Prentice-Hall.
+
+    \item Hoffman, C.M., and O'Donnell, M.J. 1982. Programming with equations. \textit{ACM
+        TOPLAS}. Vol. 4, no. 1, pp. 83--112.
+
+    \item Hughes, R.J.M. 1984. The design and implementation of programming languages.
+    PhD thesis, PRG-40, Programming Research Group, Oxford. September.
+
+    \item Johnsson, T. 1984. Efficient compilation of lazy evaluation. In \textit{Proceeding of the ACM
+        Symposium on Compiler Construction, Montreal}, pp. 58--69. June.
+
+    \item Johnsson, T. 1985. Lambda lifting: transforming programs to recursive equations. In
+    \textit{Conference on Functional Programming Languages and Computer Architecture,
+        Nancy}. Jouannaud (editor). LNCS 201. Springer Verlag.
+
+    \item Keller, R.M. 1985. Distributed graph reduction from first principles. Department of
+    Computer Science, University of Utah.
+
+    \item Klop, J.W. 1980. Combinatory reduction systems. PhD thesis, Mathematisch
+    Centrum, Amsterdam.
+
+    \item Landin, P.J. 1964. The mechanical evaluation of expressions. \textit{Computer Journal}. Vol.
+    6, pp. 308--20.
+
+    \item O'Donnell, M.J. 1977. \textit{Computing in Systems Described by Equations}. LNCS 58.
+    Springer Verlag.
+
+    \end{references}

@@ -6,7 +6,7 @@
 
 *The Implementation of Functional Programming Languages* by Simon Peyton-Jones  is a classic work in the area of functional programming language implementation. Sadly, it is also out of print, and hardcopies of the book are hard to find and are generally very expensive. The author, who is completely unaffiliated with this repository, [provides a scanned version of the printed book on his website](https://www.microsoft.com/en-us/research/publication/the-implementation-of-functional-programming-languages/). (Thank you, Simon!)
 
-The scanned version is certainly nice to have but leaves a lot to be desired in terms of comfort of reading and flexibility. You can't copy and paste, for example. I have typeset about 50% of the book for my own enjoyment. I have experimented with using LLMs to typeset the text, and they reduce the effort significantly, but it's no silver bullet. See [`tools/Prompt Engineering.md`](tools/Prompt Engineering.md)
+The scanned version is certainly nice to have but leaves a lot to be desired in terms of comfort of reading and flexibility. You can't copy and paste, for example. I have typeset about 50% of the book for my own enjoyment. I have experimented with using LLMs to typeset the text, and they reduce the effort significantly, but it's no silver bullet. See [`tools/Prompt Engineering.md`](tools/Prompt%20Engineering.md)
 
 It is unlikely that I will typeset the entire book. I have already done the hard part of obsessively reproducing the typography and layout. It would only take a dozen or so people typesetting a chapter each to complete the whole thing, so pull requests are certainly welcome.
 
@@ -34,8 +34,8 @@ Robert Jacobson
 - [ ] Part II Graph Reduction
 	- [x] 10 Program Representation
 	- [x] 11 Selecting The Next Redex
-	- [ ] 12 Graph Reduction Of Lambda Expressions
-	- [ ] 13 Supercombinators And Lambda-Lifting
+	- [x] 12 Graph Reduction Of Lambda Expressions
+	- [X] 13 Supercombinators And Lambda-Lifting
 	- [ ] 14 Recursive Supercombinators
 	- [ ] 15 Fully-Lazy Lambda-Lifting
 	- [ ] 16 Sk Combinators

@@ -984,3 +984,32 @@ Another way to see this is to try taking the reduction sequence for \ml{Y} furth
 which is just what the suggested graph represents.
 
 This is the first time our graphs have incorporated \textit{cycles} and this is indeed
+the only source of cycles in many implementations. This form of \ml{Y} is therefore
+sometimes called \textit{cyclic} Y or \textit{knot-tying} Y.
+
+Cyclic graphs give important economies in the use of storage. Using the
+acyclic version of \ml{Y} means that the graph representing \ml{(Y f)} grows without
+limit as each recurrent \ml{(Y f)} redex is evaluated. In contrast, using a cyclic
+version of \ml{Y} means that \ml{(Y f)} is represented by a single cell. Hence cyclic
+graphs give finite representations of some infinite objects (such as recursive
+functions and some infinite data structures).
+
+The principal disadvantage of a cyclic \ml{Y} is that the presence of cycles
+prevents the use of simple reference-counting garbage collection (see Chapter
+17).
+
+\section*{References}
+
+\begin{references}
+
+    \item Hughes, R.J.M. 1985. Lazy memo functions. In \textit{Proceedings of the IFIP Conference on
+        Functional Programming Languages and Computer Architecture, Nancy}, pp.
+    129--46. Jouannaud (editor). LNCS 201. Springer Verlag. September.
+
+    \item Mago, G.A. 1980. A cellular computer architecture for functional programming.
+    \textit{IEEE Computer Society COMPCON}, pp. 179--87.
+
+    \item Wadsworth, C.P. 1971. Semantics and pragmatics of the lambda calculus, Chapter 4.
+    PhD thesis, Oxford.
+
+\end{references}

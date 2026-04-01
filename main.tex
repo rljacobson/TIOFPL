@@ -385,6 +385,33 @@
 \newcommand{\theorembox}[2]{\titledbox{THEOREM}{\noindent #1}{\noindent #2}}
 \newcommand{\definitionbox}[2]{\titledbox{DEFINITION}{\noindent #1}{\noindent #2}}
 
+\newcommand{\combinatorbox}[2]{
+    {\centering
+
+        {%
+            \vspace{0.5\baselineskip}
+            \setlength{\fboxrule}{1pt}%
+            \setlength{\fboxsep}{10pt}%
+            \fbox{%
+                \begin{minipage}{0.5\textwidth}
+                    \small
+                    \setlength{\parindent}{10pt}
+                    \setlength{\parskip}{0mm plus 0mm minus 0mm}
+                    #1
+%                    \vspace{-0.5\baselineskip}\hfill{}
+
+                    \hdashsep
+                    \vspace{0.5\baselineskip}
+
+                    #2
+                \end{minipage}%
+            }%
+            \vspace{0.5\baselineskip}
+        }%
+
+    }
+}
+
 \newenvironment{pcorollary}{\begin{quote}\textit{Corollary.\;}}{\end{quote}}
 \newenvironment{pproof}{\begin{quote}\textit{Proof.\;}}{\end{quote}}
 
@@ -411,7 +438,7 @@
 \newenvironment{parsetree}[1]{\begin{center}\begin{forest}[#1]}{\end{forest}\end{center}}
 
 % The following is useful for authoring but needs to be commented for final compilation. It excludes all other files but still reads in their aux files so that counters, etc., remain valid.
-\includeonly{chapters/chap12}
+\includeonly{chapters/chap13}
 
 \begin{document}
 
@@ -438,6 +465,7 @@
 \include{chapters/chap10}
 \include{chapters/chap11}
 \include{chapters/chap12}
+\include{chapters/chap13}
 % Adjust the `\includeonly{..}` command before `\begin{document}` to include/exclude document content for faster compilation.
 
 %\backmatter
