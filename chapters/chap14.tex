@@ -1,0 +1,579 @@
+\chapter[Recursive Supercombinators]{Recursive\\Supercombinators}
+%\vspace{2cm}
+\vspace{1cm}
+
+So far we have made no explicit mention of how our lambda-lifter should
+handle recursive definitions. One way to do so is to translate all our recursive
+definitions into non-recursive ones, using the fixpoint combinator \ml{Y}, as
+described in Chapter~2. This is inefficient and slow for the following reasons:
+
+\begin{numbered}
+    \item There is no reason why the \textit{supercombinators} should not be explicitly
+    recursive since, unlike lambda abstractions, they have names so they can
+    refer to themselves. For example
+
+    \begin{letalign}
+        \ml{\$F x = \$G (\$F ($-$ x 1)) 0}
+    \end{letalign}
+
+    \item To make \ml{\$F} non-recursive using \ml{Y} would require an auxiliary definition,
+    thus:
+
+    \begin{letalign}
+        \ml{\$F} &= \ml{Y \$F1} \\
+        \ml{\$F1 F x} &= \ml{\$G (F ($-$ x 1)) 0}
+    \end{letalign}
+
+    Defining \ml{\$F} in this way will require more reductions than the explicitly
+    recursive version, since the \ml{Y} has to be reduced.
+
+    \item In Chapter~6 the translation into the ordinary lambda calculus of a \ml{letrec}
+    involving mutual recursion was handled by first grouping the definitions
+    into a tuple, and then making this definition non-recursive with \ml{Y}. Not
+    only is it annoying to have to introduce tuples to handle mutual recursion
+    of functions, but it is also very inefficient since the tuple has to be
+    constructed and then taken apart.
+\end{numbered}
+We conclude that explicitly recursive definitions of supercombinators will
+give a better performance. We now describe the techniques required to obtain
+a set of mutually recursive supercombinator definitions without using \ml{Y}.
+
+\section{Notation}
+
+Since we want to treat recursion directly, we do not want it to be compiled into
+applications of the \ml{Y} combinator. Hence we assume that the high-level
+functional program is instead translated into the lambda notation augmented
+with the simple let and letrec constructs, as was described in Chapter~3.
+
+In passing we observe that the notation
+
+\combinatorbox{
+    \ml{\$S1 x y = B1} \\
+    \indent \ml{\$S2 f = B2} \\
+    \indent \ml{etc.}
+}{
+    \ml{E}
+}
+
+\noindent
+is precisely equivalent to
+\begin{letalign}
+        letrec & \\
+        & \ml{\$S1} = \tlb{x}\tlb{y}B1 \\
+        & \ml{\$S2} = \tlb{f}B2 \\
+        & etc. \\
+        in     & \\
+        & \ml{E}
+\end{letalign}
+so that the lambda-lifting process can be regarded as a source to source
+transformation of the enriched lambda calculus.
+
+\section{\ml{Let}s and \ml{letrec}s in Supercombinator Bodies}
+
+Suppose we wanted to write a textual description for the graph
+
+\plainbox{\centering
+    \vspace{-0.5\baselineskip}
+\begin{tikzpicture}
+    \node (a) at (0,   0)  {\ml{@}};
+    \node (b) at (0.5,  -1)  {\ml{@}};
+    \node (c) at (-1, -2)  {\ml{@}};
+    \node (f) at (-1.7,-3) {\ml{f}};
+    \node (g) at (-0.3,-3) {};
+    \node (three) at (1, -2) {\ml{3}};
+    \draw (a) -- (b);
+    \draw (a) -- (c);
+    \draw (b) -- (c);
+    \draw (b) -- (three);
+    \draw (c) -- (f);
+    \draw[-{Stealth[length=3mm,width=2mm]}] (c) -- (g.center) -- (1.8,-3) -- (1.8,-1) -- (b);
+\end{tikzpicture}
+    \vspace{-0.5\baselineskip}
+}
+
+\noindent
+Whilst expressions such as \ml{(f (g a) b)} can describe trees, they cannot express
+the sharing and cycles embodied in the above graph. One solution would be to
+name the nodes (\ml{a}, \ml{b} and \ml{c}, say, working top to bottom) and express the
+graph thus:
+\begin{mlcoded}
+    a = c b \\
+    b = c 3 \\
+    c = f b
+\end{mlcoded}
+We would also want to identify \ml{a} as being the root of the graph. But we have
+just reinvented the \ml{letrec}! The graph can be described by the \ml{letrec} expression
+\begin{mlcoded}
+    \begin{tabular}{@{}l@{\;}l@{}}
+        letrec & a = c b \\
+        & b = c 3 \\
+        & c = f b \\
+        in a
+    \end{tabular}
+\end{mlcoded}
+This gives us the idea that \ml{letrec} expressions can be regarded as \textit{textual
+    descriptions of a cyclic graph}. Hence a \ml{letrec} in a supercombinator body can be
+regarded as the description of a graphical portion of the supercombinator
+body.
+
+Up to now we have considered a supercombinator body to be a \textit{tree}, and
+applying the supercombinator involves constructing a new instance of the
+tree. Now we see that allowing \ml{letrec}s in a supercombinator body allows the
+body to be a \textit{graph}, and applying such a supercombinator involves con-
+structing a new instance of this graph. We say that such a supercombinator has
+a \textit{graphical body}.
+
+For example, consider the following supercombinator definition:
+\begin{letalign}
+        \$Y f = & letrec yf = f yf \\
+        & in yf
+\end{letalign}
+This is a definition of the cyclic version of the familiar \ml{Y} combinator, whose
+body is a graph. When \ml{\$Y} is applied, we make an instance of the graph,
+substituting for occurrences of the formal parameter, \ml{f}. During the
+instantiation we must be careful to preserve the cycles of the original graph.
+
+A compiling implementation would compile code which would, when
+executed, construct the graph with the appropriate substitutions made. The
+way in which this is done is described in Chapter~18.
+
+In a similar way we can allow supercombinator bodies to contain \ml{let}-expressions, regarding them as descriptions of (acyclic) graphs. This will
+actually save us reductions, because we can now describe directly expressions
+such as
+\begin{mlcoded}
+    let x = 3 in E
+\end{mlcoded}
+where we would previously have translated this to
+\begin{letalign}
+    (\tlb{x}E) 3
+\end{letalign}
+which requires a reduction to explicate.
+
+To summarize, we see that
+
+\begin{numbered}
+    \item it is quite easy to extend supercombinators to allow them to have bodies
+    which are general graphs, rather than being restricted to trees;
+    \item graphical supercombinator bodies can easily be described using a \ml{letrec}
+    (or a \ml{let} in the case of acyclic bodies);
+    \item to instantiate a \ml{letrec} (or \ml{let}), we simply construct the graph described by
+    the \ml{letrec} (or \ml{let});
+    \item using graphical bodies can save us reductions.
+\end{numbered}
+We now discuss how to transform recursive programs into supercombinators
+with graphical bodies.
+
+\section{Lambda-lifting in the Presence of \ml{letrec}s}
+
+Our lambda-lifting algorithm will work as before, lifting the lambda
+abstractions to the top level. No special note need be taken of \ml{letrec}s; they can
+be treated just like any other expression. In particular, lambda-lifting still
+applies only to lambda abstractions, not to \ml{letrec}s as well. Some lambda
+abstractions will have \ml{letrec}s in their bodies, which will give rise to super-
+combinators with graphical bodies.
+
+The question arises, however, of what lexical level-number to assign to
+variables bound in a \ml{letrec}.
+
+The variables bound in a \ml{letrec} will be instantiated when the \textit{immediately
+    (textually) enclosing lambda abstraction} is applied to an argument, since that
+is when we construct the instance of the \ml{letrec}, substituting for all the free
+variables. Hence the variables bound in a \ml{letrec} should be given the lexical
+level-number of the immediately enclosing lambda abstraction.
+
+What if there is no enclosing lambda abstraction? In this case the natural
+level-number for such variables should be 0. But this gives us a hint, since 0 is
+the level-number we assign to constants and supercombinators. If there is no
+enclosing lambda abstraction, then the definition bodies of the \ml{letrec} can have
+no free variables (other than the variables defined in the \ml{letrec}); in other words,
+they are combinators. All that is needed to turn them into supercombinators
+is to lambda-lift them to remove any inner lambdas. Notice that the variables
+bound in such level 0 \ml{letrec}s will not be taken out as free variables because
+constants (level 0) are not taken out.
+
+Suppose we have to lambda-lift this program, which computes the infinite
+list of 1s.
+
+\combinatorbox{}{
+    \ml{letrec x = CONS 1 x} \\
+    \indent \ml{in x}
+}
+
+\noindent
+The \ml{letrec} is at level 0, and there are no lambda abstractions, so \ml{x} is a
+supercombinator already, and we get
+
+\combinatorbox{
+    \ml{\$x = CONS 1 \$x}
+}{
+    \ml{\$x}
+}
+
+As an example of a recursive function, consider the factorial function:
+
+\combinatorbox[0.7\textwidth]{}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        letrec fac = \tlb{n}IF (= n 0) 1 ($\ast$ n (fac ($-$ n 1))) \\
+        in fac 4
+    \end{mlcoded}
+}
+
+\noindent
+The \ml{letrec} is at level 0, and there are no lambda abstractions inside the body of
+the \ml{\tl n} abstraction. Hence, \ml{fac} is already a supercombinator and we get
+
+\combinatorbox[0.7\textwidth]{
+    \begin{mlcoded}
+        \$fac n = IF (= n 0) 1 ($\ast$ n (\$fac ($-$ n 1))) \\
+        \$Prog = \$fac 4
+    \end{mlcoded}
+        \vspace{-0.5\baselineskip}
+}{
+    \ml{\$Prog}
+}
+
+\section{Generating Supercombinators with Graphical Bodies}
+
+So far none of our supercombinators has had a graphical body. This occurs
+when a \ml{letrec} has some free variables. Consider, for example, the program
+
+\combinatorbox[0.7\textwidth]{}{
+        \vspace{-0.5\baselineskip}
+    \begin{letalign}
+            let & \\
+            & Inf = \tlb{v}(letrec vs = CONS v vs in vs) \\
+            in  & \\
+            & Inf 4
+    \end{letalign}
+}
+
+\noindent
+\ml{(Inf v)} returns the infinite list of \ml{v}s. Again, \ml{Inf} is at level 0 and contains no inner
+lambda abstractions, so it is already a supercombinator, and we get
+
+\combinatorbox[0.7\textwidth]{
+    \begin{mlcoded}
+        \$Inf v = letrec vs = CONS v vs in vs \\
+        \$Prog = \$Inf 4
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{
+    \ml{\$Prog}
+}
+
+\noindent
+Notice that the graphical body of the supercombinator preserves the (finite)
+cyclic representation of the (infinite) data structure.
+
+\section{An Example}
+
+We shall now work through an example to show the lambda-lifting algorithm
+in action. Here is a Miranda program to sum the first 100 integers. It is written
+in a slightly odd style in order to demonstrate various aspects of the algorithm:
+
+\combinatorbox[0.9\textwidth]{
+    \begin{mlcoded}
+        \begin{tabular}{@{}l@{ }l@{ }l}
+            sumInts m &= sum (count 1) & \\
+            & \phantom{=} where & \\
+            & \qquad\qquad count n  &= [\,], \qquad\qquad\qquad\qquad n>m \\
+            &  &= n : count (n+1) \\
+            sum [\,]    & = 0  &\\
+            sum (n:ns)  & = n + sum ns &
+        \end{tabular}
+    \end{mlcoded}
+%    \vspace{-0.5\baselineskip}
+}{
+    \ml{sumInts 100}
+}
+
+\noindent
+Translating this into the enriched lambda calculus gives
+
+\combinatorbox[0.9\textwidth]{
+}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        \begin{tabular}{l@{}l@{}}
+            letrec  \\
+            \quad sumInts  \\
+            \quad = \tlb{m}letrec  \\
+            \qquad\qquad\qquad count  = \tlb{n} &IF ($>$ n m) \\
+            \quad\quad &NIL \\
+            \quad\quad &(CONS n (count (+ n 1))) \\
+            \qquad\qquad\ in  \\
+            \qquad\qquad\qquad sum (count &1)  \\
+            \quad sum  = \tlb{ns}IF (= ns &NIL) 0 (+ (HEAD ns) (sum (TAIL ns))) \\
+            in  \\
+            \quad sumInts 100
+        \end{tabular}
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}
+
+\noindent
+(Note: this is not exactly the translation that will be produced by the pattern-matching compiler described in Chapter~5, but it is a correct translation, and will suffice for present purposes.) The variables \ml{sumInts} and \ml{sum} are defined at level~0, but \ml{sumInts} has an inner lambda abstraction. This \ml{\tl n} abstraction has the free variables \ml{m} and \ml{count}. We lift them out to generate a supercombinator, which we arbitrarily name \ml{\$count}, thus
+
+\combinatorbox[0.9\textwidth]{
+    \begin{mlcoded}
+        \$count count m n = IF ($>$ n m) NIL (CONS n (count (+ n 1)))
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        \begin{tabular}{@{}l@{ }l}
+            letrec & \\
+            \qquad sumInts & \\
+            \qquad = \tlb{m} & letrec  \\
+            & \qquad count = \$count count m \\
+            & in  \\
+            &\qquad sum (count 1) \\
+            \qquad sum  = &\tlb{ns}IF (= ns NIL) 0 (+ (HEAD ns) (sum (TAIL ns))) \\
+            in  \\
+            \qquad sumInts &100
+        \end{tabular}
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}
+
+Now \ml{sumInts} and \ml{sum} have no inner abstractions, and they are at the top
+level, so they are supercombinators. Lifting them directly, and adding the
+final \ml{\$Prog} supercombinator, gives
+
+\combinatorbox[0.9\textwidth]{
+    \begin{mlcoded}
+        \$count count m n = IF ($>$ n m) NIL (CONS n (count (+ n 1))) \\
+        \$sum ns = IF (= ns NIL) 0 (+ (HEAD ns) (\$sum (TAIL ns))) \\
+        \$sumInts m = letrec count = \$count count m \\
+        \phantom{\$sumInts m = }in \$sum (count 1) \\
+        \$Prog = \$sumInts 100
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{
+    \ml{\$Prog}
+}
+
+\noindent
+We are done.
+
+\section{Alternative Approaches}
+
+The technique described earlier is not the only way of lambda-lifting recursive
+functions. For example, Johnsson [1985] describes an algorithm which
+constructs graphical supercombinator bodies for data structures, but not for
+functions.
+
+Briefly, his technique works like this. Suppose we have a program with a
+recursive function \ml{f} containing a free variable \ml{v}:
+
+\combinatorbox{}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        (\ldots \\
+        \phantom{XX} letrec f = \tlb{x}(\ldots f\ldots v\ldots) \\
+        \phantom{XX} in (\ldots f\ldots) \\
+        \ldots)
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}
+
+\noindent
+We generate a recursive supercombinator \ml{\$f} from \ml{f} by abstracting the free
+variables (just \ml{v} in this case) \textit{but not} \ml{f} \textit{itself}. Instead, all uses of \ml{f} are replaced
+with \ml{(\$f v)}, including those in the body of \ml{\$f} itself. This yields
+
+\combinatorbox{
+    \begin{mlcoded}
+        \$f v x = \ldots(\$f v)\ldots v\ldots
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        (\ldots \\
+        \phantom{XX} (\ldots(\$f v)\ldots) \\
+        \ldots)
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}
+
+To illustrate the method we will recompile the \ml{sumInts} example given
+earlier. Recall that we begin with the program
+
+\combinatorbox[0.9\textwidth]{
+}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        \begin{tabular}{l@{}l@{}}
+            letrec  \\
+            \quad sumInts  \\
+            \quad = \tlb{m}letrec  \\
+            \qquad\qquad\qquad count  = \tlb{n} &IF ($>$ n m) \\
+            \quad\quad &NIL \\
+            \quad\quad &(CONS n (count (+ n 1))) \\
+            \qquad\qquad\ in  \\
+            \qquad\qquad\qquad sum (count &1)  \\
+            \quad sum  = \tlb{ns}IF (= ns &NIL) 0 (+ (HEAD ns) (sum (TAIL ns))) \\
+            in  \\
+            \quad sumInts 100
+        \end{tabular}
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}
+
+First we lambda-lift the \tl n abstraction, abstracting out the free variable \ml{m},
+\textit{but not} \ml{count}. Instead, we replace all calls to \ml{count} with \ml{(\$count m)}, which gives
+
+\combinatorbox[0.9\textwidth]{
+        \ml{\$count m n = IF ($>$ n m) NIL (CONS n (\$count m (+ n 1)))}
+}{
+    \vspace{-0.5\baselineskip}
+    \begin{letalign}
+            letrec  &\\
+            & sumInts  \\
+            & = \tlb{m}sum (\$count m 1)  \\
+            & sum  = \tlb{ns}IF (= ns NIL) 0 (+ (HEAD ns) (sum (TAIL ns))) \\
+            in & \\
+            & sumInts 100
+    \end{letalign}
+}
+
+There were two calls to \ml{count}, one in the body of the \tl n abstraction and one in
+the definition of \ml{sumInts}, both of which were replaced with \ml{(\$count m)}. Notice
+that this substitution could equally well be carried out using a let-definition to
+bind \ml{count} to \ml{(\$count m)}.
+
+Now \ml{sumInts} and \ml{sum} are supercombinators, so we lift them out to give
+
+\combinatorbox[0.9\textwidth]{
+    \begin{mlcoded}
+        \$count m n = IF ($>$ n m) NIL (CONS n (\$count m (+ n 1))) \\
+        \$sum ns = IF (= ns NIL) 0 (+ (HEAD ns) (\$sum (TAIL ns))) \\
+        \$sumInts m = \$sum (\$count m 1) \\
+        \$Prog = \$sumInts 100
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{
+    \ml{\$Prog}
+}
+
+\noindent
+Notice that (unlike our previous method) no supercombinator has a graphical
+body; all the recursion is handled by direct recursion of supercombinators.
+However, it turns out that cyclic data structures have to be treated in a
+different way, and do require supercombinators with graphical bodies.
+
+The new method has one major advantage. In our previous approach the
+recursive call to \ml{count} in the \ml{\$count} supercombinator was made to a function
+passed in as a parameter (called \ml{count}). In contrast, the new method makes
+the recursive call directly to the supercombinator \ml{\$count}. This means that the
+compiler can see which function is being called, and this information can
+make the compiled code considerably more efficient (see Chapter~20).
+
+On the other hand, the \ml{\$count} supercombinator generated by the new
+method is larger than that generated by the previous method. It contains an
+extra application node \ml{(\$count m)}, and a new instance of this application node
+will be constructed on every application of \ml{\$count}, which will consume more
+store.
+
+In the case of mutually recursive functions, it turns out that each function
+needs to be passed the free variables of all the other functions in the mutually
+recursive set, as well as its own. This involves doing the sort of dependency
+analysis described in Section~6.2.8. Furthermore, as mentioned above, data
+structures and functions must be treated in different ways by the new method,
+which makes the compiler more complicated.
+
+The trade-off between the two techniques is not yet clear.
+
+\section{Compile-time Simplifications}
+
+Once lambda-lifting has been completed there are some simple optimizations
+that further improve the lambda-lifted program. These take the form of
+compile-time simplifications of the program.
+
+\subsection{Compile-time Reductions}
+
+It may be advantageous to perform certain reductions at compile-time. For
+example, consider the definitions
+\begin{mlcoded}
+    \$F x y = + (\$G y) x \\
+    \$G p = $\ast$ p p
+\end{mlcoded}
+The \ml{(\$G y)} in the body of \ml{\$F} is a redex which will be created every time \ml{\$F} is
+applied. We could, however, reduce it at compile-time, giving
+\begin{mlcoded}
+    \$F x y = + ($\ast$ y y) x
+\end{mlcoded}
+thus performing the \ml{\$G} reduction once and for all at compile-time. This
+process is directly analogous to expanding out the code for a procedure call
+in-line, a common optimization in conventional compilers. In order to
+preserve sharing we should replace the redex with a let-expression:
+\begin{mlcoded}
+    \$G E $\rightarrow$ let p = E in $\ast$ p p
+\end{mlcoded}
+Sometimes we can evaluate subexpressions completely, as in the definition
+\begin{mlcoded}
+    \$H x = + x ($\ast$ 3 4)
+\end{mlcoded}
+where we can safely evaluate the \ml{($\ast$ 3 4)} once and for all at compile-time.
+This is called constant folding in conventional compiler technology.
+
+The question of exactly which redexes to reduce is not completely straight-forward, especially in the case of recursive functions, because indiscriminate use of the technique may cause the code size to increase significantly. The decision is not clear-cut, because it depends on the relative priorities of speed and code size. Hudak and Kranz [1984] give an interesting discussion of a particularly thorough-going use of compile-time reduction.
+
+\subsection{Common Subexpression Elimination}
+
+Sometimes (for clarity) the programmer may write an expression such as
+\begin{mlcoded}
+    $\ast$ (\$F x) (\$F x)
+\end{mlcoded}
+Rather than compute \ml{(\$F x)} twice, we can replace the expression with
+\begin{mlcoded}
+    let fx = \$F x in $\ast$ fx fx
+\end{mlcoded}
+
+Identifying common subexpressions may be done by a hashing algorithm
+which checks to see if an expression already exists before building a new one.
+This simplification seems always to be beneficial, but see Chapter~23 for a
+warning about some possible drawbacks.
+
+\subsection{Eliminating Redundant \ml{let}s}
+
+Sometimes \ml{let}s of the form
+\begin{mlcoded}
+    let x = y in E
+\end{mlcoded}
+arise, in which the right-hand side of the definition is a single variable. These
+can safely be eliminated by replacing occurrences of \ml{x} by \ml{y} in \ml{E}.
+
+It is also quite common to encounter code in which a variable defined in a \ml{let}
+is used only once in its scope. For example, consider the supercombinator
+\begin{mlcoded}
+    \begin{tabular}{l@{ }l@{ }l}
+        \$sumSq x y = &let & xsq  = $\ast$ x x \\
+        & & ysq = $\ast$ y y \\
+        & in & \\
+        & &+ xsq ysq
+    \end{tabular}
+\end{mlcoded}
+In this case we may as well substitute the right-hand side of the definition for
+the (single) occurrence of the variable, giving
+\begin{mlcoded}
+    \$sumSq x y = + ($\ast$ x x) ($\ast$ y y)
+\end{mlcoded}
+This is simpler and, it turns out, slightly more efficient. It may be achieved
+simply by accumulating information on the number of textually distinct
+occurrences of each variable in the body of a \ml{let}.
+
+ \section*{References}
+
+\begin{references}
+    \item Hudak, P., and Kranz, D. 1984. A combinator based compiler for a functional
+    language. In \textit{Proceedings of the 11th ACM Symposium on Principles of
+        Programming Languages}, pp. 122--32. January.
+
+    \item Johnsson, T. 1985. Lambda-lifting -- transforming programs to recursive equations. In
+    \textit{Conference on Functional Programming and Computer Architecture, Nancy}, pp.
+    190--203. Jouannaud (editor). LNCS 201. Springer Verlag.
+\end{references}
