@@ -36,8 +36,8 @@ Robert Jacobson
 	- [x] 11 Selecting The Next Redex
 	- [x] 12 Graph Reduction Of Lambda Expressions
 	- [X] 13 Supercombinators And Lambda-Lifting
-	- [ ] 14 Recursive Supercombinators
-	- [ ] 15 Fully-Lazy Lambda-Lifting
+	- [X] 14 Recursive Supercombinators
+	- [X] 15 Fully-Lazy Lambda-Lifting
 	- [ ] 16 Sk Combinators
 	- [ ] 17 Storage Management And Garbage Collection
 - [ ] Part III Advanced Graph Reduction

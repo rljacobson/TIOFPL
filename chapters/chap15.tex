@@ -1,0 +1,1315 @@
+\chapter{Fully Lazy Lambda-lifting}
+%\vspace{2cm}
+\vspace{1cm}
+
+As we discussed in Chapter~11 our implementations support lazy evaluation.
+However, there is one major way in which an implementation based on
+lambda-lifting can be made still lazier than the version we have described so
+far. The purpose of this chapter is to describe the opportunity and the
+modifications required to exploit it.
+
+\section{Full Laziness}
+
+As we remarked in Section~12.1.3, a straightforward implementation of the
+template-instantiation procedure risks constructing \textit{multiple instances of the
+    same expression}, rather than sharing a single copy of them. This wastes space
+because each instance occupies separate storage, and it wastes time because
+the instances will be reduced separately. This waste can be arbitrarily large;
+for example, the duplicated instances might each separately perform some
+large calculation.
+
+The loss of sharing can best be seen using an example. Consider the
+function
+\begin{mlcoded}
+    f = \tlb{y}+ y (sqrt 4)
+\end{mlcoded}
+Whenever this function is applied to an argument we will slavishly construct a
+new instance of the subexpression \ml{(sqrt 4)} in its body, despite the fact that all
+instances of the \ml{(sqrt 4)} reduce to \ml{2}. It would be better not to construct a new
+instance of such constant subexpressions, but to share a single instance
+instead. This can do no harm, since the constant subexpression does not
+contain any occurrences of the formal parameter, and hence its value cannot
+change between one application and another.
+
+It looks as if these constant subexpressions could be spotted and marked by
+a compiler, but they can be generated `on the fly'. Consider the Miranda
+program
+
+\combinatorbox{
+    \ml{f = g 4} \\
+    \indent\ml{g x y = y + (sqrt x)}
+}{
+    \ml{(f 1) + (f 2)}
+}
+
+\noindent
+This compiles to the lambda expression:
+
+\combinatorbox{
+    \begin{mlcoded}
+    letrec f = g 4 \\
+    \phantom{letrec} g = \tlb{x}\tlb{y}+ y (sqrt x) \\
+    in + (f 1) (f 2)
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{}
+
+\noindent
+Therefore, when evaluating the expression, we get
+
+\vs
+\begin{tikzpicture}[
+    bullet/.style={circle, fill=black, inner sep=1.5pt},
+    arr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+    node distance=0pt,
+    every node/.style={font=\sffamily\footnotesize}
+    ]
+
+    \def\rs{0.9}
+    \def\as{0.55}
+
+    \pgfmathsetmacro\rowa{0}
+    \pgfmathsetmacro\rowb{-1*\rs}
+    \pgfmathsetmacro\rowc{-1*\rs-\as}
+    \pgfmathsetmacro\rowd{-2*\rs-\as}
+    \pgfmathsetmacro\rowe{-2*\rs-2*\as}
+    \pgfmathsetmacro\rowf{-3*\rs-2*\as}
+    \pgfmathsetmacro\rowg{-3*\rs-3*\as}
+    \pgfmathsetmacro\rowh{-4*\rs-3*\as}
+    \pgfmathsetmacro\rowi{-4*\rs-4*\as}
+    \pgfmathsetmacro\rowj{-5*\rs-4*\as}
+
+    \def\tgtx{4.8}
+
+    % Row 1: + (f 1) (f 2)  [no arrow]
+    \node[anchor=north west, inner sep=0pt] at (-1.2,\rowa)
+    {\phantom{$\rightarrow$ } \ml{+ (f\quad \ \ 1) (f\ \ \ 2)}};
+
+    % Row 2: -> + (• 1) (• 2)   --> ((λx.λy.+ y (sqrt x)) 4)
+    \node[anchor=west] at (-1.2,\rowb) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b2a) at (0.25,\rowb) {};
+    \node[anchor=west] at (0.35,\rowb) {\ml{1) (}};
+    \node[bullet] (b2b) at (1.15,\rowb) {};
+    \node[anchor=west] at (1.25,\rowb) {\ml{2)}};
+    \node[anchor=west] (r2tgt) at (\tgtx,\rowc) {\ml{((\tlb{x}\tlb{y}+ y (sqrt x)) 4)}};
+    \draw (b2a.south) -- (0.25,\rowc);
+    \draw[arr] (0.25,\rowc) -- (r2tgt.west);
+    \draw (b2b.south) -- (1.15,\rowc);
+    \draw (1.15,\rowc) -- (\tgtx,\rowc);
+
+    % Row 3: -> + (• 1) (• 2)   --> (λy.+ y (sqrt 4))
+    \node[anchor=west] at (-1.2,\rowd) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b3a) at (0.25,\rowd) {};
+    \node[anchor=west] at (0.35,\rowd) {\ml{1) (}};
+    \node[bullet] (b3b) at (1.15,\rowd) {};
+    \node[anchor=west] at (1.25,\rowd) {\ml{2)}};
+    \node[anchor=west] (r3tgt) at (\tgtx,\rowe) {\ml{(\tlb{y}+ y (sqrt 4))}};
+    \draw (b3a.south) -- (0.25,\rowe);
+    \draw[arr] (0.25,\rowe) -- (r3tgt.west);
+    \draw (b3b.south) -- (1.15,\rowe);
+    \draw (1.15,\rowe) -- (\tgtx,\rowe);
+
+    % Row 4: -> + (• 1) (+ 2 (sqrt 4))   --> (λy.+ y (sqrt 4))
+    \node[anchor=west] at (-1.2,\rowf) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b4a) at (0.25,\rowf) {};
+    \node[anchor=west] at (0.35,\rowf) {\ml{1) (+ 2 (sqrt 4))}};
+    \node[anchor=west] (r4tgt) at (\tgtx,\rowg) {\ml{(\tlb{y}+ y (sqrt 4))}};
+    \draw (b4a.south) -- (0.25,\rowg);
+    \draw[arr] (0.25,\rowg) -- (r4tgt.west);
+
+    % Row 5: -> + (• 1) 4   --> (λy.+ y (sqrt 4))
+    \node[anchor=west] at (-1.2,\rowh) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b5a) at (0.25,\rowh) {};
+    \node[anchor=west] at (0.35,\rowh) {\ml{1) 4}};
+    \node[anchor=west] (r5tgt) at (\tgtx,\rowi) {\ml{(\tlb{y}+ y (sqrt 4))}};
+    \draw (b5a.south) -- (0.25,\rowi);
+    \draw[arr] (0.25,\rowi) -- (r5tgt.west);
+
+    % Rows 6–8: plain lines, lumped into one node
+    \node[anchor=north west, align=left, inner sep=0pt] at (-1.2,\rowj) {%
+        $\rightarrow$ \ml{+ (+ 1 (sqrt 4)) 4}\\[2pt]
+        $\rightarrow$ \ml{+ 3 4}\\[2pt]
+        $\rightarrow$ \ml{7}%
+    };
+
+\end{tikzpicture}
+\vs
+
+\noindent
+The crucial point is that the \ml{(sqrt 4)} is evaluated twice, because a fresh
+instance of it is made each time the \ml{\tl y} is applied. The reason for this is that it is
+a \textit{dynamically created} constant subexpression of the \ml{\tl y} abstraction.
+
+Not surprisingly, just the same problem occurs with supercombinators. Our
+example compiles to
+
+\combinatorbox{
+    \ml{\$g x y = + y (sqrt x)} \\
+    \indent\ml{\$f = \$g 4} \\
+    \indent\ml{\$Prog = + (\$f 1) (\$f 2)}
+}{
+    \ml{\$Prog}
+}
+
+\noindent
+The reduction proceeds as follows:
+
+\vs
+\begin{tikzpicture}[
+    bullet/.style={circle, fill=black, inner sep=1.5pt},
+    arr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+    node distance=0pt,
+    every node/.style={font=\sffamily\footnotesize}
+    ]
+
+    \def\rs{0.9}
+    \def\as{0.55}
+
+    \pgfmathsetmacro\rowa{0}
+    \pgfmathsetmacro\rowb{-1*\rs}
+    \pgfmathsetmacro\rowc{-1*\rs-\as}
+    \pgfmathsetmacro\rowd{-2*\rs-\as}
+    \pgfmathsetmacro\rowe{-2*\rs-2*\as}
+    \pgfmathsetmacro\rowf{-3*\rs-2*\as}
+    \pgfmathsetmacro\rowg{-3*\rs-3*\as}
+    \pgfmathsetmacro\rowh{-4*\rs-3*\as}
+
+    \def\tgtx{4.0}
+
+    % Row 1: $Prog  [no arrow]
+    \node[anchor=north west, inner sep=0pt] at (-1.2,\rowa)
+    {\phantom{$\rightarrow$ } \ml{\$Prog}};
+
+    % Row 2: -> + (• 1) (• 2)   --> ($g 4)
+    \node[anchor=west] at (-1.2,\rowb) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b2a) at (0.25,\rowb) {};
+    \node[anchor=west] at (0.35,\rowb) {\ml{1) (}};
+    \node[bullet] (b2b) at (1.15,\rowb) {};
+    \node[anchor=west] at (1.25,\rowb) {\ml{2)}};
+    \node[anchor=west] (r2tgt) at (\tgtx,\rowc) {\ml{(\$g 4)}};
+    \draw (b2a.south) -- (0.25,\rowc);
+    \draw[arr] (0.25,\rowc) -- (r2tgt.west);
+    \draw (b2b.south) -- (1.15,\rowc);
+    \draw (1.15,\rowc) -- (\tgtx,\rowc);
+
+    % Row 3: -> + (• 1) (+ 2 (sqrt 4))   --> ($g 4)
+    \node[anchor=west] at (-1.2,\rowd) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b3a) at (0.25,\rowd) {};
+    \node[anchor=west] at (0.35,\rowd) {\ml{1) (+ 2 (sqrt 4))}};
+    \node[anchor=west] (r3tgt) at (\tgtx,\rowe) {\ml{(\$g 4)}};
+    \draw (b3a.south) -- (0.25,\rowe);
+    \draw[arr] (0.25,\rowe) -- (r3tgt.west);
+
+    % Row 4: -> + (• 1) 4   --> ($g 4)
+    \node[anchor=west] at (-1.2,\rowf) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b4a) at (0.25,\rowf) {};
+    \node[anchor=west] at (0.35,\rowf) {\ml{1) 4}};
+    \node[anchor=west] (r4tgt) at (\tgtx,\rowg) {\ml{(\$g 4)}};
+    \draw (b4a.south) -- (0.25,\rowg);
+    \draw[arr] (0.25,\rowg) -- (r4tgt.west);
+
+    % Rows 5–7: plain lines
+    \node[anchor=north west, align=left, inner sep=0pt] at (-1.2,\rowh) {%
+        $\rightarrow$ \ml{+ (+ 1 (sqrt 4)) 4}\\[2pt]
+        $\rightarrow$ \ml{+ 3 4}\\[2pt]
+        $\rightarrow$ \ml{7}%
+    };
+
+\end{tikzpicture}
+\vs
+
+\noindent
+Again we see that the \ml{(sqrt 4)} has been evaluated twice.
+
+To be as lazy as possible we would like to share even these dynamically
+created constant expressions. Specifically, the effect we want to achieve is that
+every expression is evaluated \textit{at most once} after the variables in it have been
+bound. This is called \textit{full laziness}. It corresponds closely to an optimization
+sometimes performed by conventional compilers on loops, in which
+expressions not involving the loop variable (i.e.\ free expressions) are moved
+out of the loop so that they are not repeatedly evaluated.
+
+\section{Maximal Free Expressions}
+
+The problem we have discovered is that laziness can be lost if we instantiate
+too much of the body of a lambda abstraction.
+
+Which parts should not be instantiated? The parts of the body that should
+not be instantiated are those subexpressions which contain no (free)
+occurrences of the formal parameter, because if the formal parameter does
+not occur then the value of the subexpression will be the same between all
+instances, and hence may be shared. To formalize this we need a new
+definition.
+
+\definitionbox{
+    \vspace{-0.8\baselineskip}
+}{
+    A subexpression \ml{E} of a lambda abstraction \ml{L} is \textit{free} in \ml{L} if all variables in \ml{E}
+    are free in \ml{L}. A \textit{maximal free expression} or \textit{MFE} of \ml{L} is a free expression
+    which is not a proper subexpression of another free expression of \ml{L}. (\ml{E} is a
+    proper subexpression of \ml{F} if and only if \ml{E} is a subexpression of \ml{F} and
+    \ml{E} $\neq$ \ml{F}.)
+}
+
+\noindent
+\textit{Examples}\\
+In the following lambda abstractions the maximal free expressions of the \tl x
+abstractions are underlined.
+\vs
+
+\begin{compactenum}[\quad(1)]
+    \item \ml{(\tlb{x}\underline{sqrt} x)}
+    \item \ml{(\tlb{x}x \underline{(sqrt 4)})}
+    \item \ml{(\tlb{y}\tlb{x}$\pm$ x \underline{($\ast$ y y)})}
+    \item \ml{(\tlb{y}\tlb{x}+ \underline{($\ast$ y y)} x)}
+    \item \ml{(\tlb{x}\underline{(\tlb{x}x)} x)} (here the \ml{(\tlb{x}x)} is free despite the name clash)
+\end{compactenum}
+\vs
+
+\noindent
+To achieve full laziness, therefore, when performing a \tb-reduction we must
+not instantiate the maximal free expressions of the lambda abstraction.
+Instead of instantiating them we must substitute a pointer to the single shared
+instance in the body of the lambda abstraction. This key idea was first
+recognized by Wadsworth [1971]. To illustrate, recall our example from the
+previous section
+
+\combinatorbox{}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        letrec f = g 4 \\
+        \phantom{letrec} g = \tlb{x}\tlb{y}+ y (sqrt x) \\
+        in \ml{+ (f 1) (f 2)}
+    \end{mlcoded}
+}
+
+\noindent
+The reduction sequence begins in the same way
+
+\vs
+\begin{tikzpicture}[
+    bullet/.style={circle, fill=black, inner sep=1.5pt},
+    arr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+    node distance=0pt,
+    every node/.style={font=\sffamily\footnotesize}
+    ]
+
+    \def\rs{0.9}
+    \def\as{0.55}
+
+    \pgfmathsetmacro\rowa{0}
+    \pgfmathsetmacro\rowb{-1*\rs}
+    \pgfmathsetmacro\rowc{-1*\rs-\as}
+    \pgfmathsetmacro\rowd{-2*\rs-\as}
+    \pgfmathsetmacro\rowe{-2*\rs-2*\as}
+
+    \def\tgtx{4.0}
+
+    % Row 1: + (f 1) (f 2)  [no arrow]
+    \node[anchor=north west, inner sep=0pt] at (-1.2,\rowa)
+    {\phantom{$\rightarrow$ } \ml{+ (f 1) (f 2)}};
+
+    % Row 2: -> + (• 1) (• 2)   --> ((λx.λy.+ y (sqrt x)) 4)
+    \node[anchor=west] at (-1.2,\rowb) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b2a) at (0.25,\rowb) {};
+    \node[anchor=west] at (0.35,\rowb) {\ml{1) (}};
+    \node[bullet] (b2b) at (1.15,\rowb) {};
+    \node[anchor=west] at (1.25,\rowb) {\ml{2)}};
+    \node[anchor=west] (r2tgt) at (\tgtx,\rowc) {\ml{((\tlb{x}\tlb{y}+ y (sqrt x)) 4)}};
+    \draw (b2a.south) -- (0.25,\rowc);
+    \draw[arr] (0.25,\rowc) -- (r2tgt.west);
+    \draw (b2b.south) -- (1.15,\rowc);
+    \draw (1.15,\rowc) -- (\tgtx,\rowc);
+
+    % Row 3: -> + (• 1) (• 2)   --> (λy.+ y (sqrt 4))
+    \node[anchor=west] at (-1.2,\rowd) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b3a) at (0.25,\rowd) {};
+    \node[anchor=west] at (0.35,\rowd) {\ml{1) (}};
+    \node[bullet] (b3b) at (1.15,\rowd) {};
+    \node[anchor=west] at (1.25,\rowd) {\ml{2)}};
+    \node[anchor=west] (r3tgt) at (\tgtx,\rowe) {\ml{(\tlb{y}+ y (sqrt 4))}};
+    \draw (b3a.south) -- (0.25,\rowe);
+    \draw[arr] (0.25,\rowe) -- (r3tgt.west);
+    \draw (b3b.south) -- (1.15,\rowe);
+    \draw (1.15,\rowe) -- (\tgtx,\rowe);
+
+\end{tikzpicture}
+\vs
+
+\noindent
+But now we see that \ml{(sqrt 4)} is free in the \tl y abstraction, and hence should not
+be instantiated when the abstraction is applied. Thus we get
+
+\vs
+\begin{tikzpicture}[
+    bullet/.style={circle, fill=black, inner sep=1.5pt},
+    arr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+    node distance=0pt,
+    every node/.style={font=\sffamily\footnotesize}
+    ]
+
+    \def\tgtx{4.0}   % x position of target expression
+    \def\rise{0.45}  % y of the top horizontal rail (above code line at y=0)
+    \def\drop{0.65}  % y of the bottom horizontal rail (below code line)
+    \def\sqrtx{5.75} % x above (sqrt 4) in target
+
+    % Code line at y=0
+    \node[anchor=west] at (-1.2,0) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b1a) at (0.25,0) {};
+    \node[anchor=west] at (0.35,0) {\ml{1) (+ 2}};
+    \node[bullet] (b1b) at (1.85,0) {};
+    \node[anchor=west] at (1.95,0) {\ml{)}};
+
+    % Target expression at y=-\drop
+    \node[anchor=west] (tgt) at (\tgtx,-\drop) {\ml{(\tlb{y}+ y (sqrt 4))}};
+
+    % Left bullet: straight south to -\drop, then east with arrowhead to target.west
+    \draw (b1a.south) -- (0.25,-\drop);
+    \draw[arr] (0.25,-\drop) -- (tgt.west);
+
+    % Right bullet: straight north to +\rise, then east to \sqrtx, then south to
+    % just above the text (y=-\drop+0.15 to avoid overlapping)
+    \draw (b1b.north) -- (1.85,\rise);
+    \draw (1.85,\rise) -- (\sqrtx,\rise);
+    \draw[arr] (\sqrtx,\rise) -- (\sqrtx,-\drop+0.18);
+
+\end{tikzpicture}
+\vs
+
+\noindent
+The instance contains a pointer back to the \ml{(sqrt 4)} in the body of the
+abstraction.
+
+\vs
+\begin{tikzpicture}[
+    bullet/.style={circle, fill=black, inner sep=1.5pt},
+    arr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+    node distance=0pt,
+    every node/.style={font=\sffamily\footnotesize}
+    ]
+
+    \def\rs{0.9}
+    \def\as{0.55}
+    \def\tgtx{4.0}
+    \def\rise{0.45}
+    \def\sqrtx{5.5}
+
+    % Row 1 sits at y=0. Its arrow baseline is just \as below it.
+    % Subsequent code rows step by \rs from the arrow baseline of the previous row.
+    \pgfmathsetmacro\rowa{0}
+    \pgfmathsetmacro\rowb{0-\as}           % arrow baseline for row 1
+    \pgfmathsetmacro\rowc{0-\as-\rs}       % row 2 code line
+    \pgfmathsetmacro\rowd{0-\as-\rs-\as}   % arrow baseline for row 2
+    \pgfmathsetmacro\rowe{0-\as-2*\rs-\as} % row 3 code line
+    \pgfmathsetmacro\rowf{0-\as-2*\rs-2*\as} % arrow baseline for row 3 / "2" node
+
+    % Row 1: -> + (• 1) (+ 2 •)
+    \node[anchor=west] at (-1.2,\rowa) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b1a) at (0.25,\rowa) {};
+    \node[anchor=west] at (0.35,\rowa) {\ml{1) (+ 2}};
+    \node[bullet] (b1b) at (1.85,\rowa) {};
+    \node[anchor=west] at (1.95,\rowa) {\ml{)}};
+    \node[anchor=west] (r1tgt) at (\tgtx,\rowb) {\ml{(\tlb{y}+ y 2)}};
+    \draw (b1a.south) -- (0.25,\rowb);
+    \draw[arr] (0.25,\rowb) -- (r1tgt.west);
+    \draw (b1b.north) -- (1.85,\rise);
+    \draw (1.85,\rise) -- (\sqrtx,\rise);
+    \draw[arr] (\sqrtx,\rise) -- (\sqrtx,\rowb+0.18);
+
+    % Row 2: -> + (• 1) 4
+    \node[anchor=west] at (-1.2,\rowc) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b2a) at (0.25,\rowc) {};
+    \node[anchor=west] at (0.35,\rowc) {\ml{1) 4}};
+    \node[anchor=west] (r2tgt) at (\tgtx,\rowd) {\ml{(\tlb{y}+ y 2)}};
+    \draw (b2a.south) -- (0.25,\rowd);
+    \draw[arr] (0.25,\rowd) -- (r2tgt.west);
+
+    % Row 3: -> + (+ 1 •) 4
+    \node[anchor=west] at (-1.2,\rowe) {$\rightarrow$ \ml{+ (+ 1}};
+    \node[bullet] (b3b) at (0.75,\rowe) {};
+    \node[anchor=west] at (0.85,\rowe) {\ml{) 4}};
+    \pgfmathsetmacro\localrise{\rowe+0.35}
+    \draw (b3b.north) -- (0.75,\localrise);
+    \draw (0.75,\localrise) -- (\sqrtx,\localrise);
+    \draw[arr] (\sqrtx,\localrise) -- (\sqrtx,\rowf+0.18);
+    \node[anchor=north] at (\sqrtx,\rowf+0.25) {\ml{2}};
+
+    % Final lines
+    \node[anchor=north west, align=left, inner sep=0pt] at (-1.2,\rowf-0.3) {%
+        $\rightarrow$ \ml{+ 3 4}\\[2pt]
+        $\rightarrow$ \ml{7}%
+    };
+
+\end{tikzpicture}
+\vs
+
+\noindent
+Now the \ml{(sqrt 4)} is only evaluated once, as we had hoped.
+
+\section{Lambda-lifting using Maximal Free Expressions}
+
+In order to achieve full laziness in the lambda reducer of Chapter~12 we
+appear to need to identify maximal free expressions dynamically. As we noted
+there, this is rather difficult to do efficiently.
+
+Fortunately, it turns out that we can modify the lambda-lifting algorithm so
+that a straightforward implementation of the resulting supercombinator
+program is automatically fully lazy. The algorithm was invented by Hughes
+[1984].
+
+\subsection{Modifying the Lambda-lifting Algorithm}
+
+The modification we need is to \textit{abstract the maximal free expressions}, rather
+than free variables, when lambda-lifting a lambda abstraction.
+
+In our running example, the function \ml{g} has the lambda abstraction
+\begin{mlcoded}
+    \tlb{x}\tlb{y}+ y (sqrt x)
+\end{mlcoded}
+When doing lambda-lifting on the \ml{\tl y} abstraction, we abstracted \ml{x} out as an
+extra parameter, since it occurs free. Instead we should abstract out the entire
+(free) subexpression \ml{(sqrt x)} as an extra parameter, thus generating the
+supercombinator
+\begin{mlcoded}
+    \$g1 sqrtx y = + y sqrtx
+\end{mlcoded}
+The name `\ml{sqrtx}' is an arbitrary name invented for the extra parameter. We
+replace the \ml{\tl y} abstraction with the supercombinator \ml{\$g1} applied to the
+subexpression, thus:
+\begin{mlcoded}
+    \tlb{x}\$g1 (sqrt x)
+\end{mlcoded}
+Completing the compilation in the normal way gives
+
+\combinatorbox{
+    \ml{\$g1 sqrtx y = + y sqrtx} \\
+    \indent\ml{\$g x = \$g1 (sqrt x)} \\
+    \indent\ml{\$f = \$g 4} \\
+    \indent\ml{\$Prog = + (\$f 1) (\$f 2)}
+}{
+    \ml{\$Prog}
+}
+
+We get an extra supercombinator because we lose an opportunity for
+\ml{\te}-reduction when we take out \ml{(sqrt x)} as an extra parameter rather than \ml{x}.
+However, in compensation, the execution will be fully lazy, because the uses
+of \ml{(sqrt x)} will be shared. Now we can follow the reduction sequence again:
+
+\vs
+\begin{tikzpicture}[
+    bullet/.style={circle, fill=black, inner sep=1.5pt},
+    arr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+    node distance=0pt,
+    every node/.style={font=\sffamily\footnotesize}
+    ]
+
+    \def\rs{0.9}
+    \def\as{0.55}
+    \def\tgtx{4.2}
+    \def\rise{0.45}
+    \def\sqrtx{5.25}
+
+    % Row baselines: each code row followed by its arrow baseline
+    \pgfmathsetmacro\r{0}          % "$Prog" label
+    \pgfmathsetmacro\ra{-1*\rs}    % row 1 code
+    \pgfmathsetmacro\raa{-1*\rs-\as} % row 1 arrow baseline
+    \pgfmathsetmacro\rb{-2*\rs-\as}  % row 2 code
+    \pgfmathsetmacro\rba{-2*\rs-2*\as} % row 2 arrow baseline
+    \pgfmathsetmacro\rc{-3*\rs-2*\as}  % row 3 code
+    \pgfmathsetmacro\rca{-3*\rs-3*\as} % row 3 arrow baseline
+    \pgfmathsetmacro\rd{-4*\rs-3*\as}  % row 4 code
+    \pgfmathsetmacro\rda{-4*\rs-4*\as} % row 4 arrow baseline
+    \pgfmathsetmacro\re{-5*\rs-4*\as}  % row 5 code
+    \pgfmathsetmacro\rea{-5*\rs-5*\as} % row 5 arrow baseline
+    \pgfmathsetmacro\rf{-6*\rs-5*\as}  % row 6 code
+    \pgfmathsetmacro\rfa{-6*\rs-6*\as} % "2" node level
+    \pgfmathsetmacro\rg{-7*\rs-5*\as}  % final lines
+
+    % "$Prog" header
+    \node[anchor=north west, inner sep=0pt] at (-1.2,\r)
+    {\phantom{$\rightarrow$} \ml{\$Prog}};
+
+    % Row 1: -> + (• 1) (• 2)  -->  ($g 4)
+    \node[anchor=west] at (-1.2,\ra) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b1a) at (0.25,\ra) {};
+    \node[anchor=west] at (0.35,\ra) {\ml{1) (}};
+    \node[bullet] (b1b) at (1.15,\ra) {};
+    \node[anchor=west] at (1.25,\ra) {\ml{2)}};
+    \node[anchor=west] (r1tgt) at (\tgtx,\raa) {\ml{(\$g 4)}};
+    \draw (b1a.south) -- (0.25,\raa);
+    \draw[arr] (0.25,\raa) -- (r1tgt.west);
+    \draw (b1b.south) -- (1.15,\raa);
+    \draw (1.15,\raa) -- (\tgtx,\raa);
+
+    % Row 2: -> + (• 1) (• 2)  -->  ($g1 (sqrt 4))
+    \node[anchor=west] at (-1.2,\rb) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b2a) at (0.25,\rb) {};
+    \node[anchor=west] at (0.35,\rb) {\ml{1) (}};
+    \node[bullet] (b2b) at (1.15,\rb) {};
+    \node[anchor=west] at (1.25,\rb) {\ml{2)}};
+    \node[anchor=west] (r2tgt) at (\tgtx,\rba) {\ml{(\$g1 (sqrt 4))}};
+    \draw (b2a.south) -- (0.25,\rba);
+    \draw[arr] (0.25,\rba) -- (r2tgt.west);
+    \draw (b2b.south) -- (1.15,\rba);
+    \draw (1.15,\rba) -- (\tgtx,\rba);
+
+    % Row 3: -> + (• 1) (+ 2 •)  left bullet south-east, right bullet north-east-south onto ($g1 (sqrt 4))
+    \node[anchor=west] at (-1.2,\rc) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b3a) at (0.25,\rc) {};
+    \node[anchor=west] at (0.35,\rc) {\ml{1) (+ 2}};
+    \node[bullet] (b3b) at (1.85,\rc) {};
+    \node[anchor=west] at (1.95,\rc) {\ml{)}};
+    \node[anchor=west] (r3tgt) at (\tgtx,\rca) {\ml{(\$g1 (sqrt 4))}};
+    \draw (b3a.south) -- (0.25,\rca);
+    \draw[arr] (0.25,\rca) -- (r3tgt.west);
+    \pgfmathsetmacro\riserowc{\rc+0.35}
+    \draw (b3b.north) -- (1.85,\riserowc);
+    \draw (1.85,\riserowc) -- (\sqrtx,\riserowc);
+    \draw[arr] (\sqrtx,\riserowc) -- (\sqrtx,\rca+0.18);
+
+    % Row 4: -> + (• 1) (+ 2 •)  -->  ($g1 2)
+    \node[anchor=west] at (-1.2,\rd) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b4a) at (0.25,\rd) {};
+    \node[anchor=west] at (0.35,\rd) {\ml{1) (+ 2}};
+    \node[bullet] (b4b) at (1.85,\rd) {};
+    \node[anchor=west] at (1.95,\rd) {\ml{)}};
+    \node[anchor=west] (r4tgt) at (\tgtx,\rda) {\ml{(\$g1 2)}};
+    \pgfmathsetmacro\riserow{\rd+0.35}
+    \draw (b4a.south) -- (0.25,\rda);
+    \draw[arr] (0.25,\rda) -- (r4tgt.west);
+    \draw (b4b.north) -- (1.85,\riserow);
+    \draw (1.85,\riserow) -- (\sqrtx,\riserow);
+    \draw[arr] (\sqrtx,\riserow) -- (\sqrtx,\rda+0.18);
+
+    % Row 5: -> + (• 1) 4  -->  ($g1 2)
+    \node[anchor=west] at (-1.2,\re) {$\rightarrow$ \ml{+ (}};
+    \node[bullet] (b5a) at (0.25,\re) {};
+    \node[anchor=west] at (0.35,\re) {\ml{1) 4}};
+    \node[anchor=west] (r5tgt) at (\tgtx,\rea) {\ml{(\$g1 2)}};
+    \draw (b5a.south) -- (0.25,\rea);
+    \draw[arr] (0.25,\rea) -- (r5tgt.west);
+
+    % Row 6: -> + (+ • 1) 4  bullet north-east-south onto "2"
+    \node[anchor=west] at (-1.2,\rf) {$\rightarrow$ \ml{+ (+}};
+    \node[bullet] (b6b) at (0.6,\rf) {};
+    \node[anchor=west] at (0.7,\rf) {\ml{1) 4}};
+    \pgfmathsetmacro\riserowf{\rf+0.35}
+    \draw (b6b.north) -- (0.6,\riserowf);
+    \draw (0.6,\riserowf) -- (\sqrtx,\riserowf);
+    \draw[arr] (\sqrtx,\riserowf) -- (\sqrtx,\rfa+0.25);
+    \node[anchor=north] at (\sqrtx,\rfa+0.3) {\ml{2}};
+
+    % Final lines
+    \node[anchor=north west, align=left, inner sep=0pt] at (-1.2,\rg) {%
+        $\rightarrow$ \ml{+ 3 4}\\[2pt]
+        $\rightarrow$ \ml{7}%
+    };
+
+\end{tikzpicture}
+\vs
+
+\noindent
+The \ml{(sqrt 4)} is shared, and hence only evaluated once.
+
+So to preserve full laziness we should, during lambda-lifting,
+\begin{quote}
+    abstract out the maximal free expressions (rather than only the free
+    variables) of a lambda abstraction as extra parameters.
+\end{quote}
+This modification is sufficient to preserve full laziness. We call it \textit{fully lazy
+    lambda-lifting}.
+
+One slight optimization is that if a maximal free expression turns out to
+have no free variables at all (so it is a CAF), then instead of abstracting it out
+as an extra parameter, it can simply be given a name and made into a
+supercombinator. The name can then be used instead of the expression. This
+is illustrated in the next section.
+
+\subsection{Fully Lazy Lambda-lifting in the Presence of \ml{letrec}s}
+
+As in Chapter~14, our strategy needs to take account of \ml{letrec}s. Consider the
+program
+
+\combinatorbox{}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        \begin{tabular}{l@{}l@{}l}
+            let & \\
+            &f = \tlb{x} & letrec fac = \tlb{n}(\ldots) \\
+            & & in + x (fac 1000) \\
+            in &\\
+            &+ (f 3) & (f 4)
+        \end{tabular}
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}
+
+The algorithm of Chapter~14 will compile it to
+
+\combinatorbox{
+    \begin{mlcoded}
+        \$fac fac n = (\ldots) \\
+        \$f x = letrec fac = \$fac fac \\
+        \phantom{\$f x =} in + x (fac 1000)
+    \end{mlcoded}
+    \vspace{-\baselineskip}
+}{
+    \ml{+ (\$f 3) (\$f 4)}
+}
+
+\noindent
+The function \ml{fac} is defined locally in the body of \ml{f}, and hence \ml{(fac 1000)} cannot
+be lifted out as a free expression from the body of \ml{f}. Unfortunately, this means
+that \ml{(fac 1000)} will be recomputed each time \ml{\$f} is applied, so we have lost full
+laziness.
+
+The solution is to recognize that the definition of \ml{fac} does not depend on \ml{x}.
+With this in mind we can `float' the \ml{letrec} for \ml{fac} outwards, giving this program
+
+\combinatorbox{}{
+    \ml{letrec}
+        \vspace{-0.5\baselineskip}
+    \begin{letalign}
+        &fac = \tlb{n}(\ldots) \\
+        in &let \\
+        &f = \tlb{x}+ x (fac 1000) \\
+        in \\
+        &+ (f 3) (f 4)
+    \end{letalign}
+    \vspace{-0.5\baselineskip}
+}
+
+\noindent
+Now our fully lazy lambda-lifter will produce a fully lazy program:
+
+\combinatorbox{
+    \begin{mlcoded}
+        \$fac n = (\ldots) \\
+        \$fac1000 = \$fac 1000 \\
+        \$f x = + x \$fac1000 \\
+        \$Prog = + (\$f 3) (\$f 4)
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{
+    \ml{\$Prog}
+}
+
+This example also illustrates the utility making a maximal constant
+expression into a supercombinator (\ml{\$fac1000} in this case), rather than
+abstracting it out as a parameter.
+
+Our strategy now breaks into two phases:
+\begin{numbered}
+    \item Float out \ml{letrec} (and \ml{let}) definitions as far as possible.
+    \item Perform fully lazy lambda-lifting.
+\end{numbered}
+How far out can a \ml{letrec} definition be floated? The value of a variable bound in
+a \ml{letrec} will generally depend on the values of certain free variables. We call
+the set of free variables on which a variable \ml{x} depends, \ml{x}'s \textit{free variable set}.
+Once we know \ml{x}'s free variable set we can float the definition of \ml{x} outwards
+until the next enclosing lambda abstraction binds one of the variables in the
+free variable set.
+
+This step has the additional benefit that definitions which have no free
+variables at all will be floated out to the top level, where they will be turned
+into supercombinators directly.
+
+\section{A Larger Example}
+
+We shall now work through a larger example to show the lambda-lifting
+algorithm with full laziness modifications in action.
+
+The example is the function `\ml{foldl}', being used to add up the numbers
+between 1 and 100.
+
+\combinatorbox[0.9\textwidth]{
+    \begin{mlcoded}
+        sumInts n = foldl (+) 0 (count 1 n)
+        \\
+        \\
+        \begin{tabular}{@{}l@{ }l}
+            count n m = [\,], &n$>$m \\
+            count n m = n : count (n + 1) &m\\
+        \end{tabular}
+        \\
+
+        \begin{tabular}{@{}l@{ }l}
+            foldl op base [\,] &= base \\
+            foldl op base (x:xs) &= foldl op (op base x) xs
+        \end{tabular}
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{
+    \ml{sumInts 100}
+}
+
+Translating the example into the enriched lambda calculus, we get
+
+\combinatorbox[0.9\textwidth]{}{
+    \vspace{-0.5\baselineskip}
+    \noindent\ml{letrec}
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        sumInts = \tlb{n}foldl (+) 0 (count 1 n) \\
+        \\
+        count = \tlb{n}\tlb{m}IF ($>$ n m) NIL (CONS n (count (+ n 1) m)) \\
+        \\
+        foldl\\
+%        \vspace{-\baselineskip}
+        \begin{tabular}{@{}l@{}l}
+                    = \tlb{op}\tlb{base}\tlb{xs} &IF (= xs NIL) \\
+            &base \\
+            &(foldl op (op base (HEAD xs)) (TAIL xs)) \\
+        \end{tabular}
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+    \ml{in sumInts 100}
+}
+
+\noindent
+(Note: as before, this is not exactly the translation that would be produced by
+the pattern-matching compiler, but it suffices for present purposes.) Applying
+the algorithm to \ml{foldl}, we choose the innermost lambda abstraction, (\tlb{xs}\ldots),
+and look for maximal free expressions, which are \ml{(foldl op)}, \ml{(op base)} and
+\ml{base}. We take these out as extra parameters, \ml{p}, \ml{q} and \ml{base} respectively, giving
+
+\combinatorbox[\textwidth]{
+    \ml{\$R1 p q base xs = IF (= xs NIL) base (p (q (HEAD xs)) (TAIL xs))}
+%    \vspace{-0.5\baselineskip}
+}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        letrec \\
+        \phantom{x} sumInts = \tlb{n}foldl + 0 (count 1 n) \\
+        \\
+        \phantom{x} count = \tlb{n}\tlb{m}IF ($>$ n m) NIL (CONS n (count (+ n 1) m))
+        \\
+        \\
+        \phantom{x} foldl = \tlb{op}\tlb{base}\$R1 (foldl op) (op base) base \\
+        in \\
+        \phantom{x} sumInts 100
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}
+
+Now the innermost lambda abstraction is \ml{\tl base}, and its maximal free
+expressions are \ml{(\$R1 (foldl op))} and \ml{op}, which we will take out as \ml{r} and \ml{op}
+respectively, giving
+
+\combinatorbox[\textwidth]{
+    \begin{mlcoded}
+        \$R1 p q base xs = IF (= xs NIL) base (p (q (HEAD xs)) (TAIL xs)) \\
+        \$R2 r op base = r (op base) base
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{
+    \vspace{-0.5\baselineskip}
+    \begin{mlcoded}
+        \ml{letrec} \\
+        \phantom{x} sumInts = \tlb{n}foldl + 0 (count 1 n) \\
+        \\
+        \phantom{x} count = \tlb{n}\tlb{m}IF ($>$ n m) NIL (CONS n (count (+ n 1) m)) \\
+        \\
+        \phantom{x} foldl = \tlb{op}\$R2 (\$R1 (foldl op)) op \\
+        in \\
+        \phantom{x} sumInts 100
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}
+
+Now all the definitions in the top-level \ml{letrec} are supercombinators, because
+we have lifted out all the inner lambdas, so after lifting out any constant
+expressions we can lift them directly to get
+
+\combinatorbox[\textwidth]{
+    \begin{mlcoded}
+        \$sumInts n = \$foldlPlus0 (\$count1 n) \\
+        \$foldlPlus0 = \$foldl + 0 \\
+        \$count1 = \$count 1 \\
+        \$count n m = IF ($>$ n m) NIL (CONS n (\$count (+ n 1) m)) \\
+        \$foldl op = \$R2 (\$R1 (\$foldl op)) op \\
+        \$Prog = \$sumInts 100 \\
+        \$R1 p q base xs = IF (= xs NIL) base (p (q (HEAD xs)) (TAIL xs)) \\
+        \$R2 r op base = r (op base) base
+    \end{mlcoded}
+    \vspace{-0.5\baselineskip}
+}{
+    \ml{\$Prog}
+}
+
+\noindent
+Notice that we \textit{cannot} eliminate the \ml{op} parameter of \ml{\$foldl}, since it is used
+twice on the right-hand side.
+
+\section{Implementing Fully Lazy Lambda-lifting}
+
+We now turn our attention to algorithms for achieving the transformations
+required by fully lazy lambda-lifting.
+
+\subsection{Identifying the Maximal Free Expressions}
+
+How can we identify the maximal free expressions of a lambda abstraction?
+We can use the concept of \textit{lexical level-number} introduced in Section~13.3.2,
+and compute the lexical level of expressions as well as variables. The lexical
+level of an expression should be the maximum of the levels of the free
+variables within it. Then when lambda-lifting a lambda abstraction at level~$n$,
+we should take out as extra parameters any subexpressions within the body
+whose level is less than~$n$.
+
+For example, in the base of the lambda abstraction for \ml{g}, which is
+
+\begin{mlcoded}
+    \tlb{x}\tlb{y}+ y (sqrt x)
+\end{mlcoded}
+
+\noindent
+the \ml{\tl x} abstraction is at level 1 and the \ml{\tl y} abstraction is at level 2. Hence the
+various subexpressions have level-numbers as follows
+
+\begin{tabular}{l@{\hspace{1.5cm}}l}
+    \ml{+}              & level 0 \\
+    \ml{(+ y)}          & level 2 \\
+    \ml{sqrt}           & level 0 \\
+    \ml{(sqrt x)}       & level 1 \\
+    \ml{(+ y (sqrt x))} & level 2 \\
+\end{tabular}
+\vspace{0.5\baselineskip}
+
+\noindent
+To summarize:
+\vspace{-0.5\baselineskip}
+\begin{numbered}
+    \item The level-number of a \textit{constant} is 0.
+    \item The level-number of a \textit{variable} is the textual nesting depth of the lambda
+    which binds it.
+    \item The level-number of an \textit{application} \ml{(f x)} is the maximum of the level-numbers of \ml{f} and \ml{x}.
+\end{numbered}
+
+\noindent
+Given an expression \ml{E}, its \textit{native lambda abstraction} is the enclosing lambda
+abstraction whose level-number is the same as that of \ml{E}. Looking `outwards
+from \ml{E}' it is the first lambda abstraction which binds any variable in \ml{E}.
+
+All the maximal free expression information can be determined, and
+lambda-lifting performed, in a single tree-walk over the expression:
+\begin{numbered}
+    \item On the way down the tree, the level-number of each lambda abstraction
+    is recorded.
+    \item On the way up, the level of each expression is computed, using the
+    environment and the levels of its subexpressions. If it is applied to
+    another expression with the same level-number, then the two are
+    merged, otherwise they are given new unique names (since they will be
+    maximal free expressions of distinct lambda abstractions). The merging
+    is the mechanism whereby free expressions are combined to form
+    \textit{maximal} free expressions.
+
+    \item When a lambda is encountered on the way up, it is transformed into a
+    supercombinator, and the lambda abstraction is replaced by the super-
+    combinator applied to the maximal free expressions. The maximal free
+    expressions are those subexpressions with level-number less than that of
+    the lambda abstraction, after the merging has taken place.
+\end{numbered}
+
+\subsection{Lifting CAFs}
+
+The maximal constant expressions (level 0) need slightly different treatment.
+It would be correct to take them out as extra parameters, but there is an easier
+way. We can simply define a new supercombinator of zero arguments to be
+the constant expression, and use the name of the supercombinator instead of
+the expression. No benefit is obtained, however, by doing this with constant
+expressions consisting of a single constant (such as \ml{3} or \ml{\$F}), so they can be left
+as they are.
+
+For example, in the expression
+
+\begin{mlcoded}
+\tlb{x}+ 1 x
+\end{mlcoded}
+
+\noindent
+the \ml{(+ 1)} is a maximal free expression at level 0, and can be made into a
+supercombinator \ml{\$Inc}:
+
+\begin{mlcoded}
+\$Inc = + 1
+\end{mlcoded}
+
+\noindent
+Now the expression becomes
+
+\begin{mlcoded}
+\tlb{x}\$Inc x
+\end{mlcoded}
+
+\noindent
+In this case all that we achieve is the sharing of the \ml{(+ 1)} graph for each
+application of the lambda abstraction, but if the constant expression is itself a
+redex (like \ml{(+ 1 3)}, for example) then we also save repeated evaluation of the
+redex. There was an example of the utility of this in the \ml{\$fac1000} super-
+combinator of Section~15.3.2. (Note: there is actually a strong case to be made
+for not lifting out a constant expression unless it is in fact a redex -- see Section
+15.6.1.)
+
+\subsection{Ordering the Parameters}
+
+In Section~13.3.2 we put the parameters of a supercombinator in order of
+increasing level-number, to maximize the opportunities for \ml{\te}-reduction. The
+same ordering is useful for maximal free expression parameters, for two
+reasons.
+
+The first is the same as before. A maximal free expression will often be just
+a single free variable, and in this case, we should still like to have a chance of
+\ml{\te}-reduction.
+
+The second reason concerns the \textit{size} of the MFE. To maximize sharing
+(which is the object of the exercise) we should like to make our MFEs as large
+as possible.
+
+Suppose we have the lambda abstraction
+
+\begin{mlcoded}
+    \tlb{x}(\ldots G\ldots F\ldots E\ldots)
+\end{mlcoded}
+
+\noindent
+where \ml{E}, \ml{F} and \ml{G} are MFEs of the \ml{\tl x} abstraction, and
+
+\begin{mlcoded}
+    \normalfont{\normalsize{level of}} F $<$ \normalfont{\normalsize{level of}} G $<$ \normalfont{\normalsize{level of}} E
+\end{mlcoded}
+
+\noindent
+It would be best to define the supercombinator
+
+\begin{mlcoded}
+    \$S f g e x = (\ldots g\ldots f\ldots e\ldots)
+\end{mlcoded}
+
+\noindent
+and replace the abstraction with
+
+\begin{mlcoded}
+    \$S F G E
+\end{mlcoded}
+
+\noindent
+because then \ml{(\$S F G)} will have a smaller level-number than \ml{E}, and hence will
+be taken out of \ml{E}'s native lambda abstraction as a single MFE. If we had
+arranged the parameters in the reverse order, \ml{G} and \ml{F} would have had to be
+taken out separately.
+
+This will not affect the amount of computation involved (since \ml{(\$S F G)}
+cannot be reducible), but it will mean that there is only one instance of the
+\ml{(\$S F G)} tree rather than one for each application of \ml{E}'s native lambda
+abstraction. Thus, correctly ordering the parameters should make the
+maximal free expressions \textit{larger} and \textit{fewer}.
+
+The example in Section~15.4 showed an example of this optimization in
+action. We abstracted \ml{(foldl op)}, \ml{(op base)} and \ml{base} from the body of the \ml{\tl x}s
+abstraction, calling them \ml{p}, \ml{q} and \ml{base} respectively. Though we did not
+mention this at the time, we put \ml{p} first, since \ml{(foldl op)} is freer than \ml{(op base)}
+and \ml{base}. This subsequently enabled us to abstract \ml{(\$R1 (foldl op))} from the
+\ml{\tl base} abstraction.
+
+We conclude that ordering the parameters by increasing level-number is
+better in both these respects.
+
+\subsection{Floating Out the \ml{let}s and \ml{letrec}s}
+
+We recall that to maintain full laziness we must `float' definitions given in \ml{let}s
+and \ml{letrec}s outwards. In this section we discuss the algorithm in more detail.
+
+Since we will float out all the definitions in a \ml{letrec} together, we assume that
+the dependency analysis described in Chapter~6 has already been performed.
+If it were not performed, then a definition might not be floated out as far as
+possible, merely because it happened to be defined in the same \ml{letrec} as a
+definition which could not be floated out so far. For the same reason we
+assume that \ml{let}s contain only a single definition.
+
+In practice, the algorithm of this section could probably be combined with
+the dependency analysis algorithm.
+
+How far out should a \ml{let(rec)} be floated? We can compute the `correct'
+level-number of its variables, by computing the level-numbers of their
+definition bodies. This level-number is correct in the sense that it identifies the
+innermost lambda abstraction on which the definition depends. The \ml{let(rec)}
+should then be floated out until the nearest enclosing lambda abstraction has
+this level-number.
+
+This still leaves some freedom in choosing exactly how far out a \ml{let(rec)} can
+be floated. The algorithm which we describe below specifies that:
+\begin{numbered}
+    \item The immediately enclosing lambda abstraction has the same level-number as that of the variables bound in the \ml{let(rec)}.
+    \item The \ml{let(rec)} does not appear in the function position of an application.
+    \item It should be floated out as little as possible subject to the constraints (i)
+    and (ii).
+\end{numbered}
+
+The second condition rejects expressions such as:
+
+\begin{mlcoded}
+    (let v = E in E$_1$) E$_2$
+\end{mlcoded}
+
+\noindent
+in favor of the following equivalent expression, in which the \ml{let} is floated out
+one more stage:
+
+\begin{mlcoded}
+    let v = E in (E$_1$ E$_2$)
+\end{mlcoded}
+
+\noindent
+(and similarly for \ml{letrec}s). This has no effect on laziness, but allows an
+important simplification in Chapter~20.
+
+The final condition specifies that a \ml{let(rec)} should be floated out no further
+than is necessary to meet the first two conditions. To see why this may be
+important, consider the expression
+
+\begin{mlcoded}
+    IF E (\tlb{x}let v = F in G) H
+\end{mlcoded}
+
+\noindent
+where \ml{E}, \ml{F}, \ml{G} and \ml{H} are arbitrary expressions, and \ml{F} does not contain \ml{x}. The
+algorithm will transform this to
+
+\begin{mlcoded}
+    IF E (let v = F in (\tlb{x}G)) H
+\end{mlcoded}
+
+\noindent
+A sophisticated implementation may be able to avoid constructing the graph
+of \ml{H} if \ml{E} turns out to be \ml{TRUE}, and vice versa (see Chapter~20). If we were to
+float the \ml{let} out further, we would get the expression
+
+\begin{mlcoded}
+    let v = F in (IF E (\tlb{x}G) H)
+\end{mlcoded}
+
+\noindent
+which is less good, because then the graph of \ml{F} would have to be constructed
+whatever value \ml{E} turned out to have.
+
+We can now outline the algorithm as follows. Working from the outside
+inwards, for each \ml{let(rec)} perform the following steps:
+
+	\vs
+\begin{compactenum}[(1)]
+    \item Compute the level-numbers of each definition body. While doing so for
+    a \ml{letrec}, assume that the level-number of the variables defined in the
+    \ml{letrec} is zero. The reason for this is that the level-number of a recursive
+    definition depends only on its free variables, and not on the (as yet
+    unknown) level-number of the recursive definition itself.
+
+    \item For a \ml{letrec}, compute the maximum of the level-numbers of the
+    definitions' bodies. This is the correct level-number for the variables
+    bound in the \ml{letrec}. For \ml{let}s, the correct level-number is that computed
+    in Step~1. This level-number should be used for the variables bound in
+    the \ml{let(rec)} when processing its body.
+
+    \item Float out the definitions until the next enclosing lambda abstraction has
+    the same level-number as that of the variables defined in the \ml{let(rec)},
+    which was computed in Step~2.
+
+    \item Finally, if the \ml{let(rec)} now appears in the function position of an
+    application, continue to float it out until it does not.
+\end{compactenum}
+\vs
+
+\noindent
+Note: if a \ml{letrec} re-binds a variable that is already in scope, then it cannot be
+floated outwards without risk of capturing occurrences of the outer variable.
+The solution is to systematically rename one of the variables.
+
+\section{Eliminating Redundant Full Laziness}
+
+The transformations required to achieve full laziness have a price. There are
+at least three ways in which we pay:
+\begin{numbered}
+\item Supercombinators with many arguments (for all the MFEs) are
+generated. This increases the size of the redex and slows down reduction.
+\item More seriously, more supercombinators may be generated because of
+the loss of opportunities for \te{}-optimization. To see this, refer back to the
+example in Section~15.4, where three combinators were generated for
+\ml{foldl} where one would have sufficed for a non-fully lazy implementation.
+More supercombinators mean more reductions.
+\item Most serious of all, the program is broken up into small fragments,
+fragments of the bodies of functions being exported piecemeal. For a
+straightforward template-instantiation implementation this is not a
+problem, but if the bodies of supercombinators are compiled then many
+opportunities for optimization may be lost. This will become clearer in
+Chapter~20, but consider for example the lambda abstraction
+
+\vs
+\begin{mlcoded}
+\tlb{v}\tlb{x}IF (= v 0) (+ x 1) (+ x 2)
+\end{mlcoded}
+\vs
+
+The non-fully lazy lambda-lifter will generate a single supercombinator:
+
+\vs
+\begin{mlcoded}
+    \$R v x = IF (= v 0) (+ x 1) (+ x 2)
+\end{mlcoded}
+\vs
+
+An optimizing compiler will produce code for \ml{\$R} which first tests the
+value of \ml{v}, and then evaluates either the \ml{(+ x 1)} or \ml{(+ x 2)}, to compute a
+numerical value. No heap will be consumed. A fully lazy lambda-lifter
+will produce two combinators:
+
+\begin{mlcoded}
+    \begin{tabular}{@{}l@{$\;=\;$}l}
+        \$S1 if-v-zero x & if-v-zero (+ x 1) (+ x 2) \\
+        \$S v            & \$S1 (IF (= v 0)) \\
+    \end{tabular}
+\end{mlcoded}
+
+\noindent
+and will replace the \ml{\tl v} abstraction with \ml{\$S}. The compiler will now have to
+generate code for \ml{\$S1} to construct \ml{(+ x 1)} \textit{and} \ml{(+ x 2)} \textit{in the heap} before
+unwinding the spine of the \ml{if-v-zero} function, about which it now has no
+information.
+\end{numbered}
+
+\noindent
+These objections are substantial, but on the other hand full laziness can save
+very large amounts of time and space in some cases. Further study reveals,
+however, that the fully lazy lambda-lifter often abstracts out an expression
+when \textit{nothing is gained} by so doing. Hence we could improve the trans-
+formation by selectively performing ordinary (rather than fully lazy) lambda-
+lifting where nothing is gained by the fully lazy method. This section is
+therefore devoted to identifying certain situations where fully lazy lambda-
+lifting gains nothing, and is based on work by Fairbairn [1985] and Hudak and
+Goldberg [1985].
+
+\subsection{Functions Applied to Too Few Arguments}
+
+In the example above, the fully lazy lambda-lifter took out \ml{(IF (= v 0))} as an
+extra parameter. However, \ml{IF} requires 3 arguments to reduce, so no work is
+saved by sharing this expression. More precisely, just as much work would be
+saved by taking out \ml{(= v 0)} as an extra parameter, thus
+
+\begin{mlcoded}
+\begin{tabular}{@{}l@{$\;=\;$}l}
+    \$T1 v-zero x & IF v-zero (+ x 1) (+ x 2) \\
+    \$T v         & \$T1 (= v 0) \\
+\end{tabular}
+\end{mlcoded}
+
+\noindent
+and replacing the \ml{\tl v} abstraction with \ml{\$T}. In a straightforward template-
+instantiation implementation some space would be saved by taking out the
+larger expression (since the application of \ml{IF} to \ml{(= v 0)} would only be built
+once), but even this is not always true in a compiled implementation (see
+Chapter~20).
+
+The conclusion is that no work is saved by abstracting out expressions which
+consist of a built-in operator or supercombinator applied to too few
+arguments. As the example shows, however, the arguments of the function
+may be considered for abstraction.
+
+This applies equally to constant expressions which might otherwise be
+candidates for a new supercombinator definition (see Section~15.5.2). As an
+illustration of this, consider the example in Section~15.4, where the \ml{\$foldlPlus0}
+and \ml{\$count1} supercombinators are irreducible; nothing is gained by treating
+them as separate supercombinators.
+
+\subsection{Unshared Lambda Abstractions}
+
+Continuing with the same example, suppose the lambda abstraction under
+consideration appeared in a context like this:
+
+\begin{mlcoded}
+    \begin{tabular}{@{}l}
+        let \\
+        \quad f = \tlb{v}\tlb{x}IF (= v 0) (+ x 1) (+ x 2) \\
+        in \\
+        \quad \ldots(f 4 5)\ldots
+    \end{tabular}
+\end{mlcoded}
+
+\noindent
+and suppose that the \ml{(f 4 5)} is the only use of \ml{f}. In this case, the partial
+application \ml{(f 4)} \textit{cannot be shared}, since it is used immediately. Using the \ml{\$S}
+combinator for \ml{f}, the reduction \ml{(f 4 5)} would go like this:
+
+\begin{letalign}
+        f 4 5 & \;\;= \$S 4 5\\
+         &$\rightarrow$ \$S1 (= 4 0) 5 \\
+         &$\rightarrow$ IF (= 4 0) (+ 5 1) (+ 5 2) \\
+         &$\rightarrow$ + 5 2 \\
+         &$\rightarrow$ 7
+\end{letalign}
+
+\noindent
+Since the partial application cannot be shared, neither can the painstakingly
+abstracted expression \ml{(= 4 0)}. No sharing would be lost by using the original
+\ml{\$R} combinator instead. From this example we can derive a general rule:
+
+\begin{quote}
+    given a lambda abstraction \ml{\tlb{x}E} in a context in which it cannot be shared,
+    we should not abstract free expressions from \ml{E} because they will not be
+    shared. Instead we should abstract only the free variables.
+\end{quote}
+
+\noindent
+We can justify this rule by observing that free expressions abstracted from \ml{E}
+cannot be shared because:
+\begin{numbered}
+    \item they are not shared inside \ml{E}, since they are abstracted from a single place
+    in \ml{E};
+    \item they are not shared outside \ml{E}, because the whole lambda abstraction \tlb{x}E
+    is not shared.
+\end{numbered}
+
+\noindent
+The sharing of partial applications is just a specific instance of this general
+rule. Notice that for the first time our lambda-lifting strategy becomes \textit{context-dependent}. The trick is to work out when a lambda abstraction might be
+shared. This is not at all obvious. For a start, it might be passed as an argument
+to another function, in which case a complete analysis would involve looking
+at the body of that function. More subtly, consider an extension of our
+example:
+
+\begin{mlalign}
+        let \\
+        & f = \tlb{v}\tlb{x}IF (= v 0) (+ x 1) (+ x 2) \\
+        & g = \tlb{x}\tlb{y}+ 1 (f x y) \\
+        in \\
+        & \ldots \normalsize{\normalfont{expression not mentioning}} f\ldots
+\end{mlalign}
+
+\noindent
+It does not look as if a partial application of \ml{f} can be shared. But if a partial
+application of \ml{g} is shared we will abstract \ml{(f x)} as an MFE from the \ml{\tl y}
+abstraction in \ml{g}, so then the partial application of \ml{f} is shared.
+
+Discovering information about sharing is potentially very difficult (it seems
+to be another application of \textit{abstract interpretation}; see Chapter~22), but the
+saving grace is that we can give up at any time and assume that a partial
+application may be shared. The details are beyond the scope of this book but
+Fairbairn [1985] and Hudak and Goldberg [1985] each describe their
+algorithms.
+
+\section*{References}
+
+\begin{references}
+
+    \item Fairbairn, J. 1985. The design and implementation of a simple typed language based on
+    the lambda calculus, pp. 59--60. PhD thesis, \textit{Technical Report 75}. University of
+    Cambridge. May.
+
+    \item Hudak, P., and Goldberg, B. 1985. Serial combinators. In \textit{Conference on Functional
+        Programming Languages and Computer Architecture, Nancy}, pp. 382--99.
+    Jouannaud (editor). LNCS 201. Springer Verlag.
+
+    \item Hughes, R.J.M. 1984. The design and implementation of programming languages.
+    PhD thesis, PRG-40. Programming Research Group, Oxford. September.
+
+    \item Wadsworth, C.P. 1971. Semantics and pragmatics of the lambda calculus, Chapter~4.
+    PhD thesis, Oxford.
+
+\end{references}
