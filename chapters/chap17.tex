@@ -1,0 +1,509 @@
+\chapter{Storage Management and\\ Garbage Collection}
+\vspace{2cm}
+%\vspace{1cm}
+
+As mentioned in Chapter~10, a graph reducer requires the support of a storage
+management system which allocates cells on request, and recovers garbage
+cells for subsequent re-use. Storage management and garbage collection is a
+subject on which there is a large literature. Cohen [1981] gives an excellent
+survey with a comprehensive list of references.
+
+The purpose of this chapter is to sketch the standard algorithms, to give an
+assessment of their characteristics, and to make a brief survey of more
+recently developed techniques.
+
+\section{Criteria for Assessing a Storage Manager}
+
+When considering a garbage collection technique it is helpful to keep in mind
+the criteria against which it should be assessed. The main ones are:
+
+\begin{numbered}
+    \item \textit{What are its overheads} (in space and time)? All garbage collection
+    systems consume resources, both in the form of per-cell extra storage
+    requirements and in the CPU cycles taken to perform the collection.
+
+    \item \textit{Does it support compaction?} If a storage manager repeatedly allocates,
+    recovers and re-allocates variable-sized cells, the free storage tends to
+    become fragmented into many small separate blocks. This can mean that
+    a cell cannot be allocated because no free block is large enough, even
+    though the total free storage is adequate. This phenomenon is known as
+    \textit{storage fragmentation} [Knuth, 1976], and it can only be avoided by
+    periodically \textit{compacting} all the cells together at one end of the address
+    space, so as to produce a large contiguous free area from which to
+    allocate new cells. Compaction also has a beneficial effect on virtual
+    memory performance.
+
+    \item \textit{How well does it support a sparsely used heap and virtual memory?} There
+    has been much recent interest in very large \textit{persistent} heaps. The idea of
+    persistence is that a functional operating system, for example, could
+    incorporate a filing system as part of its data structures in a very large
+    heap, rather than treating the filing system as something external to the
+    program (an idea first implemented in Multics). In such a system, only a
+    small fraction of the heap will be in active use at any time, and a virtual
+    memory system is essential to cache the active portion in fast memory.
+
+    \item \textit{Can it operate on a parallel machine, or in real time?} One of the
+    attractions of functional languages is that they offer a natural way to
+    exploit the power of parallel architectures (see Chapter~24), which
+    requires storage managers that are capable of running on such a dis\-tributed system.
+
+    Some garbage collection techniques require the computation to be
+    stopped while garbage collection takes place, leading to an `embarrassing
+    pause' during which the system appears to do nothing. This is unacceptable
+    in real-time applications, and garbage collectors have been
+    proposed which work in parallel with the useful computation. Such
+    parallel collectors may also be suitable for parallel architectures.
+
+    \item \textit{What is the effect of heap occupancy?} The performance of some
+    algorithms drops sharply when the heap gets full.
+
+    \item \textit{Can it recover cyclic structures?}
+\end{numbered}
+
+\noindent
+These issues are all discussed by Cohen.
+
+\section{A Sketch of the Standard Techniques}
+
+There are several well-known garbage collection techniques. Among these
+are \textit{mark-scan}, \textit{copying} and \textit{reference-counting} garbage collectors. In this
+section we will give a brief sketch of the algorithms and their characteristics.
+Cohen [1981] is the reference where no reference is given explicitly.
+
+Mark-scan algorithms operate in two phases. First, all accessible cells are
+\textit{marked} by traversing the entire accessible structure. Then a linear scan
+through memory recovers all unmarked cells.
+
+Copying algorithms work by copying the entire accessible structure from
+one portion of the address space (\textit{from-space}) into another (\textit{to-space}),
+thereby leaving all the garbage behind in from-space. Cells being copied into
+to-space are placed contiguously, beginning at one end of the space, and
+hence when copying is complete there is a contiguous area in to-space from
+which new cells can be allocated. When to-space fills up with new cells, the
+spaces are \textit{flipped} (i.e.\ to-space becomes from-space and vice versa) and the
+process is repeated. The algorithm is surprisingly simple, and is well described
+in Baker's classic paper [1978].
+
+Reference-counting relies on keeping an extra field, called the \textit{reference-count}, in each cell. The reference-count field holds the number of references
+to the cell (i.e.\ the number of pointers to the cell). This count is incremented
+whenever a pointer is duplicated, and decremented whenever a pointer is
+discarded. When the reference-count drops to zero the cell must be garbage,
+since no other cells point to it.
+
+Against our criteria, the techniques have the following characteristics.
+
+\begin{numbered}
+    \item \textit{Overheads.} A \textit{mark-scan} collector requires a \textit{mark bit} in each cell to
+    indicate that the cell has been visited. In addition it appears at first that
+    the mark phase will require an auxiliary \textit{stack} to guide its recursive
+    tree-walk. Furthermore, the only bound on the size of this stack is the
+    number of cells in the heap, though this bound would only be attained in
+    pathological cases. This would be a heavy price to pay, but fortunately
+    the Deutsch--Schorr--Waite pointer-reversing algorithm [Schorr and
+    Waite, 1967] reduces the space overheads of the mark phase algorithm to
+    a single bit per cell (in addition to the mark bit). This algorithm was
+    explained in a different context in Section~11.6.1.
+
+    \textit{Copying} collectors appear to have a 100\% space overhead, but in a
+    virtual memory system the semi-space that is not in use will be paged out,
+    so there is very little overhead in fast memory. Even during copying,
+    activity only takes place at two sites in the target semi-space (to-space),
+    so only two pages of to-space need to be paged in.
+
+    \textit{Reference-counting} collectors require a reference-count field in every
+    cell. In principle this field should be as wide as an address, since every cell
+    in the heap could point to a single cell, but in practice reference-counts
+    are almost always small. Hybrid systems have therefore been proposed,
+    which have a limited-width reference-count field. When there are too
+    many references to a cell and the reference-count field overflows it is set
+    to a special value meaning `infinity', which is never decremented (so the
+    cell is then irrecoverable). Cells irrecoverable by reference-counting are
+    subsequently recovered by an occasional invocation of a mark-scan or
+    copying collector.
+
+    Reference-counting collectors are also somewhat less easy to use.
+    Great care must be taken in the implementation never to duplicate a
+    reference without incrementing the reference-count, though this is not,
+    of course, a criticism of the adequacy of the algorithm itself. More
+    seriously, many extra storage accesses are required to update the
+    reference-counts.
+
+    \item \textit{Compaction.} Compaction can be combined with the scanning phase of a
+    \textit{mark-scan} collector. This is usually done using \textit{sliding compaction}, in
+    which cells are slid down to one end of the address space, maintaining
+    their address order. This means that cells which point to each other will
+    not normally end up physically adjacent.
+
+    A \textit{copying} collector is inherently compacting, since the cells are copied
+    into a contiguous area in to-space. Furthermore, it is fairly easy to
+    arrange that cells that point to one another get copied into physically
+    adjacent locations, which significantly improves \textit{locality} and gives
+    opportunities for extra-compact list representations (\textit{cdr-coding})
+    [Baker, 1978]. This process is sometimes called \textit{linearizing} since linked
+    lists get copied into a contiguous linear area of store, and it further
+    reduces the storage overheads of a copying collector. The improvement
+    in locality may also give improved paging performance in a virtual
+    memory system.
+
+    \textit{Reference-counting} does not inherently perform any compaction, but
+    there is no reason why a compactor could not run concurrently with a
+    reference-counting garbage collector.
+
+    \item \textit{Sparsely used heap/virtual memory.} \textit{Mark-scan} and \textit{copying} collectors
+    visit all accessible cells, not just those in immediate use. In contrast,
+    \textit{reference-counting} collectors visit only cells in current use. For heaps in
+    which only a small fraction of the accessible data is in active use, this
+    represents a strong advantage for reference-counting.
+
+    Without compaction the accessible cells get thinly spread through the
+    address space, giving appalling paging behavior. The locality-improving
+    possibilities of copying collectors (or reference-counting plus a copying
+    compactor), mentioned above, thus make them preferable to sliding
+    compaction.
+
+    \item \textit{Parallel machines and real-time performance.} Since garbage collection
+    began, researchers have tried to find ways to run garbage collection in
+    parallel with useful computation, in an endeavor to eliminate the
+    `embarrassing pause'. For \textit{mark-scan} collectors this may be achieved by
+    arranging that garbage collection is performed by a process (or
+    processor) \textit{in parallel with} useful computation. The algorithm is, of
+    course, more complicated [Steele, 1975; Kung and Wong, 1977; Dijkstra
+    \textit{et al.}, 1978].
+
+    For \textit{copying} collectors, an ingenious scheme allows the copying
+    process to take place incrementally, a fixed small amount being
+    performed whenever a cell is allocated [Baker, 1978]. This scheme
+    increases the overheads of the useful computation somewhat, in both
+    time and space, and fails completely if to-space fills up before copying is
+    completed.
+
+    \textit{Reference-counting} collectors are inherently distributed in time, and
+    hence need no modification for real-time performance.
+
+    \item \textit{Effect of heap occupancy.} The performance of \textit{mark-scan} and \textit{copying}
+    collectors degrades sharply as the heap gets full, since all the accessible
+    data have to be visited in order to recover the few unused cells.
+    \textit{Reference-counting}, on the other hand, is unaffected by heap occupancy.
+
+    \item \textit{Cyclic structures.} \textit{Mark-scan} and \textit{copying} collectors have no problem
+    with cyclic structures, but \textit{reference-counting} cannot recover them. The
+    reason is that when a cell refers to itself it may have a non-zero reference-
+        count even though it is not accessible from anywhere else (and hence is
+    garbage). Recent developments in this area are discussed below.
+    \end{numbered}
+
+    \section{Developments in Reference-counting}
+
+    The overheads of reference-counting, and its inability to recover cyclic
+    structures, have often led to its dismissal as a garbage collection technique,
+    except in specialized contexts. However, recent work has made progress
+    towards alleviating these problems, and the inherently real-time and distributed nature of reference-counting is becoming increasingly attractive as
+    parallel architectures gain in importance.
+
+    \subsection{Reference-counting Garbage Collection of Cyclic Structures}
+
+    Hughes [1982] has suggested an extension to the conventional reference-counting algorithm that would allow it to reclaim circular structures, based on
+    previous work by Bobrow [1980].
+
+    The key idea is simple and elegant. We regard the accessible data in the
+    heap as a \textit{directed graph}, and divide this graph into its \textit{strongly connected
+    components}. In this context we recall that
+
+    \begin{numbered}
+    \item a graph is \textit{strongly connected} if, for any two nodes \ml{A} and \ml{B}, there is a path
+    from \ml{A} to \ml{B}, and vice versa;
+
+    \item a \textit{strongly connected component} of a graph is a maximal strongly
+    connected subgraph.
+    \end{numbered}
+
+    \noindent
+    Now, it is clear that
+
+    \begin{numbered}
+    \item if one node of a strongly connected component is accessible, then all its
+    nodes are (and vice versa);
+
+    \item if we coalesce all the nodes in each strongly connected component, then
+    the resulting \textit{derived graph} is acyclic.
+    \end{numbered}
+
+    \noindent
+    But now, since the derived graph is acyclic, it is amenable to conventional
+    reference-counting garbage collection; and when a node of the derived graph
+    becomes unreferenced, all the nodes of the corresponding strongly connected
+    component have become unreferenced.
+
+    Hughes therefore suggests adding a second reference-count field to each
+    node, which either contains the \textit{shared reference-count} for the strongly
+    connected component of which the node is a part, or is used to point at the
+    node which does hold the shared reference-count. He gives algorithms for
+    incrementally maintaining the information about which components are
+    strongly connected, and shows that they are rather cheap, except where a
+    strongly connected component is broken up.
+
+    It appears that this technique can successfully alleviate the `circular data
+    structure problem', and thus allow exploitation of the other desirable
+    characteristics of reference-counting. Aertes [1981] describes an essentially
+    identical system. Brownbridge [1985] describes a different reference-counting technique, also claimed to be capable of recovering circular
+    structures.
+
+    Interestingly, all of these techniques will only work for implementations
+    free of side-effects. In other words, they will work for implementations of
+    functional languages, but not for Lisp (at least, not if the program uses
+    RPLACs). Perhaps this is a new point in favor of functional languages!
+
+    \subsection{One-bit Reference-counts}
+
+    The logical extreme of the limited width reference-count idea is a one-bit
+    reference-count field. This is not a new idea [Wise and Friedman, 1977].
+
+    Recently, however, a number of researchers noticed that instead of storing
+    a one-bit reference-count \textit{in the cell} it would be possible to store the reference-count \textit{in the pointer}. A single bit in each pointer identifies the pointer as being
+    a \textit{unique reference} or a \textit{shared reference}. Cells are created with a unique
+    reference to them; when a unique reference is duplicated, \textit{both} copies become
+    shared references. When a unique reference is discarded the cell to which it
+    points can be immediately re-used; when a shared reference is discarded no
+    recovery is possible. Like all elegant ideas it is marvellously obvious in
+    retrospect.
+
+    The principal advantage of storing the reference-count in the pointer is that
+    it completely eliminates the extra store accesses required to increment and
+    decrement reference-counts.
+
+    The benefits of even such a narrow reference-count are dramatic. Stoye \textit{et
+        al.} [1984] report that up to \ml{70}\% of all garbage cells are recovered immediately
+    they become unused in the SKIM SK combinator reduction machine. Further
+    performance improvement is gained in the SKIM implementation because
+    reclaimed cells are often re-used immediately, rather than being attached to
+    the free list.
+
+    \subsection{Hardware Support for Reference-counting}
+
+    Much of the time overhead of reference-counting would be alleviated if
+    hardware support were available. Wise [1985] describes hardware for a
+    `smart' memory module, capable of detecting when one pointer is overwritten
+    with another. When this occurs, the module sends a `decrement' message to
+    the module which holds the cell pointed to by the old pointer, and an
+    `increment' message to the module which holds the cell pointed to by the new
+    pointer.
+
+    \section{Shorting out Indirection Nodes}
+
+    In Chapter~12 we discussed the introduction of \textit{indirection nodes} to preserve
+    sharing when updating the root of a redex with its result. This is the only
+    purpose of indirection nodes, and in all other respects they are a burden on
+    the implementation, since they take up storage, and have to be `jumped over'
+    when traversing the graph.
+
+    It turns out that a rather simple modification to the garbage collector can
+    `short out' all the indirection nodes in a graph, so they are no longer required.
+    Consider a mark-scan collector. When it reaches an indirection node during
+    the mark phase, it does not mark the indirection node. Instead it overwrites
+    the pointer to the indirection node with the contents of the indirection,
+    effectively shorting it out. Thus:
+
+    \begin{center}
+        {%
+            \sffamily
+            \small
+            \begin{tikzpicture}
+                \def\cellwidth{0.8cm}
+                \def\cellheight{0.7cm}
+                \def\toprow{0}
+                \def\botrow{-2.4}
+
+                % Top row: left node
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight] (tl1) at (0,\toprow) {};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (tl2) at (tl1.east) {};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (tl3) at (tl2.east) {};
+
+                % Top row: indirection node
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight] (ti1) at (5,\toprow) {IND};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (ti2) at (ti1.east) {};
+
+                % Top row: right node
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight] (tr1) at (9.6,\toprow) {};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (tr2) at (tr1.east) {};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (tr3) at (tr2.east) {};
+
+                % Top row: pointers
+                \draw[-{Stealth[length=3mm,width=2mm]}, thick] (tl3.center) -- (ti1.west);
+                \draw[-{Stealth[length=3mm,width=2mm]}, thick] (ti2.center) -- (tr1.west);
+
+                % Label
+                \node[anchor=west] at (0,-1.2) {becomes};
+
+                % Bottom row: left node
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight] (bl1) at (0,\botrow) {};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (bl2) at (bl1.east) {};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (bl3) at (bl2.east) {};
+
+                % Bottom row: indirection node
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight] (bi1) at (5,\botrow) {IND};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (bi2) at (bi1.east) {};
+
+                % Bottom row: right node
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight] (br1) at (9.6,\botrow) {};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (br2) at (br1.east) {};
+                \node[draw, rectangle, minimum width=\cellwidth, minimum height=\cellheight, anchor=west] (br3) at (br2.east) {};
+
+                % Bottom row: pointers
+                \draw[-{Stealth[length=3mm,width=2mm]}, thick] (bi2.center) -- (br1.west);
+                \draw[-{Stealth[length=3mm,width=2mm]}, thick] (bl3.center) -- ++(0,-1.0) -| (br1.south);
+            \end{tikzpicture}
+        }%
+    \end{center}
+
+    Since all pointers to indirection nodes will be updated in this way it follows
+    that the indirection nodes themselves will be unreferenced (and unmarked),
+    so they can be collected with the rest of the garbage. Not only does this save
+    store, but it also saves time when following the pointers that have been
+    updated. A very similar technique will work for a copying collector.
+
+    \section{Exploiting Cell Lifetimes}
+
+    Another approach recently suggested by Lieberman and Hewitt [1983] is
+    based on the observation that
+
+    \begin{quote}
+        \small
+        The longer a cell has lived,\\
+        the longer it is likely to live.
+    \end{quote}
+
+    \noindent
+    Consider, for example, a heap which includes a filing system. Many files will
+    be unused for long periods, while data structures that are currently being
+    processed will have relatively short lifetimes. A conventional copying
+    collector will copy the entire filing system each time it runs -- a very wasteful
+    activity, since it is unlikely to recover any space from the inactive majority of
+    the filing system.
+
+    Hewitt and Lieberman therefore suggest dividing the address space into
+    \textit{regions} of increasing age. Most pointers point backwards in time (that is, if
+    they cross region boundaries, they will mostly point from younger regions to
+    older ones). Where pointers point from an older region into a younger one
+    (only update operations can cause this), they are constrained to go via an \textit{entry
+        table} associated with the younger region.
+
+    Now the youngest region can be garbage-collected \textit{independently}, using
+    Baker's algorithm, so long as we preserve all cells referenced from its entry
+    table. In general, any region can be garbage-collected without touching any
+    older information. So all we have to do is to garbage-collect young regions
+    (where garbage collection will be fruitful) more often than older ones (where
+    it will be less fruitful, but eventually necessary).
+
+    \section{Avoiding Garbage Collection}
+
+    Another approach to garbage collection is to try to avoid it altogether. Wadler
+    [1984] suggests a technique for compiling a certain class of functional program
+    into a \textit{finite state machine} with a fixed number of registers and no heap. This, in
+    effect, performs memory allocation in advance (rather as a conventional
+    Pascal program has no problem with memory allocation). He calls his
+    compiler the \textit{listless transformer.}
+
+    The functional programs to which this technique is applicable are, not
+    surprisingly, those that can be evaluated using \textit{bounded internal storage}. This
+    includes, for example, functions that find the length of a list, add up a list,
+    concatenate or merge two lists, or divide a list into two lists of odd and even
+    elements. It excludes, however, functions that sort a list, append a list to
+    itself, or work on tree-shaped data.
+
+    Clearly the applicability of the method is limited, but where appropriate it
+    is extremely effective, since the finite state machine can be made very fast.
+
+    Wadler has a working implementation of his listless transformer, written in
+    KRC.
+
+    \section{Garbage Collection in Distributed Systems}
+
+    Efforts to develop garbage collectors which work in parallel with useful
+    computation have gained new impetus with the advent of parallel architectures, where the problem generalizes to many computation and garbage
+    collection processes.
+
+    Most work has been addressed to architectures with a single large address
+    space (\textit{closely coupled} systems), for example Hudak [1983a and 1983b] and
+    Ben-Ari [1984].
+
+    Other efforts have been directed towards \textit{loosely coupled} systems in which
+    the heap is distributed between a number of processing elements, and
+    accessing a cell held by another processing element is recognized as a
+    relatively expensive operation. Examples include Mohamed-Ali [1984] and
+    Hughes [1985].
+
+    \section*{References}
+
+    \begin{references}
+
+        \item Aerts, J.P.H. 1981. \textit{Implementing SASL without Garbage Collection.} EUT-Report
+        81-WSK-05. Eindhoven Univ.\ of Technology. November.
+
+        \item Baker, H. 1978. List processing in real time on a serial computer. \textit{Communications of
+            the ACM.} Vol.~21, no.~4, pp.~280--94.
+
+        \item Ben-Ari, M. 1984. Algorithms for on-the-fly garbage collection. \textit{ACM TOPLAS.} Vol.
+        6, no.~3, pp.~333--44.
+
+        \item Bobrow, D.G. 1980. Managing reentrant structures using reference-counts. \textit{ACM
+            TOPLAS.} Vol.~2, no.~3, pp.~269--73.
+
+        \item Brownbridge, D. 1985. Cyclic reference-counting for combinator machines. In
+        \textit{Proceedings of the IFIP Conference on Functional Programming and Computer
+            Architecture, Nancy.} September.
+
+        \item Cohen, J. 1981. Garbage collection of linked data structures. \textit{ACM Computing Surveys.}
+        Vol.~13, no.~3, pp.~341--67.
+
+        \item Dijkstra, E.W., Lamport, L., Martin, A.J., Scholten, C.S., and Steffens, E.F.M.
+        1978. On-the-fly garbage collection -- an exercise in cooperation. \textit{Communications
+            of the ACM.} Vol.~21, no.~11, pp.~966--75.
+
+        \item Hudak, P. 1983a. \textit{Distributed Graph Marking.} Research report 268, Computer Science
+        Dept, Yale. January.
+
+        \item Hudak, P. 1983b. Distributed task and memory management. In \textit{Proceedings of the
+            ACM Symposium on Principles of Distributed Computing}, pp.~277--89. August.
+
+        \item Hughes, R.J.M. 1982. \textit{Reference-counting with Circular Structures in Virtual Memory
+            Applicative Systems.} Programming Research Group, Oxford.
+
+        \item Hughes, R.J.M. 1985. A distributed garbage collection algorithm. In \textit{Proceedings of the
+            IFIP Conf.\ on Functional Programming and Computer Architecture, Nancy}, pp.
+        256--72. Jouannaud (editor). LNCS 201, Springer Verlag. September.
+
+        \item Knuth, D. 1976. \textit{The Art of Computer Programming.} Vol.~I, Section 2.5. Addison
+        Wesley.
+
+        \item Kung, H.T., and Wong, S.W. 1977. \textit{An Efficient Parallel Garbage Collection System,
+            and its Correctness Proof.} Dept of Comp.\ Sci., Carnegie-Mellon Univ.
+        September.
+
+        \item Lieberman, H., and Hewitt, C. 1983. A real time garbage collector based on the
+        lifetimes of objects. \textit{Communications of the ACM.} Vol.~26, no.~6, pp.~419--29.
+
+        \item Mohamed-Ali, K.A. 1984. Object oriented storage management and garbage
+        collection in distributed processing systems. PhD Thesis, report TRITA-CS-8406.
+        Royal Institute of Technology, Stockholm. December.
+
+        \item Schorr, H., and Waite, W. 1967. An efficient machine independent procedure for
+        garbage collection. \textit{Communications of the ACM.} Vol.~10, no.~8, pp.~501--6.
+
+        \item Steele, G.L. 1975. Multiprocessing compactifying garbage collection. \textit{Communications of the ACM.} Vol.~18, no.~9, pp.~495--508.
+
+        \item Stoye, W.R., Clarke, T.J.W., and Norman, A.C. 1984. Some practical methods for
+        rapid combinator reduction. In \textit{Proceedings of the ACM Symposium on Lisp and
+            Functional Programming, Austin}, pp.~159--66. August.
+
+        \item Wadler, P. 1984. Listlessness is better than laziness: lazy evaluation and garbage
+        collection at compile-time. In \textit{Proceedings of the ACM Symposium on Lisp and
+            Functional Programming, Austin}, pp.~45--52. August.
+
+        \item Wise, D. 1985. Design for a multiprocessing heap with on-board reference-counting.
+        In \textit{Functional Programming and Computer Architecture, Nancy}, pp.~289--304.
+        Jouannaud (editor). LNCS 201. Springer Verlag.
+
+        \item Wise, D.S., and Friedman, D.P. 1977. The one-bit reference-count. \textit{BIT.} Vol.~17, no.
+        3, pp.~351--9.
+
+    \end{references}
