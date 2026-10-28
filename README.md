@@ -38,7 +38,7 @@ Robert Jacobson
 	- [X] 13 Supercombinators And Lambda-Lifting
 	- [X] 14 Recursive Supercombinators
 	- [X] 15 Fully-Lazy Lambda-Lifting
-	- [ ] 16 Sk Combinators
+	- [X] 16 Sk Combinators
 	- [ ] 17 Storage Management And Garbage Collection
 - [ ] Part III Advanced Graph Reduction
 	- [ ] 18 The G-Machine
