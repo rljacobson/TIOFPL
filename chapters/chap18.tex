@@ -1,0 +1,948 @@
+\chapter{The G-Machine}
+\vspace{2cm}
+%\vspace{1cm}
+
+The heart of any graph reducer is the implementation of function application.
+In Chapter~12 we saw that a lambda abstraction can be applied to an argument
+by constructing an instance of the body of the abstraction with substitutions
+made for occurrences of the formal parameter. Unfortunately, this involved
+an inefficient traversal of the tree representing the body of the abstraction,
+and the presence of free variables seemed to make a more efficient implementation rather difficult.
+
+With this in mind, we developed the supercombinator transformation in
+Chapter~13, which yielded particularly simple lambda abstractions (the
+supercombinators), which had no free variables. This simplified the process of
+instantiating the body of such an abstraction, but at the (minor) price of
+having to substitute for several variables at once. However, the principal
+incentive for developing the supercombinator transformation was the hope of
+compiling the body of a supercombinator to a fixed sequence of instructions
+which, when executed, would construct an instance of its body.
+
+The payoff comes in this chapter, in which we will examine the G-machine,
+an extremely fast implementation of graph reduction based on
+supercombinator compilation. The G-machine was developed at the Chalmers
+Institute of Technology, G\"oteborg, Sweden, by Johnsson and Augustsson.
+This chapter and the subsequent three chapters draw heavily on the
+G-machine papers [Johnsson, 1984; Augustsson, 1984]. Many of the ideas in
+these chapters are theirs, and not all of them have appeared in the published
+literature.
+
+The development of the G-machine is presented informally, but it would be
+an interesting exercise to give a formal proof of its correctness [Lester, 1985].
+
+\section{Using an Intermediate Code}
+
+Once we have decided to compile supercombinator bodies to a sequence of
+instructions we have to decide on the language in which the instructions
+should be written. It would be possible to produce, say, VAX machine code
+directly, but this approach suffers from two disadvantages. Firstly, we would
+have to start all over again if we want to generate code for some other
+machine, and, secondly, we would be in danger of mixing up the issues of how
+to compile supercombinators to a sequential code with issues of how best to
+exploit particular features of the VAX.
+
+This is not a new problem, and a common solution is to define an
+\textit{intermediate code}, which can be regarded as the machine code for an abstract
+sequential machine. Then the compilation process can be split into two parts:
+first generate the intermediate code, and then generate target code for a
+particular machine from the intermediate code. Changing the code generator
+to generate code for a different target machine is then relatively easy, and
+improvements made in the compilation to intermediate code benefit all such
+code generators. Examples of this approach include Pascal's P-code [Clark,
+1981], BCPL's O-code [Richards, 1971] and Portable Standard Lisp's
+C-macros [Griss and Hearn, 1981].
+
+\subsection{G-code and the G-machine Compiler}
+
+For these reasons, the designers of the G-machine defined an intermediate
+code called G-code, into which supercombinator bodies are compiled. The
+compiler for the G-machine follows a sequence similar to that described in the
+first two parts of this book. In particular:
+
+\begin{numbered}
+    \item The source language is a variant of ML with lazy evaluation semantics,
+    called Lazy ML (or LML).
+    \item Early phases of the compiler perform type-checking, compile pattern-matching and do dependency analysis. At this stage the program has
+    been translated to the lambda calculus (augmented with \ml{let} and \ml{letrec}).
+    \item A lambda-lifter transforms the program to supercombinator form. The
+    full laziness optimization is not performed, but this feature could easily be
+    added.
+    \item Now the supercombinators are compiled to G-code.
+    \item Finally, machine code for the target machine is generated from the
+    G-code.
+\end{numbered}
+
+\noindent
+Figure~18.1 shows the structure of the G-machine compiler.
+
+Our description of the G-machine compiler falls into three parts:
+
+\begin{numbered}
+    \item a description of the compilation algorithm which translates the source
+    language into the intermediate code;
+    \item a description of the intermediate code itself, giving a precise description
+    of what each instruction does;
+    \item a description of the code generator.
+\end{numbered}
+
+
+\boxedfigure{
+    \centering
+    \begin{tabular}{@{}c@{\hspace{1.5cm}}l@{}}
+        Source program & \\
+        $\downarrow$ & \\
+        \fbox{Compile to lambda expressions} & \\
+        $\downarrow$ & \\
+        Lambda calculus plus \ml{let} and \ml{letrec} & \\
+        $\downarrow$ & \\
+        \fbox{Lambda-lifting} & \\
+        $\downarrow$ & \\
+        Set of supercombinator definitions & \\
+        $\downarrow$ & \\
+        \fbox{Compilation to G-code} & Chapters 18, 20, 21 \\
+        $\downarrow$ & \\
+        G-code program & Chapters 18, 19 \\
+        $\downarrow$ & \\
+        \fbox{Code generation} & Chapter 19 \\
+        $\downarrow$ & \\
+        Target machine code & \\
+    \end{tabular}
+}{Structure of the G-machine compiler}
+
+\noindent
+We will discuss the first of these parts in this chapter and the latter two in the
+next chapter. First, however, we will mention some related work.
+
+\subsection{Other Fast Sequential Implementations of Lazy Languages}
+
+The implementation of Ponder [Fairbairn, 1982], developed by Fairbairn and
+Wray, is based on a similar approach to the G-machine. The Ponder Abstract
+Machine (PAM) is at least as sophisticated as the G-machine, though they
+were developed independently, and is described in Fairbairn's thesis
+[Fairbairn, 1985; Fairbairn and Wray, 1986]. An interesting development of
+this work is a cross-compiler which compiles Ponder abstract machine
+instructions into SKIM microcode [Elworthy, 1985].
+
+A related approach, though one which diverges from graph reduction, is to
+use a lexically scoped dialect of Lisp, such as Scheme [Steele and Sussman,
+1978] or T [Rees and Adams, 1982], as an intermediate code. This takes
+advantage of the immense amount of effort which has been spent on building
+fast Lisp implementations, and is the approach taken by Hudak [Hudak and
+Kranz, 1984].
+
+A fast VAX implementation of Hope [Burstall \textit{et al.}, 1980] based on an
+intermediate code called FP/M has recently been developed at Imperial
+College [Field, 1985] (remember, however, that Hope is a strict language).
+
+\section{An Example of G-machine Execution}
+
+We begin with an example, to give the flavor of the G-machine. Consider the
+Miranda program
+
+\combinatorbox{
+    \ml{from n = n : from (succ n)} \\
+    \indent\ml{succ n = n+1}
+}{
+    \ml{from (succ 0)}
+}
+
+\noindent
+It generates the infinite list \ml{[1,2,3,\ldots,]}. The functions \ml{from} and \ml{succ} are
+supercombinators already, so the lambda-lifting is trivial, yielding
+
+\combinatorbox{
+    \ml{\$from n = CONS n (\$from (\$succ n))} \\
+    \indent\ml{\$succ n = + n 1} \\
+    \indent\ml{\$Prog = \$from (\$succ 0)}
+}{
+    \ml{\$Prog}
+}
+
+\noindent
+The G-machine uses a stack, and execution begins with a pointer to the initial
+graph on top of the stack (Figure~18.2(a)). The spine is then unwound, exactly
+as previously discussed in Section~11.6, without using pointer-reversal. The
+difference comes when the spine has been completely unwound, so that there
+is a pointer to \ml{\$from} on the stack (see Figure~18.2(b)). By following this
+pointer the machine extracts
+
+\begin{numbered}
+    \item the number of arguments expected by \ml{\$from} (one in this case);
+    \item the starting address for the code for \ml{\$from}.
+\end{numbered}
+
+\noindent
+First it checks that there are enough arguments on the stack for \ml{\$from} to
+execute, and finds that there are. It then rearranges the top of the stack
+slightly (see the transition from (b) to (c) in Figure~18.2) and then jumps to the
+code for \ml{\$from}. The rearrangement of the top of the stack puts a pointer to the
+argument to \ml{\$from} on top of the stack. We will discuss the stack rearrangement in more detail later. Notice also that the machine \textit{jumps} to \ml{\$from} rather
+than \textit{calling} it. An instruction at the end of \ml{\$from} will complete evaluation of
+the graph after the \ml{\$from} reduction is done.
+
+
+\begin{figure}[h]
+    \centering
+
+    {%
+        \setlength{\fboxrule}{1pt}%
+        \setlength{\fboxsep}{0pt}%
+        \fbox{%
+%            \begin{minipage}{0.9\textwidth}
+                \sffamily\footnotesize
+%                \setlength{\parindent}{10pt}
+                \setlength{\parskip}{0mm plus 0mm minus 0mm}
+                \centering\noindent
+
+\begin{tabular}{ccc}
+
+    % a
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: a single cell with a bullet at its center
+        \node[cell] (c1) at (0,0) {};
+        \node[bullet] (s1) at (c1.center) {};
+
+        % Tree (hand-placed nodes); root @ is at the same height as the bullet
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Pointer from the stack bullet to the root @ node: one straight segment
+        \draw[ptr] (s1) -- (ap1.west);
+    \end{tikzpicture}
+    &
+
+    % b
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: two cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+
+        % Tree (hand-placed nodes); root @ is at the same height as the first bullet
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Pointer from the first bullet to the root @ node
+        \draw[ptr] (s1) -- (ap1.west);
+
+        % Pointer from the second bullet to $from (curved, as in the scan)
+        \draw[ptr] (s2) to[out=0, in=180] (from.west);
+    \end{tikzpicture}
+
+    &
+
+    % c
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: two cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+
+        % Tree (hand-placed nodes)
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Pointer from the first bullet to the root @ node
+        \draw[ptr] (s1) -- (ap1.west);
+
+        % Pointer from the second bullet to the lower @ node: curves down and
+        % under $from, then rises into ap2 from the lower left
+        \draw[ptr] (s2) to[out=-60, in=-150] (ap2.south west);
+    \end{tikzpicture}
+
+    \\[2.5cm]
+    (a) &
+    (b) \ml{UNWIND} &
+    (c) Rearrange stack \\[.5cm]
+
+    % d
+
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: three cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[cell] (c3) at (0,-1.0) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+        \node[bullet] (s3) at (c3.center) {};
+
+        % Tree (hand-placed nodes)
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Pointer from the first bullet to the root @ node
+        \draw[ptr] (s1) -- (ap1.west);
+
+        % Second pointer: shallow curve into the west side of ap2
+        \draw[ptr] (s2) to[out=-30, in=-160] (ap2.west);
+
+        % Third pointer: slightly deeper curve into the south-west side of ap2
+        \draw[ptr] (s3) to[out=-35, in=-140] (ap2.south west);
+    \end{tikzpicture}
+
+
+    &
+
+    % e
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: four cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[cell] (c3) at (0,-1.0) {};
+        \node[cell] (c4) at (0,-1.5) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+        \node[bullet] (s3) at (c3.center) {};
+        \node[bullet] (s4) at (c4.center) {};
+
+        % Tree (hand-placed nodes)
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Second tree: a single node beneath the first
+        \node[lbl]   (succ2) at (1.9,-2.3) {\ml{\$succ}};
+
+        % Tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Pointer from the first bullet to the root @ node
+        \draw[ptr] (s1) -- (ap1.west);
+
+        % Second pointer: shallow curve into the west side of ap2
+        \draw[ptr] (s2) to[out=-30, in=-160] (ap2.west);
+
+        % Third pointer: slightly deeper curve into the south-west side of ap2
+        \draw[ptr] (s3) to[out=-15, in=-140] (ap2.south west);
+
+        % Fourth pointer: to the new $succ node
+        \draw[ptr] (s4) to[out=0, in=120] (succ2.north);
+    \end{tikzpicture}
+
+    &
+
+    % f
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: three cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[cell] (c3) at (0,-1.0) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+        \node[bullet] (s3) at (c3.center) {};
+
+        % First tree (hand-placed nodes)
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Second tree: an apply node over a single $succ leaf
+        \node[apply] (ap3)   at (1.3,-1.8) {\ml{@}};
+        \node[lbl]   (succ2) at (0.9,-2.4) {\ml{\$succ}};
+
+        % First tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Second tree edge
+        \draw (ap3) -- (succ2);
+
+        % Pointer from the first bullet to the root @ node
+        \draw[ptr] (s1) -- (ap1.west);
+
+        % Second pointer: shallow curve into the west side of ap2
+        \draw[ptr] (s2) to[out=-30, in=-160] (ap2.west);
+
+        % Third pointer: now ends at the new apply node ap3
+        \draw[ptr] (s3) to[out=-15, in=120] (ap3.north);
+
+        % Fourth pointer: from the right of ap3, curling up and into ap2
+        \draw[ptr] (ap3.east) to[out=-30, in=-140] (ap2.south west);
+    \end{tikzpicture}
+
+    \\[3.4cm]
+    (d) \ml{PUSH 0} &
+    (e) \ml{PUSHGLOBAL \$succ} &
+    (f) \ml{MKAP} \\[.5cm]
+
+    %g
+
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: four cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[cell] (c3) at (0,-1.0) {};
+        \node[cell] (c4) at (0,-1.5) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+        \node[bullet] (s3) at (c3.center) {};
+        \node[bullet] (s4) at (c4.center) {};
+
+        % First tree (hand-placed nodes)
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Second tree: an apply node over a single $succ leaf
+        \node[apply] (ap3)   at (1.3,-1.8) {\ml{@}};
+        \node[lbl]   (succ2) at (0.9,-2.4) {\ml{\$succ}};
+
+        % Third tree: a single $from node directly below the fourth cell
+        \node[lbl]   (from2) at (0,-2.8) {\ml{\$from}};
+
+        % First tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Second tree edge
+        \draw (ap3) -- (succ2);
+
+        % Pointer from the first bullet to the root @ node
+        \draw[ptr] (s1) -- (ap1.west);
+
+        % Second pointer: shallow curve into the west side of ap2
+        \draw[ptr] (s2) to[out=-30, in=-160] (ap2.west);
+
+        % Third pointer: to the apply node ap3
+        \draw[ptr] (s3) to[out=-15, in=120] (ap3.north);
+
+        % Fourth pointer: from the right of ap3, curling up and into ap2
+        \draw[ptr] (ap3.east) to[out=-30, in=-140] (ap2.south west);
+
+        % Fifth pointer: straight down from the new cell's bullet to $from
+        \draw[ptr] (s4) -- (from2.north);
+    \end{tikzpicture}
+
+    &
+
+    %h
+
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: three cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[cell] (c3) at (0,-1.0) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+        \node[bullet] (s3) at (c3.center) {};
+
+        % First tree (hand-placed nodes)
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Second tree: ($from ($succ)) combined into one tree
+        \node[apply] (ap3)   at (1.0,-1.8) {\ml{@}};
+        \node[lbl]   (from2) at (0.5,-2.4) {\ml{\$from}};
+        \node[apply] (ap4)   at (1.5,-2.4) {\ml{@}};
+        \node[lbl]   (succ2) at (1.2,-3.1) {\ml{\$succ}};
+
+        % First tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Second tree edges
+        \draw (ap3) -- (from2);
+        \draw (ap3) -- (ap4);
+        \draw (ap4) -- (succ2);
+
+        % Pointer from the first bullet to the root @ node
+        \draw[ptr] (s1) -- (ap1.west);
+
+        % Second pointer: shallow curve into the west side of ap2
+        \draw[ptr] (s2) to[out=-30, in=-160] (ap2.west);
+
+        % Third pointer: to the root of the new tree
+        \draw[ptr] (s3) to[out=-15, in=120] (ap3.north);
+
+        % Pointer from the new lower apply node, looping right and up into ap2
+        \draw[ptr] (ap4.east) to[out=-40, in=-140] (ap2.south west);
+    \end{tikzpicture}
+
+    &
+    % i
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: four cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[cell] (c3) at (0,-1.0) {};
+        \node[cell] (c4) at (0,-1.5) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+        \node[bullet] (s3) at (c3.center) {};
+        \node[bullet] (s4) at (c4.center) {};
+
+        % First tree (hand-placed nodes)
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Second tree: ($from ($succ)) combined into one tree
+        \node[apply] (ap3)   at (1.0,-1.8) {\ml{@}};
+        \node[lbl]   (from2) at (0.5,-2.4) {\ml{\$from}};
+        \node[apply] (ap4)   at (1.5,-2.4) {\ml{@}};
+        \node[lbl]   (succ2) at (1.2,-3.1) {\ml{\$succ}};
+
+        % First tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Second tree edges
+        \draw (ap3) -- (from2);
+        \draw (ap3) -- (ap4);
+        \draw (ap4) -- (succ2);
+
+        % Pointer from the first bullet to the root @ node
+        \draw[ptr] (s1) -- (ap1.west);
+
+        % Second pointer: shallow curve into the west side of ap2
+        \draw[ptr] (s2) to[out=-30, in=-160] (ap2.west);
+
+        % Third pointer: to the root of the new tree
+        \draw[ptr] (s3) to[out=-15, in=120] (ap3.north);
+
+        % Fourth pointer: from the new cell, a shallow curve into ap2 again
+        \draw[ptr] (s4) to[out=20, in=-150] (ap2.south west);
+
+        % Pointer from the new lower apply node, looping right and up into ap2
+        \draw[ptr] (ap4.east) to[out=-40, in=-140] (ap2.south west);
+    \end{tikzpicture}
+
+    \\[3.7cm]
+
+    (g) \ml{PUSHGLOBAL \$from} &
+    (h) \ml{MKAP} &
+    (i) \ml{PUSH 1} \\[.5cm]
+
+    % j
+
+
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: three cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[cell] (c3) at (0,-1.0) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+        \node[bullet] (s3) at (c3.center) {};
+
+        % First tree (hand-placed nodes)
+        \node[apply] (ap1)  at (2.4,0)    {\ml{@}};
+        \node[lbl]   (from) at (1.7,-0.7) {\ml{\$from}};
+        \node[apply] (ap2)  at (2.7,-0.7) {\ml{@}};
+        \node[lbl]   (succ) at (2.2,-1.5) {\ml{\$succ}};
+        \node[lbl]   (zero) at (3.1,-1.5) {\ml{0}};
+
+        % Second tree
+        \node[apply] (ap3)   at (1.0,-2.4) {\ml{@}};
+        \node[lbl]   (from2) at (0.5,-3.0) {\ml{\$from}};
+        \node[apply] (ap4)   at (1.5,-3.0) {\ml{@}};
+        \node[lbl]   (succ2) at (1.2,-3.7) {\ml{\$succ}};
+
+        % CONS root: stacked double bullet, up and to the left of ap3
+        \node[bullet] (cons1) at (0.5,-1.75) {};
+        \node[bullet] (cons2) at (0.5,-1.95) {};
+
+        % First tree edges
+        \draw (ap1) -- (from);
+        \draw (ap1) -- (ap2);
+        \draw (ap2) -- (succ);
+        \draw (ap2) -- (zero);
+
+        % Second tree edges; the CONS edge branches down and to the right
+        \draw (cons2) -- (ap3);
+        \draw (ap3) -- (from2);
+        \draw (ap3) -- (ap4);
+        \draw (ap4) -- (succ2);
+
+        % Pointer from the first bullet to the root @ node
+        \draw[ptr] (s1) -- (ap1.west);
+
+        % Second pointer: shallow curve into the west side of ap2
+        \draw[ptr] (s2) to[out=-30, in=-160] (ap2.west);
+
+        % Third pointer: to the top of the CONS root
+        \draw[ptr] (s3) to[out=-15, in=120] (cons1.north);
+
+        % Pointer from the CONS root into ap2
+        \draw[ptr] (cons1.east) to[out=-10, in=-150] (ap2.south west);
+
+        % Pointer from the lower apply node, looping right and up into ap2
+        \draw[ptr] (ap4.east) to[out=-40, in=-140] (ap2.south west);
+    \end{tikzpicture}
+
+     &
+    % k
+    \begin{tikzpicture}[
+        baseline=(current bounding box.north),
+        font=\sffamily\footnotesize,
+        cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+        bullet/.style={circle, fill=black, inner sep=1.5pt},
+        ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+        apply/.style={inner sep=1pt},
+        lbl/.style={inner sep=1pt}
+        ]
+
+        % Stack: two cells, each with a bullet at its center
+        \node[cell] (c1) at (0,0)    {};
+        \node[cell] (c2) at (0,-0.5) {};
+        \node[bullet] (s1) at (c1.center) {};
+        \node[bullet] (s2) at (c2.center) {};
+
+        % CONS root: stacked double bullet
+        \node[bullet] (cons1) at (1.7,0.1)  {};
+        \node[bullet] (cons2) at (1.7,-0.1) {};
+
+        % Tree on a regular grid: right child +0.4 (or +0.45) in x, left leaf -0.5 in x, 0.7 down per level
+        \node[apply] (apa)   at (2.3,-0.6)  {\ml{@}};
+        \node[lbl]   (from)  at (1.8,-1.3)  {\ml{\$from}};
+        \node[apply] (apb)   at (2.7,-1.3)  {\ml{@}};
+        \node[lbl]   (succ1) at (2.2,-2.0)  {\ml{\$succ}};
+        \node[apply] (apc)   at (3.1,-2.0)  {\ml{@}};
+        \node[lbl]   (succ2) at (2.6,-2.7)  {\ml{\$succ}};
+        \node[lbl]   (zero)  at (3.5,-2.7)  {\ml{0}};
+
+        % Tree edges
+        \draw (cons2) -- (apa);
+        \draw (apa) -- (from);
+        \draw (apa) -- (apb);
+        \draw (apb) -- (succ1);
+        \draw (apb) -- (apc);
+        \draw (apc) -- (succ2);
+        \draw (apc) -- (zero);
+
+        % First pointer: straight into the CONS root
+        \draw[ptr] (s1) -- (1.55,0);
+
+        % Second pointer: from the CONS root, down and around into @c
+        \draw[ptr] (cons2.west) to[out=-140, in=180] (apc.west);
+
+        % Third pointer: from the second cell, a wide sweep into @c from below
+        \draw[ptr] (s2) to[out=-80, in=-150] (apc.south west);
+    \end{tikzpicture}
+
+
+     &
+     % l
+
+     \begin{tikzpicture}[
+         baseline=(current bounding box.north),
+         font=\sffamily\footnotesize,
+         cell/.style={draw, minimum width=1.3cm, minimum height=0.5cm, inner sep=0pt},
+         bullet/.style={circle, fill=black, inner sep=1.5pt},
+         ptr/.style={-{Stealth[length=2.5mm,width=1.5mm]}, thick},
+         apply/.style={inner sep=1pt},
+         lbl/.style={inner sep=1pt}
+         ]
+
+         % Stack: two cells, each with a bullet at its center
+         \node[cell] (c1) at (0,0)    {};
+         \node[bullet] (s1) at (c1.center) {};
+
+         % CONS root: stacked double bullet
+         \node[bullet] (cons1) at (1.7,0.1)  {};
+         \node[bullet] (cons2) at (1.7,-0.1) {};
+
+         % Tree on a regular grid: right child +0.4 (or +0.45) in x, left leaf -0.5 in x, 0.7 down per level
+         \node[apply] (apa)   at (2.3,-0.6)  {\ml{@}};
+         \node[lbl]   (from)  at (1.8,-1.3)  {\ml{\$from}};
+         \node[apply] (apb)   at (2.7,-1.3)  {\ml{@}};
+         \node[lbl]   (succ1) at (2.2,-2.0)  {\ml{\$succ}};
+         \node[apply] (apc)   at (3.1,-2.0)  {\ml{@}};
+         \node[lbl]   (succ2) at (2.6,-2.7)  {\ml{\$succ}};
+         \node[lbl]   (zero)  at (3.5,-2.7)  {\ml{0}};
+
+         % Tree edges
+         \draw (cons2) -- (apa);
+         \draw (apa) -- (from);
+         \draw (apa) -- (apb);
+         \draw (apb) -- (succ1);
+         \draw (apb) -- (apc);
+         \draw (apc) -- (succ2);
+         \draw (apc) -- (zero);
+
+         % First pointer: straight into the CONS root
+         \draw[ptr] (s1) -- (1.55,0);
+
+         % Second pointer: from the CONS root, down and around into @c
+         \draw[ptr] (cons2.west) to[out=-140, in=180] (apc.west);
+     \end{tikzpicture}
+
+     \\[1cm]
+    (j) \ml{CONS} &
+    (k) \ml{UPDATE 2} &
+    (l) \ml{POP 1} \\
+\end{tabular}
+
+
+%            \end{minipage}%
+        }%
+    }%
+
+    \caption{\textsf Evaluation of \ml{(\$from (\$succ 0))}}
+\end{figure}
+
+
+Control has now passed to \ml{\$from}. A G-machine compiler will produce the
+following G-code for \ml{\$from}, which is executed in sequence:
+
+\simpletitledbox{
+    G-code for function \ml{\$from}
+}{
+    \begin{tabular}{@{}l@{\hspace{2cm}}l@{}}
+        \ml{PUSH 0;}            & Push \ml{n} \\
+        \ml{PUSHGLOBAL \$succ;} & Push function \ml{\$succ} \\
+        \ml{MKAP;}              & Construct \ml{(\$succ n)} \\
+        \ml{PUSHGLOBAL \$from;} & Push function \ml{\$from} \\
+        \ml{MKAP;}              & Construct \ml{(\$from (\$succ n))} \\
+        \ml{PUSH 1;}            & Push \ml{n} \\
+        \ml{CONS;}              & Construct \ml{(n : (\$from (\$succ n)))} \\
+        \ml{UPDATE 2;}          & Update the root of the redex \\
+        \ml{POP 1;}             & Pop the parameter \ml{n} \\
+        \ml{UNWIND;}            & Initiate next reduction \\
+    \end{tabular}
+}
+
+The execution of \ml{\$from} is shown step by step in Figure~18.2. We can make
+several observations by examining the code given above:
+
+\begin{numbered}
+    \item At the point of entry, the parameter \ml{n} is on top of the stack, and a pointer
+    to the root of the redex is immediately below it (Figure~18.2(c)).
+    \item Items which are not on top of the stack are addressed \textit{relative to the top of
+        the stack}, with the top element having offset zero. For example, the
+    \ml{PUSH 1} instruction takes the element next to top in the stack, and pushes
+    it onto the stack. Stack items cannot be addressed relative to the base of
+    the stack because a reduction takes place at the tip of the spine, with an
+    unknown number of vertebrae above. (An alternative would have been
+    to assume a frame pointer, and relegate offset calculation to code
+    generation time.)
+    \item Some instructions take their operands from the stack and put their result
+    on the stack in the manner of a zero address machine. \ml{MKAP} and \ml{CONS}
+    are examples of such instructions.
+\end{numbered}
+
+\noindent
+Apart from the last three instructions, the sequence simply constructs an
+instance of the body of \ml{\$from} (see Figure~18.2(l)).
+
+The \ml{UPDATE 2} instruction updates the root of the redex with a copy of the
+root of the result (there is a slight inefficiency here, since the root of the result
+is discarded almost immediately it is constructed; we will address this
+efficiency question later). Notice that the G-machine updates the root of the
+redex using copying, rather than using indirection nodes (but this is not an
+inherent property of the G-machine -- see Section~19.4.4).
+
+The \ml{POP 1} instruction removes the parameters (only one in this case) from
+the stack, leaving a pointer to the reduced graph on top of the stack. Finally
+\ml{UNWIND} examines the tag of the root node of the reduced graph. In this case it
+is a \ml{CONS} cell, so evaluation is complete.
+
+This concludes our example, for now. (Note: in order to reduce the number
+of execution steps, the example contains some optimizations which we will
+not study until Chapter~20.)
+
+We will now develop the G-machine in a stepwise fashion, beginning with a
+very simple implementation, and developing the compilation algorithm and
+the G-code together. First, however, we will specify the language from which
+we are compiling.
+
+\section{The Source Language for the G-compiler}
+
+The compilation to G-code begins with a program consisting of a number of
+supercombinator definitions of the form
+
+\begin{mlcoded}
+    \$S x$_1$ x$_2$ \ldots\ x$_n$ $=$ E
+\end{mlcoded}
+
+\noindent
+where \ml{E} is an expression containing no lambdas, but which may contain \ml{let}s
+and \ml{letrec}s. Figure~18.3 gives a reminder of the syntax of expressions. Notice
+
+\boxedfigure{
+    \begin{tabular}{@{}lll@{}}
+        \ml{<E>} & \typedecl{} & \ml{<constant>} \\
+        & \ml{|} & \ml{<identifier>} \\
+        & \ml{|} & \ml{<E> <E>} \\
+        & \ml{|} & \ml{let <identifier> $=$ <E> in <E>} \\
+        & \ml{|} & \ml{letrec <identifier> $=$ <E>} \\
+        & & \quad\quad\quad\ml{\ldots} \\
+        & & \quad\quad\quad\ml{<identifier> $=$ <E>} \\
+        & & \ml{in <E>} \\
+    \end{tabular}
+}{BNF for syntax of expressions}
+
+\noindent
+that the left-hand side of a definition in a \ml{let} or \ml{letrec} can consist only of a
+single variable; local function definitions have been removed by lambda-lifting. For example,
+
+\begin{mlcoded}
+    let f x $=$ $+$ x 1 \\
+    in E
+\end{mlcoded}
+
+\noindent
+cannot occur. Notice also that we allow only one definition in a \ml{let}. Multiple
+definitions can be handled by nested \ml{let}s, and the restriction slightly simplifies
+the compiler.
+
+It is worth having a formal description of the syntax, because our compiler
+will need to contain a case for each construct. Referring to the syntax enables
+us to confirm that all cases have been covered.
+
+To save repetitive work in this chapter we will use a stripped-down set of
+built-in functions and constants, shown in Figure~18.4. The stripped-down set
+has been chosen to illustrate all the features of the compiler. The operators in
+the right-hand column behave exactly like those in the left-hand column.
+
+Assuming that we implement lists with structure tag 1 for \ml{NIL} and 2 for
